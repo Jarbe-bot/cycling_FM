@@ -89,22 +89,22 @@
                <div>
                     <h3 class="text-base md:text-lg font-bold text-white mb-1.5 uppercase">1. The Engine (5 Phases)</h3>
                     <ul class="list-disc pl-5 space-y-1">
-                        <li><strong class="text-green-400">Phase 1 (Possession):</strong> Midfielders dictate the play. Based heavily on <span class="text-white">Sp.Atk</span>, <span class="text-white">Sp.Def</span> and Physicality (<span class="text-white">HP</span>).</li>
-                        <li><strong class="text-yellow-400">Phase 2 (Chance Creation):</strong> Wingers and Attacking Mids break the lines using <span class="text-white">Sp.Atk</span> and <span class="text-white">Speed</span>. <span class="text-slate-400 text-xs">Strikers act as decoys using HP or Speed.</span></li>
-                        <li><strong class="text-red-400">Phase 3 (Finishing):</strong> Strikers pull the trigger! Based entirely on <span class="text-white">ATK</span> + <span class="text-white">Speed</span> (Fast) or <span class="text-white">ATK</span> + <span class="text-white">HP</span> (Target Man).</li>
-                        <li><strong class="text-purple-400">Phase 4 (Prevention):</strong> Fullbacks and CDM's cut the passing lanes early using <span class="text-white">Sp.Def</span> and <span class="text-white">Speed</span>.</li>
-                        <li><strong class="text-blue-400">Phase 5 (The Block):</strong> The final wall. Centerbacks and Goalkeepers block the shots with brute <span class="text-white">DEF</span> and <span class="text-white">HP</span>.</li>
+                        <li><strong class="text-green-400">Phase 1 (Possession):</strong> Midfielders dictate the play. Based heavily on <span class="text-white">Hills</span>, <span class="text-white">Climbing</span> and Physicality (<span class="text-white">GC</span>).</li>
+                        <li><strong class="text-yellow-400">Phase 2 (Chance Creation):</strong> Wingers and Attacking Mids break the lines using <span class="text-white">Hills</span> and <span class="text-white">Sprint</span>. <span class="text-slate-400 text-xs">Strikers act as decoys using GC or Sprint.</span></li>
+                        <li><strong class="text-red-400">Phase 3 (Finishing):</strong> Strikers pull the trigger! Based entirely on <span class="text-white">Classics</span> + <span class="text-white">Sprint</span> (Fast) or <span class="text-white">Classics</span> + <span class="text-white">GC</span> (Target Man).</li>
+                        <li><strong class="text-purple-400">Phase 4 (Prevention):</strong> Fullbacks and CDM's cut the passing lanes early using <span class="text-white">Climbing</span> and <span class="text-white">Sprint</span>.</li>
+                        <li><strong class="text-blue-400">Phase 5 (The Block):</strong> The final wall. Centerbacks and Goalkeepers block the shots with brute <span class="text-white">TT</span> and <span class="text-white">GC</span>.</li>
                     </ul>
                 </div>
                 <div>
-                    <h3 class="text-base md:text-lg font-bold text-white mb-1.5 uppercase">2. Football Attributes</h3>
+                    <h3 class="text-base md:text-lg font-bold text-white mb-1.5 uppercase">2. Rider Attributes</h3>
                     <div class="grid grid-cols-2 gap-2 md:gap-3">
-                        <div class="bg-slate-900 p-2.5 rounded-lg border border-slate-700"><strong class="text-green-400">HP:</strong> Physicality, Target Man, Shielding.</div>
-                        <div class="bg-slate-900 p-2.5 rounded-lg border border-slate-700"><strong class="text-red-400">ATK:</strong> Finishing, Shot Power, Penalties.</div>
-                        <div class="bg-slate-900 p-2.5 rounded-lg border border-slate-700"><strong class="text-blue-400">DEF:</strong> Tackling, Marking, Shot Stopping.</div>
-                        <div class="bg-slate-900 p-2.5 rounded-lg border border-slate-700"><strong class="text-purple-400">Sp.A:</strong> Technique, Vision, Passing.</div>
-                        <div class="bg-slate-900 p-2.5 rounded-lg border border-slate-700"><strong class="text-pink-400">Sp.D:</strong> Tactical Awareness, Interceptions.</div>
-                        <div class="bg-slate-900 p-2.5 rounded-lg border border-slate-700"><strong class="text-yellow-400">SPE:</strong> Pace, Agility, Wing Play.</div>
+                        <div class="bg-slate-900 p-2.5 rounded-lg border border-slate-700"><strong class="text-yellow-400">SPR (Sprint):</strong> Top speed in the final metres. On the pitch: pace, agility, wing play.</div>
+                        <div class="bg-slate-900 p-2.5 rounded-lg border border-slate-700"><strong class="text-red-400">CLS (Classics):</strong> Power and killer instinct of a one-day racer. On the pitch: finishing, shot power.</div>
+                        <div class="bg-slate-900 p-2.5 rounded-lg border border-slate-700"><strong class="text-blue-400">TT (Time trial):</strong> Steady, unbreakable power against the clock. On the pitch: tackling, marking, shot stopping.</div>
+                        <div class="bg-slate-900 p-2.5 rounded-lg border border-slate-700"><strong class="text-purple-400">HIL (Hills):</strong> Punch and timing on short, steep climbs. On the pitch: technique, vision, passing.</div>
+                        <div class="bg-slate-900 p-2.5 rounded-lg border border-slate-700"><strong class="text-pink-400">CLB (Climbing):</strong> Patience and rhythm on long mountains. On the pitch: tactical awareness, interceptions.</div>
+                        <div class="bg-slate-900 p-2.5 rounded-lg border border-slate-700"><strong class="text-green-400">GC (General classification):</strong> Stamina and consistency over three weeks. On the pitch: physicality, target man, shielding.</div>
                     </div>
                     <p class="mt-2 text-slate-400">Base stats count fully up to 130. Above that every point still helps, at 40% strength.</p>
                 </div>
@@ -2202,7 +2202,7 @@ const AudioManager = {
             };
 
             let html = '<div class="overflow-x-auto pb-2"><table class="w-full text-left text-[9px] md:text-xs text-slate-300 whitespace-nowrap">';
-            html += '<thead class="bg-slate-900 text-slate-400 uppercase border-b border-slate-700"><tr><th class="px-1 py-2 md:p-3">Pos</th><th class="px-1 py-2 md:p-3">Player</th><th class="px-1 py-2 text-center">SPE</th><th class="px-1 py-2 text-center">HP</th><th class="px-1 py-2 text-center">ATK</th><th class="px-1 py-2 text-center">DEF</th><th class="px-1 py-2 text-center">SPA</th><th class="px-1 py-2 text-center">SPD</th><th class="px-1 py-2 text-center bg-slate-900/50">OVR</th><th class="px-1 py-2 text-center">Act</th></tr></thead>';
+            html += '<thead class="bg-slate-900 text-slate-400 uppercase border-b border-slate-700"><tr><th class="px-1 py-2 md:p-3">Pos</th><th class="px-1 py-2 md:p-3">Player</th><th class="px-1 py-2 text-center">SPR</th><th class="px-1 py-2 text-center">GC</th><th class="px-1 py-2 text-center">CLS</th><th class="px-1 py-2 text-center">TT</th><th class="px-1 py-2 text-center">HIL</th><th class="px-1 py-2 text-center">CLB</th><th class="px-1 py-2 text-center bg-slate-900/50">OVR</th><th class="px-1 py-2 text-center">Act</th></tr></thead>';
             html += '<tbody class="divide-y divide-slate-800">';
 
             for (let [groupName, roles] of Object.entries(groups)) {
@@ -2385,12 +2385,12 @@ const AudioManager = {
 // ====================================================================
 const LINE_OF = { ST: 'att', WG: 'att', AM: 'mid', CM: 'mid', DM: 'mid', WM: 'mid', FB: 'def', CB: 'def', GK: 'gk' };
 const TRAIN_STAT_LABELS = [
-    { key: 'spe', label: 'Speed', color: 'text-yellow-400' },
-    { key: 'hp', label: 'HP', color: 'text-green-400' },
-    { key: 'atk', label: 'Attack', color: 'text-red-400' },
-    { key: 'def', label: 'Defense', color: 'text-blue-400' },
-    { key: 'spa', label: 'Sp.Atk', color: 'text-purple-400' },
-    { key: 'spd', label: 'Sp.Def', color: 'text-pink-400' }
+    { key: 'spe', label: 'Sprint', color: 'text-yellow-400' },
+    { key: 'hp', label: 'GC', color: 'text-green-400' },
+    { key: 'atk', label: 'Classics', color: 'text-red-400' },
+    { key: 'def', label: 'Time trial', color: 'text-blue-400' },
+    { key: 'spa', label: 'Hills', color: 'text-purple-400' },
+    { key: 'spd', label: 'Climbing', color: 'text-pink-400' }
 ];
 
 // ====================================================================
@@ -3715,12 +3715,12 @@ function handleModalClick(event) {
                                 </div>
                                 <h3 class="font-black text-lg sm:text-2xl text-white text-center uppercase tracking-wide w-full shrink-0 mb-3 leading-tight truncate" title="${p.name}">${cardName(p.name)}</h3>
                                 <div class="grid grid-cols-2 gap-x-5 gap-y-2.5 w-full text-sm sm:text-base font-mono bg-slate-950 p-4 rounded-lg text-slate-300 shrink-0">
-                                    <div class="flex justify-between items-center"><span class="text-slate-400 font-bold">SPE</span><span class="text-white font-black text-base sm:text-lg">${p.stats.spe}</span></div>
-                                    <div class="flex justify-between items-center"><span class="text-slate-400 font-bold">HP</span><span class="text-white font-black text-base sm:text-lg">${p.stats.hp}</span></div>
-                                    <div class="flex justify-between items-center"><span class="text-slate-400 font-bold">ATK</span><span class="text-white font-black text-base sm:text-lg">${p.stats.atk}</span></div>
-                                    <div class="flex justify-between items-center"><span class="text-slate-400 font-bold">DEF</span><span class="text-white font-black text-base sm:text-lg">${p.stats.def}</span></div>
-                                    <div class="flex justify-between items-center"><span class="text-slate-400 font-bold">Sp.A</span><span class="text-white font-black text-base sm:text-lg">${p.stats.spa}</span></div>
-                                    <div class="flex justify-between items-center"><span class="text-slate-400 font-bold">Sp.D</span><span class="text-white font-black text-base sm:text-lg">${p.stats.spd}</span></div>
+                                    <div class="flex justify-between items-center"><span class="text-slate-400 font-bold">SPR</span><span class="text-white font-black text-base sm:text-lg">${p.stats.spe}</span></div>
+                                    <div class="flex justify-between items-center"><span class="text-slate-400 font-bold">GC</span><span class="text-white font-black text-base sm:text-lg">${p.stats.hp}</span></div>
+                                    <div class="flex justify-between items-center"><span class="text-slate-400 font-bold">CLS</span><span class="text-white font-black text-base sm:text-lg">${p.stats.atk}</span></div>
+                                    <div class="flex justify-between items-center"><span class="text-slate-400 font-bold">TT</span><span class="text-white font-black text-base sm:text-lg">${p.stats.def}</span></div>
+                                    <div class="flex justify-between items-center"><span class="text-slate-400 font-bold">HIL</span><span class="text-white font-black text-base sm:text-lg">${p.stats.spa}</span></div>
+                                    <div class="flex justify-between items-center"><span class="text-slate-400 font-bold">CLB</span><span class="text-white font-black text-base sm:text-lg">${p.stats.spd}</span></div>
                                 </div>
                                 <div class="flex justify-between items-center w-full text-sm sm:text-base font-bold text-slate-400 mt-3 border-t border-slate-700/50 pt-3 shrink-0">
                                     <span>${natLabel(p)}</span>${gameOptions.showOvr ? `<span class="text-yellow-400 font-black text-base sm:text-lg">${playerOVR} Base OVR</span>` : ''}
@@ -3761,12 +3761,12 @@ await rollOptions(role, displayPos);
             
             let statsHtml = '';
             const statLabels = [
-                { key: 'spe', label: 'Speed', color: 'text-yellow-400' },
-                { key: 'hp', label: 'HP', color: 'text-green-400' },
-                { key: 'atk', label: 'Attack', color: 'text-red-400' },
-                { key: 'def', label: 'Defense', color: 'text-blue-400' },
-                { key: 'spa', label: 'Sp.Atk', color: 'text-purple-400' },
-                { key: 'spd', label: 'Sp.Def', color: 'text-pink-400' }
+                { key: 'spe', label: 'Sprint', color: 'text-yellow-400' },
+                { key: 'hp', label: 'GC', color: 'text-green-400' },
+                { key: 'atk', label: 'Classics', color: 'text-red-400' },
+                { key: 'def', label: 'Time trial', color: 'text-blue-400' },
+                { key: 'spa', label: 'Hills', color: 'text-purple-400' },
+                { key: 'spd', label: 'Climbing', color: 'text-pink-400' }
             ];
 
             statLabels.forEach(s => {
@@ -3910,12 +3910,12 @@ await rollOptions(role, displayPos);
                         </div>
                         <h3 class="font-black text-sm sm:text-lg text-white text-center uppercase tracking-wide w-full shrink-0 my-0.5 truncate" title="${p.name}">${cardName(p.name)}</h3>
                         <div class="grid grid-cols-2 gap-x-4 gap-y-2 w-full text-xs sm:text-sm font-mono bg-slate-950 p-2.5 rounded-lg text-slate-300 shrink-0 mt-1">
-                            <div class="flex justify-between items-center"><span class="text-slate-400 font-bold">SPE</span><span class="text-white font-black text-sm sm:text-base">${p.stats.spe}</span></div>
-                            <div class="flex justify-between items-center"><span class="text-slate-400 font-bold">HP</span><span class="text-white font-black text-sm sm:text-base">${p.stats.hp}</span></div>
-                            <div class="flex justify-between items-center"><span class="text-slate-400 font-bold">ATK</span><span class="text-white font-black text-sm sm:text-base">${p.stats.atk}</span></div>
-                            <div class="flex justify-between items-center"><span class="text-slate-400 font-bold">DEF</span><span class="text-white font-black text-sm sm:text-base">${p.stats.def}</span></div>
-                            <div class="flex justify-between items-center"><span class="text-slate-400 font-bold">Sp.A</span><span class="text-white font-black text-sm sm:text-base">${p.stats.spa}</span></div>
-                            <div class="flex justify-between items-center"><span class="text-slate-400 font-bold">Sp.D</span><span class="text-white font-black text-sm sm:text-base">${p.stats.spd}</span></div>
+                            <div class="flex justify-between items-center"><span class="text-slate-400 font-bold">SPR</span><span class="text-white font-black text-sm sm:text-base">${p.stats.spe}</span></div>
+                            <div class="flex justify-between items-center"><span class="text-slate-400 font-bold">GC</span><span class="text-white font-black text-sm sm:text-base">${p.stats.hp}</span></div>
+                            <div class="flex justify-between items-center"><span class="text-slate-400 font-bold">CLS</span><span class="text-white font-black text-sm sm:text-base">${p.stats.atk}</span></div>
+                            <div class="flex justify-between items-center"><span class="text-slate-400 font-bold">TT</span><span class="text-white font-black text-sm sm:text-base">${p.stats.def}</span></div>
+                            <div class="flex justify-between items-center"><span class="text-slate-400 font-bold">HIL</span><span class="text-white font-black text-sm sm:text-base">${p.stats.spa}</span></div>
+                            <div class="flex justify-between items-center"><span class="text-slate-400 font-bold">CLB</span><span class="text-white font-black text-sm sm:text-base">${p.stats.spd}</span></div>
                         </div>
                         <div class="flex justify-between items-center w-full text-xs sm:text-sm font-bold text-slate-400 mt-2 border-t border-slate-700/50 pt-1.5 shrink-0">
                             <span>${natLabel(p)}</span>${gameOptions.showOvr ? `<span class="text-yellow-400 font-black text-sm sm:text-base">${ovr} OVR</span>` : ''}
