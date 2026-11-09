@@ -1897,6 +1897,27 @@ const AudioManager = {
         // Vlaggen (ISO-codes voor flagcdn.com)
         const NAT_ISO = { 'Australia':'au','Austria':'at','Belgium':'be','Colombia':'co','Croatia':'hr','Czech Republic':'cz','Denmark':'dk','Ecuador':'ec','Eritrea':'er','Estonia':'ee','France':'fr','Germany':'de','Great Britain':'gb','Hungary':'hu','Ireland':'ie','Italy':'it','Kazakhstan':'kz','Latvia':'lv','Luxembourg':'lu','Mexico':'mx','Netherlands':'nl','New Zealand':'nz','Norway':'no','Poland':'pl','Portugal':'pt','Russia':'ru','Slovakia':'sk','Slovenia':'si','Spain':'es','Switzerland':'ch','United States':'us','Venezuela':'ve' };
         const flagUrl = nat => NAT_ISO[nat] ? 'https://flagcdn.com/w40/' + NAT_ISO[nat] + '.png' : '';
+        // Statblok voor de kaarten: label, waarde en een gekleurde balk per stat. compact = draftkaart (korte labels op mobiel)
+        const STAT_ROWS = [
+            ['spe', 'Sprint', 'SPR', '#facc15'], ['hp', 'GC', 'GC', '#4ade80'],
+            ['atk', 'Classics', 'CLS', '#f87171'], ['def', 'TT', 'TT', '#60a5fa'],
+            ['spa', 'Hills', 'HIL', '#c084fc'], ['spd', 'Climb', 'CLB', '#f472b6']
+        ];
+        function statGridHtml(p, compact) {
+            const cells = STAT_ROWS.map(([k, full, short, col]) => {
+                const v = p.stats[k];
+                const w = Math.max(4, Math.min(100, Math.round(v / 160 * 100)));
+                const label = compact && short !== full ? '<span class="sm:hidden">' + short + '</span><span class="hidden sm:inline">' + full + '</span>' : full;
+                return '<div class="min-w-0">'
+                    + '<div class="flex justify-between items-baseline gap-1">'
+                    + '<span class="uppercase tracking-wide font-bold text-slate-300 ' + (compact ? 'text-[10px] sm:text-[11px]' : 'text-[11px] sm:text-xs') + '">' + label + '</span>'
+                    + '<span class="font-black text-white tabular-nums ' + (compact ? 'text-sm sm:text-base' : 'text-base sm:text-lg') + '">' + v + '</span></div>'
+                    + '<div class="h-1 rounded-full bg-slate-800 mt-1 overflow-hidden"><div class="h-full rounded-full" style="width:' + w + '%;background:' + col + '"></div></div>'
+                    + '</div>';
+            }).join('');
+            return '<div class="grid grid-cols-2 ' + (compact ? 'gap-x-3 sm:gap-x-4 gap-y-2 p-2.5 mt-1' : 'gap-x-5 gap-y-3 p-4') + ' w-full bg-slate-950 rounded-lg shrink-0">' + cells + '</div>';
+        }
+
         // Op smalle schermen alleen de vlag, vanaf sm ook de landnaam
         const natLabelResponsive = p => (flagUrl(p.nat) ? '<img src="' + flagUrl(p.nat) + '" class="inline-block w-5 h-auto rounded-sm sm:mr-1.5 align-[-2px]" alt="' + p.nat + '">' : '') + '<span class="' + (flagUrl(p.nat) ? 'hidden sm:inline' : '') + '">' + p.nat + '</span>';
         const natLabel = p => (flagUrl(p.nat) ? '<img src="' + flagUrl(p.nat) + '" class="inline-block w-5 h-auto rounded-sm mr-1.5 align-[-2px]" alt="">' : '') + p.nat;
@@ -3734,14 +3755,7 @@ function handleModalClick(event) {
                                     <img src="${p.sprite}" class="h-full w-full object-contain drop-shadow-[0_5px_5px_rgba(0,0,0,0.8)] z-10">
                                 </div>
                                 <h3 class="font-black text-lg sm:text-2xl text-white text-center uppercase tracking-wide w-full shrink-0 mb-3 leading-tight truncate" title="${p.name}">${cardName(p.name)}</h3>
-                                <div class="grid grid-cols-2 gap-x-5 gap-y-2.5 w-full text-sm sm:text-base font-mono bg-slate-950 p-4 rounded-lg text-slate-300 shrink-0">
-                                    <div class="flex justify-between items-center"><span class="text-slate-400 font-bold text-[11px] sm:text-xs">Sprint</span><span class="text-white font-black text-base sm:text-lg">${p.stats.spe}</span></div>
-                                    <div class="flex justify-between items-center"><span class="text-slate-400 font-bold text-[11px] sm:text-xs">GC</span><span class="text-white font-black text-base sm:text-lg">${p.stats.hp}</span></div>
-                                    <div class="flex justify-between items-center"><span class="text-slate-400 font-bold text-[11px] sm:text-xs">Classics</span><span class="text-white font-black text-base sm:text-lg">${p.stats.atk}</span></div>
-                                    <div class="flex justify-between items-center"><span class="text-slate-400 font-bold text-[11px] sm:text-xs">TT</span><span class="text-white font-black text-base sm:text-lg">${p.stats.def}</span></div>
-                                    <div class="flex justify-between items-center"><span class="text-slate-400 font-bold text-[11px] sm:text-xs">Hills</span><span class="text-white font-black text-base sm:text-lg">${p.stats.spa}</span></div>
-                                    <div class="flex justify-between items-center"><span class="text-slate-400 font-bold text-[11px] sm:text-xs">Climb</span><span class="text-white font-black text-base sm:text-lg">${p.stats.spd}</span></div>
-                                </div>
+                                ${statGridHtml(p, false)}
                                 <div class="flex justify-between items-center w-full text-sm sm:text-base font-bold text-slate-400 mt-3 border-t border-slate-700/50 pt-3 shrink-0">
                                     <span>${natLabel(p)}</span>${gameOptions.showOvr ? `<span class="text-yellow-400 font-black text-base sm:text-lg">${playerOVR} Base OVR</span>` : ''}
                                 </div>
@@ -3929,14 +3943,7 @@ await rollOptions(role, displayPos);
                             <img src="${p.sprite}" class="h-full w-full object-contain drop-shadow-[0_5px_5px_rgba(0,0,0,0.8)] z-10">
                         </div>
                         <h3 class="font-black text-sm sm:text-lg text-white text-center uppercase tracking-wide w-full shrink-0 my-0.5 truncate" title="${p.name}">${cardName(p.name)}</h3>
-                        <div class="grid grid-cols-2 gap-x-3 sm:gap-x-4 gap-y-2 w-full text-xs sm:text-sm font-mono bg-slate-950 p-2.5 rounded-lg text-slate-300 shrink-0 mt-1">
-                            <div class="flex justify-between items-center"><span class="text-slate-400 font-bold text-[11px] sm:text-xs"><span class="sm:hidden">SPR</span><span class="hidden sm:inline">Sprint</span></span><span class="text-white font-black text-sm sm:text-base">${p.stats.spe}</span></div>
-                            <div class="flex justify-between items-center"><span class="text-slate-400 font-bold text-[11px] sm:text-xs">GC</span><span class="text-white font-black text-sm sm:text-base">${p.stats.hp}</span></div>
-                            <div class="flex justify-between items-center"><span class="text-slate-400 font-bold text-[11px] sm:text-xs"><span class="sm:hidden">CLS</span><span class="hidden sm:inline">Classics</span></span><span class="text-white font-black text-sm sm:text-base">${p.stats.atk}</span></div>
-                            <div class="flex justify-between items-center"><span class="text-slate-400 font-bold text-[11px] sm:text-xs">TT</span><span class="text-white font-black text-sm sm:text-base">${p.stats.def}</span></div>
-                            <div class="flex justify-between items-center"><span class="text-slate-400 font-bold text-[11px] sm:text-xs"><span class="sm:hidden">HIL</span><span class="hidden sm:inline">Hills</span></span><span class="text-white font-black text-sm sm:text-base">${p.stats.spa}</span></div>
-                            <div class="flex justify-between items-center"><span class="text-slate-400 font-bold text-[11px] sm:text-xs"><span class="sm:hidden">CLB</span><span class="hidden sm:inline">Climb</span></span><span class="text-white font-black text-sm sm:text-base">${p.stats.spd}</span></div>
-                        </div>
+                        ${statGridHtml(p, true)}
                         <div class="flex justify-between items-center w-full text-xs sm:text-sm font-bold text-slate-400 mt-2 border-t border-slate-700/50 pt-1.5 shrink-0">
                             <span class="truncate min-w-0" title="${p.nat}">${natLabelResponsive(p)}</span>${gameOptions.showOvr ? `<span class="text-yellow-400 font-black text-sm sm:text-base whitespace-nowrap shrink-0 ml-1">${ovr} OVR</span>` : ''}
                         </div>
