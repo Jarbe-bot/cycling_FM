@@ -1897,6 +1897,8 @@ const AudioManager = {
         // Vlaggen (ISO-codes voor flagcdn.com)
         const NAT_ISO = { 'Australia':'au','Austria':'at','Belgium':'be','Colombia':'co','Croatia':'hr','Czech Republic':'cz','Denmark':'dk','Ecuador':'ec','Eritrea':'er','Estonia':'ee','France':'fr','Germany':'de','Great Britain':'gb','Hungary':'hu','Ireland':'ie','Italy':'it','Kazakhstan':'kz','Latvia':'lv','Luxembourg':'lu','Mexico':'mx','Netherlands':'nl','New Zealand':'nz','Norway':'no','Poland':'pl','Portugal':'pt','Russia':'ru','Slovakia':'sk','Slovenia':'si','Spain':'es','Switzerland':'ch','United States':'us','Venezuela':'ve' };
         const flagUrl = nat => NAT_ISO[nat] ? 'https://flagcdn.com/w40/' + NAT_ISO[nat] + '.png' : '';
+        // Op smalle schermen alleen de vlag, vanaf sm ook de landnaam
+        const natLabelResponsive = p => (flagUrl(p.nat) ? '<img src="' + flagUrl(p.nat) + '" class="inline-block w-5 h-auto rounded-sm sm:mr-1.5 align-[-2px]" alt="' + p.nat + '">' : '') + '<span class="' + (flagUrl(p.nat) ? 'hidden sm:inline' : '') + '">' + p.nat + '</span>';
         const natLabel = p => (flagUrl(p.nat) ? '<img src="' + flagUrl(p.nat) + '" class="inline-block w-5 h-auto rounded-sm mr-1.5 align-[-2px]" alt="">' : '') + p.nat;
 
         // Korte naam voor op de kaarten: lange namen worden "J. Nordhagen"; de volledige naam staat in de tooltip
@@ -3927,16 +3929,16 @@ await rollOptions(role, displayPos);
                             <img src="${p.sprite}" class="h-full w-full object-contain drop-shadow-[0_5px_5px_rgba(0,0,0,0.8)] z-10">
                         </div>
                         <h3 class="font-black text-sm sm:text-lg text-white text-center uppercase tracking-wide w-full shrink-0 my-0.5 truncate" title="${p.name}">${cardName(p.name)}</h3>
-                        <div class="grid grid-cols-2 gap-x-4 gap-y-2 w-full text-xs sm:text-sm font-mono bg-slate-950 p-2.5 rounded-lg text-slate-300 shrink-0 mt-1">
-                            <div class="flex justify-between items-center"><span class="text-slate-400 font-bold text-[11px] sm:text-xs">Sprint</span><span class="text-white font-black text-sm sm:text-base">${p.stats.spe}</span></div>
+                        <div class="grid grid-cols-2 gap-x-3 sm:gap-x-4 gap-y-2 w-full text-xs sm:text-sm font-mono bg-slate-950 p-2.5 rounded-lg text-slate-300 shrink-0 mt-1">
+                            <div class="flex justify-between items-center"><span class="text-slate-400 font-bold text-[11px] sm:text-xs"><span class="sm:hidden">SPR</span><span class="hidden sm:inline">Sprint</span></span><span class="text-white font-black text-sm sm:text-base">${p.stats.spe}</span></div>
                             <div class="flex justify-between items-center"><span class="text-slate-400 font-bold text-[11px] sm:text-xs">GC</span><span class="text-white font-black text-sm sm:text-base">${p.stats.hp}</span></div>
-                            <div class="flex justify-between items-center"><span class="text-slate-400 font-bold text-[11px] sm:text-xs">Classics</span><span class="text-white font-black text-sm sm:text-base">${p.stats.atk}</span></div>
+                            <div class="flex justify-between items-center"><span class="text-slate-400 font-bold text-[11px] sm:text-xs"><span class="sm:hidden">CLS</span><span class="hidden sm:inline">Classics</span></span><span class="text-white font-black text-sm sm:text-base">${p.stats.atk}</span></div>
                             <div class="flex justify-between items-center"><span class="text-slate-400 font-bold text-[11px] sm:text-xs">TT</span><span class="text-white font-black text-sm sm:text-base">${p.stats.def}</span></div>
-                            <div class="flex justify-between items-center"><span class="text-slate-400 font-bold text-[11px] sm:text-xs">Hills</span><span class="text-white font-black text-sm sm:text-base">${p.stats.spa}</span></div>
-                            <div class="flex justify-between items-center"><span class="text-slate-400 font-bold text-[11px] sm:text-xs">Climb</span><span class="text-white font-black text-sm sm:text-base">${p.stats.spd}</span></div>
+                            <div class="flex justify-between items-center"><span class="text-slate-400 font-bold text-[11px] sm:text-xs"><span class="sm:hidden">HIL</span><span class="hidden sm:inline">Hills</span></span><span class="text-white font-black text-sm sm:text-base">${p.stats.spa}</span></div>
+                            <div class="flex justify-between items-center"><span class="text-slate-400 font-bold text-[11px] sm:text-xs"><span class="sm:hidden">CLB</span><span class="hidden sm:inline">Climb</span></span><span class="text-white font-black text-sm sm:text-base">${p.stats.spd}</span></div>
                         </div>
                         <div class="flex justify-between items-center w-full text-xs sm:text-sm font-bold text-slate-400 mt-2 border-t border-slate-700/50 pt-1.5 shrink-0">
-                            <span>${natLabel(p)}</span>${gameOptions.showOvr ? `<span class="text-yellow-400 font-black text-sm sm:text-base">${ovr} OVR</span>` : ''}
+                            <span class="truncate min-w-0" title="${p.nat}">${natLabelResponsive(p)}</span>${gameOptions.showOvr ? `<span class="text-yellow-400 font-black text-sm sm:text-base whitespace-nowrap shrink-0 ml-1">${ovr} OVR</span>` : ''}
                         </div>
                     </div>
                 `;
