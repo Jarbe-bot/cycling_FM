@@ -1793,6 +1793,90 @@ const AudioManager = {
         // Voorlopige afbeelding: een neutraal truitje (wordt later vervangen door ploegkleuren en vlag)
         const RIDER_PLACEHOLDER = 'data:image/svg+xml;utf8,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><path d="M30 15 L42 10 Q50 18 58 10 L70 15 L90 32 L78 45 L70 38 L70 90 L30 90 L30 38 L22 45 L10 32 Z" fill="#94a3b8" stroke="#1e293b" stroke-width="3"/></svg>');
 
+
+        // ===== TRUITJES =====
+        // Ploegkleuren (benadering, zonder logo's). base = hoofdkleur, second = tweede kleur, accent = kraag/streepje,
+        // pattern = split | band | sleeves | sides, label = kleur van de ploegnaam op de kaart. Aanpassen kan hier.
+        const TEAM_KITS = {
+            'UAE Team Emirates XRG':            { base: '#ffffff', second: '#111827', accent: '#dc2626', pattern: 'sides',   label: '#f87171' },
+            'Visma–Lease a Bike':               { base: '#facc15', second: '#111111', accent: '#111111', pattern: 'split',   label: '#facc15' },
+            'Red Bull–Bora–Hansgrohe':          { base: '#1e2a4a', second: '#dc2626', accent: '#facc15', pattern: 'sides',   label: '#f87171' },
+            'Lidl–Trek':                        { base: '#0050aa', second: '#facc15', accent: '#e11d48', pattern: 'band',    label: '#60a5fa' },
+            'Alpecin–Premier Tech':             { base: '#0f172a', second: '#38bdf8', accent: '#ffffff', pattern: 'band',    label: '#38bdf8' },
+            'Lotto–Intermarché':                { base: '#dc2626', second: '#ffffff', accent: '#111111', pattern: 'band',    label: '#f87171' },
+            'Soudal Safety Jogger':             { base: '#1d4ed8', second: '#ffffff', accent: '#ef4444', pattern: 'split',   label: '#60a5fa' },
+            'Decathlon CMA CGM':                { base: '#38bdf8', second: '#0c1e4a', accent: '#ffffff', pattern: 'split',   label: '#7dd3fc' },
+            'EF Education–EasyPost':            { base: '#ec4899', second: '#1e1b4b', accent: '#ffffff', pattern: 'band',    label: '#f472b6' },
+            'Groupama–FDJ United':              { base: '#ffffff', second: '#1e3a8a', accent: '#dc2626', pattern: 'split',   label: '#93c5fd' },
+            'Movistar Team':                    { base: '#0b2a5b', second: '#84cc16', accent: '#84cc16', pattern: 'band',    label: '#a3e635' },
+            'Netcompany INEOS':                 { base: '#111827', second: '#b91c1c', accent: '#ffffff', pattern: 'band',    label: '#f87171' },
+            'NSN Cycling Team':                 { base: '#ffffff', second: '#0f172a', accent: '#0ea5e9', pattern: 'sleeves', label: '#cbd5e1' },
+            'Team Bahrain Victorious':          { base: '#c8102e', second: '#ffffff', accent: '#f59e0b', pattern: 'sleeves', label: '#fb7185' },
+            'Team Jayco–AlUla':                 { base: '#1e3a8a', second: '#2dd4bf', accent: '#ffffff', pattern: 'band',    label: '#5eead4' },
+            'Team Picnic–PostNL':               { base: '#f97316', second: '#0f172a', accent: '#ffffff', pattern: 'split',   label: '#fb923c' },
+            'Uno-X Mobility':                   { base: '#dc2626', second: '#facc15', accent: '#facc15', pattern: 'sleeves', label: '#fca5a5' },
+            'XDS Astana Team':                  { base: '#22b8cf', second: '#facc15', accent: '#0f172a', pattern: 'band',    label: '#67e8f9' },
+            'Tudor Pro Cycling Team':           { base: '#c1121f', second: '#111111', accent: '#ffffff', pattern: 'split',   label: '#f87171' },
+            'Pinarello Q36.5 Pro Cycling Team': { base: '#27272a', second: '#e4e4e7', accent: '#e4e4e7', pattern: 'band',    label: '#d4d4d8' },
+            'Legends':                          { base: '#f5e6c4', second: '#8b5a2b', accent: '#8b5a2b', pattern: 'band',    label: '#fcd34d' }
+        };
+        // Kampioenstruien (seizoen 2027): wereld, Europa en nationale kampioenen in de pool
+        const CHAMPIONS = {
+            'Brandon McNulty': 'world', 'Remco Evenepoel': 'europe',
+            'Jonathan Milan': 'Italy', 'Romain Grégoire': 'France', 'Egan Bernal': 'Colombia', 'Felix Engelhardt': 'Germany',
+            'Quinn Simmons': 'United States', 'Mathias Vacek': 'Czech Republic', 'Nicolas Vinokurov': 'Kazakhstan'
+        };
+        // Banen voor de nationale kampioenstrui (van boven naar onder over de borst)
+        const NAT_BANDS = {
+            'Italy': ['#16a34a', '#ffffff', '#dc2626'], 'France': ['#1d4ed8', '#ffffff', '#dc2626'],
+            'Colombia': ['#facc15', '#1d4ed8', '#dc2626'], 'Germany': ['#111111', '#dc2626', '#facc15'],
+            'United States': ['#b91c1c', '#ffffff', '#1e3a8a'], 'Czech Republic': ['#ffffff', '#1d4ed8', '#dc2626'],
+            'Kazakhstan': ['#00afca', '#facc15', '#00afca'], 'Belgium': ['#111111', '#facc15', '#dc2626'],
+            'Netherlands': ['#dc2626', '#ffffff', '#1d4ed8'], 'Spain': ['#c60b1e', '#ffc400', '#c60b1e'],
+            'Great Britain': ['#1e3a8a', '#ffffff', '#dc2626'], 'Denmark': ['#c8102e', '#ffffff', '#c8102e'],
+            'Switzerland': ['#dc2626', '#ffffff', '#dc2626'], 'Portugal': ['#15803d', '#dc2626', '#facc15']
+        };
+        const JERSEY_PATH = 'M30 15 L42 10 Q50 18 58 10 L70 15 L90 32 L78 45 L70 38 L70 90 L30 90 L30 38 L22 45 L10 32 Z';
+        const _jerseyCache = {};
+        function jerseySvg(fill, extra) {
+            const svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><clipPath id="j"><path d="' + JERSEY_PATH + '"/></clipPath></defs>'
+                + '<g clip-path="url(#j)"><rect width="100" height="100" fill="' + fill + '"/>' + extra + '</g>'
+                + '<path d="' + JERSEY_PATH + '" fill="none" stroke="#1e293b" stroke-width="3" stroke-linejoin="round"/></svg>';
+            return 'data:image/svg+xml;utf8,' + encodeURIComponent(svg);
+        }
+        const rect = (x, y, w, h, c) => '<rect x="' + x + '" y="' + y + '" width="' + w + '" height="' + h + '" fill="' + c + '"/>';
+        const collar = c => '<path d="M42 10 Q50 18 58 10 L56 9 Q50 15 44 9 Z" fill="' + c + '"/>';
+        function riderJersey(r) {
+            if (_jerseyCache[r.id]) return _jerseyCache[r.id];
+            let url;
+            const champ = CHAMPIONS[r.name];
+            if (champ === 'world') {
+                const rb = ['#2563eb', '#dc2626', '#111111', '#facc15', '#16a34a'];
+                url = jerseySvg('#ffffff', rb.map((c, i) => rect(0, 40 + i * 4, 100, 4, c)).join('') + rb.map((c, i) => rect(0, 34 + i * 1.6, 30, 1.6, c) + rect(70, 34 + i * 1.6, 30, 1.6, c)).join(''));
+            } else if (champ === 'europe') {
+                let stars = '';
+                for (let i = 0; i < 6; i++) stars += '<circle cx="' + (35 + i * 6) + '" cy="48" r="1.6" fill="#facc15"/>';
+                url = jerseySvg('#ffffff', rect(0, 41, 100, 14, '#1d4ed8') + stars + collar('#1d4ed8'));
+            } else if (champ && NAT_BANDS[champ]) {
+                const b = NAT_BANDS[champ];
+                url = jerseySvg('#ffffff', b.map((c, i) => rect(0, 38 + i * 7, 100, 7, c)).join('') + collar(b[0]));
+            } else {
+                const k = TEAM_KITS[r.team] || { base: '#94a3b8', second: '#64748b', accent: '#1e293b', pattern: 'band' };
+                let extra = '';
+                if (k.pattern === 'split') extra = rect(0, 58, 100, 42, k.second) + rect(0, 56, 100, 2, k.accent);
+                else if (k.pattern === 'band') extra = rect(0, 42, 100, 13, k.second) + rect(0, 55, 100, 2, k.accent);
+                else if (k.pattern === 'sleeves') extra = rect(0, 0, 32, 100, k.second) + rect(68, 0, 32, 100, k.second) + rect(30, 0, 2, 100, k.accent) + rect(68, 0, 2, 100, k.accent);
+                else if (k.pattern === 'sides') extra = rect(30, 0, 9, 100, k.second) + rect(61, 0, 9, 100, k.second) + rect(0, 0, 30, 100, k.second) + rect(70, 0, 30, 100, k.second);
+                url = jerseySvg(k.base, extra + collar(k.accent));
+            }
+            _jerseyCache[r.id] = url;
+            return url;
+        }
+        // Vlaggen (ISO-codes voor flagcdn.com)
+        const NAT_ISO = { 'Australia':'au','Austria':'at','Belgium':'be','Colombia':'co','Croatia':'hr','Czech Republic':'cz','Denmark':'dk','Ecuador':'ec','Eritrea':'er','Estonia':'ee','France':'fr','Germany':'de','Great Britain':'gb','Hungary':'hu','Ireland':'ie','Italy':'it','Kazakhstan':'kz','Latvia':'lv','Luxembourg':'lu','Mexico':'mx','Netherlands':'nl','New Zealand':'nz','Norway':'no','Poland':'pl','Portugal':'pt','Russia':'ru','Slovakia':'sk','Slovenia':'si','Spain':'es','Switzerland':'ch','United States':'us','Venezuela':'ve' };
+        const flagUrl = nat => NAT_ISO[nat] ? 'https://flagcdn.com/w40/' + NAT_ISO[nat] + '.png' : '';
+        const natLabel = p => (flagUrl(p.nat) ? '<img src="' + flagUrl(p.nat) + '" class="inline-block w-5 h-auto rounded-sm mr-1.5 align-[-2px]" alt="">' : '') + p.nat;
+
         async function fetchPokemonDetail(id) {
             const r = RIDER_BY_ID[id];
             if (!r) return null;
@@ -1808,12 +1892,12 @@ const AudioManager = {
                 cry: null,
                 generation: 1,
                 types: r.types,
-                primaryType: r.types[0],
+                primaryType: r.team,   // bepaalt de kleur van de ploegnaam op de kaart (zie TEAM_KITS.label)
                 stats,
                 normStats,
                 weight: 0,
                 bst: r.s.reduce((a, v) => a + v, 0),
-                sprite: RIDER_PLACEHOLDER
+                sprite: riderJersey(r)
             };
         }
 
@@ -2045,6 +2129,7 @@ const AudioManager = {
 
         function getTypeColorHex(type) {
             const c = { Fire:'#dc2626', Water:'#2563eb', Grass:'#16a34a', Electric:'#ca8a04', Psychic:'#d946ef', Rock:'#57534e', Ground:'#ea580c', Fighting:'#ea580c', Flying:'#0ea5e9', Normal:'#64748b', Ghost:'#9333ea', Dragon:'#4f46e5', Ice:'#06b6d4', Bug:'#65a30d', Poison:'#9333ea', Dark:'#475569', Steel:'#64748b', Fairy:'#ec4899' };
+            if (typeof TEAM_KITS !== 'undefined' && TEAM_KITS[type]) return TEAM_KITS[type].label;
             return c[type] || '#64748b';
         }
 
@@ -3608,7 +3693,7 @@ function handleModalClick(event) {
                                     <div class="flex justify-between items-center"><span class="text-slate-400 font-bold">Sp.D</span><span class="text-white font-black text-base sm:text-lg">${p.stats.spd}</span></div>
                                 </div>
                                 <div class="flex justify-between items-center w-full text-sm sm:text-base font-bold text-slate-400 mt-3 border-t border-slate-700/50 pt-3 shrink-0">
-                                    <span>${p.nat}</span>${gameOptions.showOvr ? `<span class="text-yellow-400 font-black text-base sm:text-lg">${playerOVR} Base OVR</span>` : ''}
+                                    <span>${natLabel(p)}</span>${gameOptions.showOvr ? `<span class="text-yellow-400 font-black text-base sm:text-lg">${playerOVR} Base OVR</span>` : ''}
                                 </div>
                             </div>
                         </div>
@@ -3807,7 +3892,7 @@ await rollOptions(role, displayPos);
                             <div class="flex justify-between items-center"><span class="text-slate-400 font-bold">Sp.D</span><span class="text-white font-black text-sm sm:text-base">${p.stats.spd}</span></div>
                         </div>
                         <div class="flex justify-between items-center w-full text-xs sm:text-sm font-bold text-slate-400 mt-2 border-t border-slate-700/50 pt-1.5 shrink-0">
-                            <span>${p.nat}</span>${gameOptions.showOvr ? `<span class="text-yellow-400 font-black text-sm sm:text-base">${ovr} OVR</span>` : ''}
+                            <span>${natLabel(p)}</span>${gameOptions.showOvr ? `<span class="text-yellow-400 font-black text-sm sm:text-base">${ovr} OVR</span>` : ''}
                         </div>
                     </div>
                 `;
