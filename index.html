@@ -1900,6 +1900,18 @@ const AudioManager = {
         const SHORT_NAMES = { 'Tobias Halland Johannessen': 'T. Johannessen', 'Anders Halland Johannessen': 'A. Johannessen',
             'Tao Geoghegan Hart': 'Geoghegan Hart', 'Juan Sebastián Molano': 'J.S. Molano', 'Iván García Cortina': 'García Cortina',
             'Mikkel Frølich Honoré': 'M. Honoré', 'Xabier Mikel Azparren': 'X. Azparren' };
+        // Achternaam voor op het veld. Bij dubbele achternamen (Pedersen, Rodríguez, ...) komt de initiaal ervoor.
+        const PITCH_NAMES = { 'Juan Sebastián Molano': 'Molano', 'Mikkel Frølich Honoré': 'Honoré', 'Xabier Mikel Azparren': 'Azparren',
+            'Tobias Halland Johannessen': 'T. Johannessen', 'Anders Halland Johannessen': 'A. Johannessen' };
+        const _surnameCount = {};
+        RIDERS.forEach(r => { const sn = r.name.split(' ').slice(1).join(' '); _surnameCount[sn] = (_surnameCount[sn] || 0) + 1; });
+        function pitchName(name) {
+            if (PITCH_NAMES[name]) return PITCH_NAMES[name];
+            const parts = name.split(' ');
+            const sn = parts.slice(1).join(' ') || name;
+            return _surnameCount[sn] > 1 ? parts[0].charAt(0) + '. ' + sn : sn;
+        }
+
         function cardName(name) {
             if (SHORT_NAMES[name]) return SHORT_NAMES[name];
             if (!name || name.length <= 15) return name;
@@ -2286,7 +2298,10 @@ const AudioManager = {
                     node.innerHTML = `
                         <div class="relative flex flex-col items-center justify-center drop-shadow-xl z-10 transition-transform">
                             ${statsHtml}
-                            <img src="${player.sprite}" class="w-10 h-10 sm:w-16 sm:h-16 md:w-20 md:h-20 object-contain drop-shadow-[0_4px_6px_rgba(0,0,0,0.85)] z-10 -mb-0.5" crossorigin="anonymous">
+                            <div class="relative z-10 -mb-0.5">
+                                <img src="${player.sprite}" class="w-10 h-10 sm:w-16 sm:h-16 md:w-20 md:h-20 object-contain drop-shadow-[0_4px_6px_rgba(0,0,0,0.85)]" crossorigin="anonymous">
+                                ${flagUrl(player.nat) ? `<img src="${flagUrl(player.nat)}" class="absolute top-0 -right-1 w-3 sm:w-4 md:w-5 h-auto rounded-sm border border-slate-900/60 shadow" crossorigin="anonymous" alt="">` : ''}
+                            </div>
                             <div class="bg-slate-900 text-white font-black rounded border border-white/30 whitespace-nowrap mx-auto overflow-hidden z-20 flex shadow-lg text-[8px] sm:text-[10px] md:text-xs items-center">
                                 <span class="px-1 py-0.5" style="background-color: ${typeHex};">${pos.display}</span>
                                 <span class="bg-slate-950 px-1.5 py-0.5 border-l border-slate-700 flex items-center gap-0.5">
@@ -2294,6 +2309,7 @@ const AudioManager = {
                                     ${isBoosted ? `<span class="text-[6px] sm:text-[7px] text-green-500 font-bold mb-1">▲${boostedOVR - baseOVR}</span>` : ''}
                                 </span>
                             </div>
+                            <div class="mt-0.5 max-w-[64px] sm:max-w-[96px] md:max-w-[120px] truncate text-center text-white font-black uppercase tracking-tight text-[7px] sm:text-[9px] md:text-[11px] leading-tight drop-shadow-[0_1px_2px_rgba(0,0,0,1)]" title="${player.name}">${pitchName(player.name)}</div>
                         </div>
                     `;
                 } else {
@@ -3715,12 +3731,12 @@ function handleModalClick(event) {
                                 </div>
                                 <h3 class="font-black text-lg sm:text-2xl text-white text-center uppercase tracking-wide w-full shrink-0 mb-3 leading-tight truncate" title="${p.name}">${cardName(p.name)}</h3>
                                 <div class="grid grid-cols-2 gap-x-5 gap-y-2.5 w-full text-sm sm:text-base font-mono bg-slate-950 p-4 rounded-lg text-slate-300 shrink-0">
-                                    <div class="flex justify-between items-center"><span class="text-slate-400 font-bold">SPR</span><span class="text-white font-black text-base sm:text-lg">${p.stats.spe}</span></div>
-                                    <div class="flex justify-between items-center"><span class="text-slate-400 font-bold">GC</span><span class="text-white font-black text-base sm:text-lg">${p.stats.hp}</span></div>
-                                    <div class="flex justify-between items-center"><span class="text-slate-400 font-bold">CLS</span><span class="text-white font-black text-base sm:text-lg">${p.stats.atk}</span></div>
-                                    <div class="flex justify-between items-center"><span class="text-slate-400 font-bold">TT</span><span class="text-white font-black text-base sm:text-lg">${p.stats.def}</span></div>
-                                    <div class="flex justify-between items-center"><span class="text-slate-400 font-bold">HIL</span><span class="text-white font-black text-base sm:text-lg">${p.stats.spa}</span></div>
-                                    <div class="flex justify-between items-center"><span class="text-slate-400 font-bold">CLB</span><span class="text-white font-black text-base sm:text-lg">${p.stats.spd}</span></div>
+                                    <div class="flex justify-between items-center"><span class="text-slate-400 font-bold text-[11px] sm:text-xs">Sprint</span><span class="text-white font-black text-base sm:text-lg">${p.stats.spe}</span></div>
+                                    <div class="flex justify-between items-center"><span class="text-slate-400 font-bold text-[11px] sm:text-xs">GC</span><span class="text-white font-black text-base sm:text-lg">${p.stats.hp}</span></div>
+                                    <div class="flex justify-between items-center"><span class="text-slate-400 font-bold text-[11px] sm:text-xs">Classics</span><span class="text-white font-black text-base sm:text-lg">${p.stats.atk}</span></div>
+                                    <div class="flex justify-between items-center"><span class="text-slate-400 font-bold text-[11px] sm:text-xs">TT</span><span class="text-white font-black text-base sm:text-lg">${p.stats.def}</span></div>
+                                    <div class="flex justify-between items-center"><span class="text-slate-400 font-bold text-[11px] sm:text-xs">Hills</span><span class="text-white font-black text-base sm:text-lg">${p.stats.spa}</span></div>
+                                    <div class="flex justify-between items-center"><span class="text-slate-400 font-bold text-[11px] sm:text-xs">Climb</span><span class="text-white font-black text-base sm:text-lg">${p.stats.spd}</span></div>
                                 </div>
                                 <div class="flex justify-between items-center w-full text-sm sm:text-base font-bold text-slate-400 mt-3 border-t border-slate-700/50 pt-3 shrink-0">
                                     <span>${natLabel(p)}</span>${gameOptions.showOvr ? `<span class="text-yellow-400 font-black text-base sm:text-lg">${playerOVR} Base OVR</span>` : ''}
@@ -3910,12 +3926,12 @@ await rollOptions(role, displayPos);
                         </div>
                         <h3 class="font-black text-sm sm:text-lg text-white text-center uppercase tracking-wide w-full shrink-0 my-0.5 truncate" title="${p.name}">${cardName(p.name)}</h3>
                         <div class="grid grid-cols-2 gap-x-4 gap-y-2 w-full text-xs sm:text-sm font-mono bg-slate-950 p-2.5 rounded-lg text-slate-300 shrink-0 mt-1">
-                            <div class="flex justify-between items-center"><span class="text-slate-400 font-bold">SPR</span><span class="text-white font-black text-sm sm:text-base">${p.stats.spe}</span></div>
-                            <div class="flex justify-between items-center"><span class="text-slate-400 font-bold">GC</span><span class="text-white font-black text-sm sm:text-base">${p.stats.hp}</span></div>
-                            <div class="flex justify-between items-center"><span class="text-slate-400 font-bold">CLS</span><span class="text-white font-black text-sm sm:text-base">${p.stats.atk}</span></div>
-                            <div class="flex justify-between items-center"><span class="text-slate-400 font-bold">TT</span><span class="text-white font-black text-sm sm:text-base">${p.stats.def}</span></div>
-                            <div class="flex justify-between items-center"><span class="text-slate-400 font-bold">HIL</span><span class="text-white font-black text-sm sm:text-base">${p.stats.spa}</span></div>
-                            <div class="flex justify-between items-center"><span class="text-slate-400 font-bold">CLB</span><span class="text-white font-black text-sm sm:text-base">${p.stats.spd}</span></div>
+                            <div class="flex justify-between items-center"><span class="text-slate-400 font-bold text-[11px] sm:text-xs">Sprint</span><span class="text-white font-black text-sm sm:text-base">${p.stats.spe}</span></div>
+                            <div class="flex justify-between items-center"><span class="text-slate-400 font-bold text-[11px] sm:text-xs">GC</span><span class="text-white font-black text-sm sm:text-base">${p.stats.hp}</span></div>
+                            <div class="flex justify-between items-center"><span class="text-slate-400 font-bold text-[11px] sm:text-xs">Classics</span><span class="text-white font-black text-sm sm:text-base">${p.stats.atk}</span></div>
+                            <div class="flex justify-between items-center"><span class="text-slate-400 font-bold text-[11px] sm:text-xs">TT</span><span class="text-white font-black text-sm sm:text-base">${p.stats.def}</span></div>
+                            <div class="flex justify-between items-center"><span class="text-slate-400 font-bold text-[11px] sm:text-xs">Hills</span><span class="text-white font-black text-sm sm:text-base">${p.stats.spa}</span></div>
+                            <div class="flex justify-between items-center"><span class="text-slate-400 font-bold text-[11px] sm:text-xs">Climb</span><span class="text-white font-black text-sm sm:text-base">${p.stats.spd}</span></div>
                         </div>
                         <div class="flex justify-between items-center w-full text-xs sm:text-sm font-bold text-slate-400 mt-2 border-t border-slate-700/50 pt-1.5 shrink-0">
                             <span>${natLabel(p)}</span>${gameOptions.showOvr ? `<span class="text-yellow-400 font-black text-sm sm:text-base">${ovr} OVR</span>` : ''}
