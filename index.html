@@ -467,7 +467,9 @@
         /* Desktop: het veld past bij de hoogte van het scherm (minstens 560px breed); spelers en labels schalen mee, zodat niets op elkaar komt */
         @media (min-width: 1024px) {
             #pitch-view .pitch { container-type: inline-size; width: min(100%, max(560px, calc((100vh - 70px) * 0.75))); }
-            #pitch-container .player-node img { width: 10.4cqw !important; height: 10.4cqw !important; }
+            #pitch-container .player-node img.pitch-jersey { width: 10.4cqw !important; height: 10.4cqw !important; }
+            #pitch-container .player-node img.pitch-flag { width: 2.6cqw !important; height: auto !important; }
+            #pitch-container .player-node .pitch-name { font-size: max(10px, 1.5cqw) !important; max-width: 17cqw !important; }
             #pitch-container .player-node [class*="md:text-xs"] { font-size: max(10px, 1.56cqw) !important; }
         }
         @media (min-width: 768px) { #reroll-wrapper:has(#btn-reroll.hidden) { min-height: 0; margin-bottom: 0; } }
@@ -2299,8 +2301,8 @@ const AudioManager = {
                         <div class="relative flex flex-col items-center justify-center drop-shadow-xl z-10 transition-transform">
                             ${statsHtml}
                             <div class="relative z-10 -mb-0.5">
-                                <img src="${player.sprite}" class="w-10 h-10 sm:w-16 sm:h-16 md:w-20 md:h-20 object-contain drop-shadow-[0_4px_6px_rgba(0,0,0,0.85)]" crossorigin="anonymous">
-                                ${flagUrl(player.nat) ? `<img src="${flagUrl(player.nat)}" class="absolute top-0 -right-1 w-3 sm:w-4 md:w-5 h-auto rounded-sm border border-slate-900/60 shadow" crossorigin="anonymous" alt="">` : ''}
+                                <img src="${player.sprite}" class="pitch-jersey w-10 h-10 sm:w-16 sm:h-16 md:w-20 md:h-20 object-contain drop-shadow-[0_4px_6px_rgba(0,0,0,0.85)]" crossorigin="anonymous">
+                                ${flagUrl(player.nat) ? `<img src="${flagUrl(player.nat)}" class="pitch-flag absolute top-0 -right-1 w-3 sm:w-4 md:w-5 h-auto rounded-sm border border-slate-900/60 shadow" crossorigin="anonymous" alt="">` : ''}
                             </div>
                             <div class="bg-slate-900 text-white font-black rounded border border-white/30 whitespace-nowrap mx-auto overflow-hidden z-20 flex shadow-lg text-[8px] sm:text-[10px] md:text-xs items-center">
                                 <span class="px-1 py-0.5" style="background-color: ${typeHex};">${pos.display}</span>
@@ -2309,7 +2311,7 @@ const AudioManager = {
                                     ${isBoosted ? `<span class="text-[6px] sm:text-[7px] text-green-500 font-bold mb-1">▲${boostedOVR - baseOVR}</span>` : ''}
                                 </span>
                             </div>
-                            <div class="mt-0.5 max-w-[64px] sm:max-w-[96px] md:max-w-[120px] truncate text-center text-white font-black uppercase tracking-tight text-[7px] sm:text-[9px] md:text-[11px] leading-tight drop-shadow-[0_1px_2px_rgba(0,0,0,1)]" title="${player.name}">${pitchName(player.name)}</div>
+                            <div class="pitch-name mt-0.5 max-w-[64px] sm:max-w-[96px] md:max-w-[120px] truncate text-center text-white font-black uppercase tracking-tight text-[7px] sm:text-[9px] md:text-[11px] leading-tight drop-shadow-[0_1px_2px_rgba(0,0,0,1)]" title="${player.name}">${pitchName(player.name)}</div>
                         </div>
                     `;
                 } else {
