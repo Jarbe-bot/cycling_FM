@@ -1849,10 +1849,26 @@ const AudioManager = {
         }
         const rect = (x, y, w, h, c) => '<rect x="' + x + '" y="' + y + '" width="' + w + '" height="' + h + '" fill="' + c + '"/>';
         const collar = c => '<path d="M42 10 Q50 18 58 10 L56 9 Q50 15 44 9 Z" fill="' + c + '"/>';
+        // Eigen truien (map jerseys/). Ploegen zonder bestand vallen terug op de getekende versie hieronder.
+        const TEAM_JERSEY_FILES = {
+            'UAE Team Emirates XRG': 'uae', 'Visma–Lease a Bike': 'visma', 'Red Bull–Bora–Hansgrohe': 'redbull', 'Lidl–Trek': 'lidltrek',
+            'Alpecin–Premier Tech': 'alpecin', 'Lotto–Intermarché': 'lotto-intermarche', 'Soudal Safety Jogger': 'soudal',
+            'Decathlon CMA CGM': 'decathlon', 'EF Education–EasyPost': 'ef', 'Groupama–FDJ United': 'fdj', 'Movistar Team': 'movistar',
+            'Netcompany INEOS': 'ineos', 'NSN Cycling Team': 'nsn', 'Team Bahrain Victorious': 'bahrain', 'Team Jayco–AlUla': 'jayco',
+            'Team Picnic–PostNL': 'picnic-postnl', 'Uno-X Mobility': 'unox', 'XDS Astana Team': 'astana', 'Tudor Pro Cycling Team': 'tudor',
+            'Pinarello Q36.5 Pro Cycling Team': 'q36', 'Legends': 'legends1'
+        };
+        // Kampioenstruien als bestand. Nationale truien: voeg het land toe zodra het bestand bestaat, bv. 'Italy': 'nat-italy'.
+        // Zolang een land ontbreekt, draagt de nationale kampioen zijn gewone ploegtrui.
+        const CHAMPION_JERSEY_FILES = { world: 'worldchampion', europe: 'eurochampion' };
+        const jerseyFile = name => 'jerseys/' + name + '.webp';
+
         function riderJersey(r) {
             if (_jerseyCache[r.id]) return _jerseyCache[r.id];
             let url;
             const champ = CHAMPIONS[r.name];
+            if (champ && CHAMPION_JERSEY_FILES[champ]) return (_jerseyCache[r.id] = jerseyFile(CHAMPION_JERSEY_FILES[champ]));
+            if (TEAM_JERSEY_FILES[r.team] && !(champ === 'world' || champ === 'europe')) return (_jerseyCache[r.id] = jerseyFile(TEAM_JERSEY_FILES[r.team]));
             if (champ === 'world') {
                 const rb = ['#2563eb', '#dc2626', '#111111', '#facc15', '#16a34a'];
                 url = jerseySvg('#ffffff', rb.map((c, i) => rect(0, 40 + i * 4, 100, 4, c)).join('') + rb.map((c, i) => rect(0, 34 + i * 1.6, 30, 1.6, c) + rect(70, 34 + i * 1.6, 30, 1.6, c)).join(''));
