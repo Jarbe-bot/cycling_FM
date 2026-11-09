@@ -110,7 +110,7 @@
                 </div>
                 <div>
                     <h3 class="text-base md:text-lg font-bold text-white mb-1.5 uppercase">3. Robin Hood Chemistry</h3>
-                    <p class="mb-2">Chemistry boosts apply to the specific player with the links! Link adjacent riders from the same <span class="text-green-400">Team</span> (+2) or the same <span class="text-yellow-400">Nationality</span> (+1). <span class="text-green-400">Green lines</span> = Massive stat boost!</p>
+                    <p class="mb-2">Chemistry boosts apply to the specific player with the links! Link adjacent riders from the same <span class="text-yellow-400">Team</span> (+1) and/or the same <span class="text-yellow-400">Nationality</span> (+1). Legends form their own team. <span class="text-green-400">Green lines</span> = Massive stat boost!</p>
                     <p class="text-blue-400 font-bold">The Robin Hood Rule: Weak players receive a MUCH larger boost from chemistry than superstars like Pogačar. Building a tactical team is better than drafting loose stars!</p>
                 </div>
                <div>
@@ -1042,12 +1042,13 @@
             return userIndex !== -1 ? userIndex + 1 : 99;
         }
 
-        // Chemie per link: zelfde ploeg = 2, zelfde nationaliteit = 1 (samen nooit meer dan 2)
+        // Chemie per link, zoals een pokémonrun met meerdere generaties:
+        // zelfde ploeg OF zelfde nationaliteit = 1 (gele lijn), allebei = 2 (groene lijn)
         function linkChem(p1, p2) {
             if (!p1 || !p2) return 0;
-            if (p1.team && p1.team === p2.team) return 2;
-            if (p1.nat && p1.nat === p2.nat) return 1;
-            return 0;
+            const sameTeam = !!p1.team && p1.team === p2.team;
+            const sameNat = !!p1.nat && p1.nat === p2.nat;
+            return (sameTeam ? 1 : 0) + (sameNat ? 1 : 0);
         }
 
         function getChemMistakeProof() {
@@ -1996,9 +1997,8 @@ const AudioManager = {
             });
 
           // DE VERNIEUWDE ROBIN HOOD BUFF
-            let percentPerPoint = 0.10; // Standaard 10% van het gat per punt!
-            if (activeGensCount <= 2) percentPerPoint = 0.05;      // 5% bij 1 of 2 gens
-            else if (activeGensCount <= 4) percentPerPoint = 0.07; // 7% bij 3 of 4 gens
+            // Wielerversie: chemie werkt zoals een run met alle generaties (ploeg en nationaliteit elk +1), dus altijd 10% per punt
+            let percentPerPoint = 0.10;
 
             let closurePct = chem * percentPerPoint;
             
