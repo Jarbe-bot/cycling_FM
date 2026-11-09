@@ -110,7 +110,7 @@
                 </div>
                 <div>
                     <h3 class="text-base md:text-lg font-bold text-white mb-1.5 uppercase">3. Robin Hood Chemistry</h3>
-                    <p class="mb-2">Chemistry boosts apply to the specific player with the links! Link adjacent players of the same <span class="text-yellow-400">Generation</span> (+1) or <span class="text-yellow-400">Type</span> (+1). <span class="text-green-400">Green lines</span> = Massive stat boost!</p>
+                    <p class="mb-2">Chemistry boosts apply to the specific player with the links! Link adjacent riders from the same <span class="text-green-400">Team</span> (+2) or the same <span class="text-yellow-400">Nationality</span> (+1). <span class="text-green-400">Green lines</span> = Massive stat boost!</p>
                     <p class="text-blue-400 font-bold">The Robin Hood Rule: Weak players receive a MUCH larger boost from chemistry than overpowered Legendaries. Building a tactical team is better than drafting loose stars!</p>
                 </div>
                <div>
@@ -1040,6 +1040,14 @@
             return userIndex !== -1 ? userIndex + 1 : 99;
         }
 
+        // Chemie per link: zelfde ploeg = 2, zelfde nationaliteit = 1 (samen nooit meer dan 2)
+        function linkChem(p1, p2) {
+            if (!p1 || !p2) return 0;
+            if (p1.team && p1.team === p2.team) return 2;
+            if (p1.nat && p1.nat === p2.nat) return 1;
+            return 0;
+        }
+
         function getChemMistakeProof() {
             let liveCalc = 0;
             if (activeFormation && formations[activeFormation]) {
@@ -1049,10 +1057,7 @@
                     const p1 = userTeam[link[0]];
                     const p2 = userTeam[link[1]];
                     if (p1 && p2) {
-                        const sameType = p1.types.some(t => p2.types.includes(t));
-                        const sameGen = p1.generation === p2.generation;
-                        if ((sameType && sameGen && !isSingleGen) || (sameType && isSingleGen)) liveCalc += 2;
-                        else if (sameType || (sameGen && !isSingleGen)) liveCalc += 1;
+                        liveCalc += linkChem(p1, p2);
                     }
                 });
             }
@@ -1115,9 +1120,7 @@
                 const p1 = userTeam[link[0]]; 
                 const p2 = userTeam[link[1]];
                 if (!p1 || !p2) return false;
-                const sameType = p1.types.some(t => p2.types.includes(t));
-                const sameGen = p1.generation === p2.generation;
-                return sameType || (sameGen && !isSingleGen);
+                return linkChem(p1, p2) > 0;
             });
         }
 
@@ -1859,12 +1862,7 @@ const AudioManager = {
                     const otherPosId = link[0] === posId ? link[1] : link[0];
                     const otherPlayer = userTeam[otherPosId];
                     if (otherPlayer) {
-                        const sameType = player.types.some(t => otherPlayer.types.includes(t));
-                        const sameGen = player.generation === otherPlayer.generation;
-                        
-                       // In een single-gen run telt Type dubbel voor de chemie-punten!
-                    if (sameType) chem += isSingleGen ? 2 : 1;
-                    if (sameGen && !isSingleGen) chem += 1;
+                        chem += linkChem(player, otherPlayer);
                     }
                 }
             });
@@ -2221,15 +2219,13 @@ const AudioManager = {
                 if (p1 && p2) {
                     let strokeColor = '#ef4444'; 
                     let strokeWidth = 2;
-                    const sameType = p1.types.some(t => p2.types.includes(t));
-                    const sameGen = p1.generation === p2.generation;
-                    
-                   // Groene lijn als je Type+Gen hebt, OF als je Type matcht in een Single Gen run
-                    if ((sameType && sameGen && !isSingleGen) || (sameType && isSingleGen)) {
+                    const lc = linkChem(p1, p2);
+                    // Groene lijn = zelfde ploeg, gele lijn = zelfde nationaliteit
+                    if (lc === 2) {
                         strokeColor = '#4ade80'; 
                         strokeWidth = 3;
                         teamChemScore += 2;
-                    } else if (sameType || (sameGen && !isSingleGen)) {
+                    } else if (lc === 1) {
                         strokeColor = '#facc15'; 
                         strokeWidth = 2.5;
                         teamChemScore += 1;
@@ -3596,7 +3592,7 @@ function handleModalClick(event) {
                         <div class="w-full max-w-[240px] sm:max-w-[280px]" onclick="event.stopPropagation()">
                             <div class="fut-card flex-col items-center p-4 rounded-xl w-full justify-between bg-slate-900 border-2 border-slate-600 !opacity-100 !transform-none !scale-100 flex shadow-2xl">
                                 <div class="flex justify-between items-center w-full border-b border-slate-700 pb-1.5 shrink-0">
-                                    <span class="font-bold text-xs sm:text-sm uppercase" style="color: ${typeHex}">${p.types.join(' / ')}</span>
+                                    <span class="font-bold text-xs sm:text-sm uppercase truncate pr-1" style="color: ${typeHex}" title="${p.team}">${p.team}</span>
                                     <span class="font-black text-xs sm:text-sm text-slate-300">BST ${p.bst}</span>
                                 </div>
                                 <div class="flex items-center justify-center w-full relative my-3 h-32 sm:h-40">
@@ -3612,7 +3608,7 @@ function handleModalClick(event) {
                                     <div class="flex justify-between items-center"><span class="text-slate-400 font-bold">Sp.D</span><span class="text-white font-black text-base sm:text-lg">${p.stats.spd}</span></div>
                                 </div>
                                 <div class="flex justify-between items-center w-full text-sm sm:text-base font-bold text-slate-400 mt-3 border-t border-slate-700/50 pt-3 shrink-0">
-                                    <span>Gen ${p.generation}</span>${gameOptions.showOvr ? `<span class="text-yellow-400 font-black text-base sm:text-lg">${playerOVR} Base OVR</span>` : ''}
+                                    <span>${p.nat}</span>${gameOptions.showOvr ? `<span class="text-yellow-400 font-black text-base sm:text-lg">${playerOVR} Base OVR</span>` : ''}
                                 </div>
                             </div>
                         </div>
@@ -3795,7 +3791,7 @@ await rollOptions(role, displayPos);
                 const cardHtml = `
                     <div id="card-${idx}" class="fut-card flex-col items-center p-3 sm:p-4 rounded-xl w-full h-full justify-between flex-grow" onclick="selectPokemonByIndex(${idx})">
                         <div class="flex justify-between items-center w-full border-b border-slate-700 pb-1.5 shrink-0">
-                            <span class="font-bold text-xs sm:text-sm uppercase truncate pr-1" style="color: ${typeHex}">${p.types.join(' / ')}</span>
+                            <span class="font-bold text-xs sm:text-sm uppercase truncate pr-1" style="color: ${typeHex}" title="${p.team}">${p.team}</span>
                             <span class="font-black text-xs sm:text-sm text-slate-300 shrink-0">BST ${p.bst}</span>
                         </div>
                         <div class="flex items-center justify-center w-full relative my-1 aspect-square shrink-0">
@@ -3811,7 +3807,7 @@ await rollOptions(role, displayPos);
                             <div class="flex justify-between items-center"><span class="text-slate-400 font-bold">Sp.D</span><span class="text-white font-black text-sm sm:text-base">${p.stats.spd}</span></div>
                         </div>
                         <div class="flex justify-between items-center w-full text-xs sm:text-sm font-bold text-slate-400 mt-2 border-t border-slate-700/50 pt-1.5 shrink-0">
-                            <span>Gen ${p.generation}</span>${gameOptions.showOvr ? `<span class="text-yellow-400 font-black text-sm sm:text-base">${ovr} OVR</span>` : ''}
+                            <span>${p.nat}</span>${gameOptions.showOvr ? `<span class="text-yellow-400 font-black text-sm sm:text-base">${ovr} OVR</span>` : ''}
                         </div>
                     </div>
                 `;
