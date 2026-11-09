@@ -28,7 +28,7 @@ body {
 }
 
 body.bg-landing {
-    background-position: center top;
+    background-position: center top !important;
     /* Zeer lichte waas zodat de afbeelding in volle glorie schittert */
     background-image: linear-gradient(rgba(15, 23, 42, 0.1), rgba(15, 23, 42, 0.4)), url('cycling-fm-bg2.webp') !important;
 }
