@@ -30,12 +30,12 @@ body {
 body.bg-landing {
     background-position: center top;
     /* Zeer lichte waas zodat de afbeelding in volle glorie schittert */
-    background-image: linear-gradient(rgba(15, 23, 42, 0.1), rgba(15, 23, 42, 0.4)), url('cycling-fm-bg.webp') !important;
+    background-image: linear-gradient(rgba(15, 23, 42, 0.1), rgba(15, 23, 42, 0.4)), url('cycling-fm-bg2webp') !important;
 }
 
 body.bg-start {
     /* Donkere, zware waas zodat de instellingen en witte tekst leesbaar blijven */
-    background-image: linear-gradient(rgba(15, 23, 42, 0.85), rgba(15, 23, 42, 0.98)), url('cycling-fm-bg.webp') !important;
+    background-image: linear-gradient(rgba(15, 23, 42, 0.85), rgba(15, 23, 42, 0.98)), url('cycling-fm-bg2webp') !important;
 }
 
 /* Mobile Background Overrides */
@@ -52,11 +52,11 @@ body.bg-start {
 }
 
 body.bg-office {
-    background-image: linear-gradient(rgba(15, 23, 42, 0.85), rgba(15, 23, 42, 0.98)), url('cycling-fm-bg.webp') !important;
+    background-image: linear-gradient(rgba(15, 23, 42, 0.85), rgba(15, 23, 42, 0.98)), url('cycling-fm-bg2webp') !important;
 }
 
 body.bg-stadium {
-    background-image: linear-gradient(rgba(15, 23, 42, 0.65), rgba(15, 23, 42, 0.98)), url('cycling-fm-bg.webp') !important;
+    background-image: linear-gradient(rgba(15, 23, 42, 0.65), rgba(15, 23, 42, 0.98)), url('cycling-fm-bg2webp') !important;
 }
 
 .standings {
