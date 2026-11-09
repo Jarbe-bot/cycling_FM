@@ -878,29 +878,38 @@
             });
         });
 
-                const euroOpponents = [
+                // Competitie: 7 clubs per carrière uit deze 12 namen. De laatste CPU-club degradeert elk seizoen;
+        // een club met een andere naam neemt zijn plaats in, met exact dezelfde sterkte en speelstijl.
+        const LEAGUE_CLUB_NAMES = ['Ventoux United', 'Liège BL', 'Amstel FC', 'Inter Poggio', 'AS Champs-Élysées', "Alpe d'Huez CF",
+            'Tourmalet United', 'AC Stelvio', 'F.C. De Muur', 'Eendracht Koppenberg', 'Olympique Roubaix', 'Sporting La Redoute'];
+        function pickLeagueNames(n, used) {
+            const free = LEAGUE_CLUB_NAMES.filter(x => !used.includes(x)).sort(() => 0.5 - Math.random());
+            return free.slice(0, n);
+        }
+
+        const euroOpponents = [
             // POT 1: Europese subtop (~81-83 OVR equivalent -> ~880-920 pools)
             { id: 111, name: "Galibiersaray", pools: { poss: 840, create: 910, prevent: 870, finish: 920, block: 870 }, names: ["Fignon", "Jalabert", "Chavanel", "Moncoutié", "Thévenet", "Bobet"] },
-            { id: 114, name: "Aston Vélo", pools: { poss: 860, create: 900, prevent: 890, finish: 910, block: 880 }, names: ["Wiggins", "Froome", "Thomas", "Millar", "Boardman", "Cummings"] },
-            { id: 106, name: "Napolombardia", pools: { poss: 870, create: 920, prevent: 900, finish: 920, block: 900 }, names: ["Bettini", "Bugno", "Bartoli", "Ballan", "Pozzato", "Visentini"] },
-            { id: 113, name: "Bor. Dortmuur", pools: { poss: 860, create: 940, prevent: 880, finish: 940, block: 880 }, names: ["Zabel", "Ullrich", "Kittel", "Greipel", "Martin", "Klöden"] },
+            { id: 114, name: "Livenepool", pools: { poss: 860, create: 900, prevent: 890, finish: 910, block: 880 }, names: ["Wiggins", "Froome", "Thomas", "Millar", "Boardman", "Cummings"] },
+            { id: 106, name: "SSC Nibali", pools: { poss: 870, create: 920, prevent: 900, finish: 920, block: 900 }, names: ["Bettini", "Bugno", "Bartoli", "Ballan", "Pozzato", "Visentini"] },
+            { id: 113, name: "Bayer Leverkuss", pools: { poss: 860, create: 940, prevent: 880, finish: 940, block: 880 }, names: ["Zabel", "Ullrich", "Kittel", "Greipel", "Martin", "Klöden"] },
 
             // POT 2: Sterke knock-out ploegen (~84-86 OVR equivalent -> ~940-980 pools)
             { id: 109, name: "Chelsprint", pools: { poss: 890, create: 930, prevent: 960, finish: 930, block: 960 }, names: ["Cipollini", "Petacchi", "Freire", "McEwen", "Steels", "Abdoujaparov"] },
             { id: 110, name: "Arsenal d'Arenberg", pools: { poss: 920, create: 960, prevent: 920, finish: 950, block: 930 }, names: ["Tafi", "Duclos-Lassalle", "Madiot", "Bäckstedt", "O'Grady", "Hayman"] },
-            { id: 107, name: "AC Milan-Sanremo", pools: { poss: 880, create: 940, prevent: 980, finish: 940, block: 980 }, names: ["Gerrans", "Goss", "Ciolek", "Fondriest", "Saronni", "Kelly"] },
-            { id: 105, name: "Atlético Angliru", pools: { poss: 850, create: 920, prevent: 1020, finish: 950, block: 1010 }, names: ["Heras", "Mancebo", "Mayo", "Olano", "Escartín", "Beloki"] },
+            { id: 107, name: "AC Milano San Remo", pools: { poss: 880, create: 940, prevent: 980, finish: 940, block: 980 }, names: ["Gerrans", "Goss", "Ciolek", "Fondriest", "Saronni", "Kelly"] },
+            { id: 105, name: "Athletic Pello Bilbao", pools: { poss: 850, create: 920, prevent: 1020, finish: 950, block: 1010 }, names: ["Heras", "Mancebo", "Mayo", "Olano", "Escartín", "Beloki"] },
 
             // POT 3: Europese top (~86-88 OVR equivalent -> ~990-1040 pools)
-            { id: 115, name: "Inter Giro", pools: { poss: 920, create: 980, prevent: 1020, finish: 990, block: 1020 }, names: ["Gimondi", "Moser", "Chiappucci", "Pantani", "Basso", "Bitossi"] },
-            { id: 112, name: "AEK Ardennes", pools: { poss: 950, create: 1000, prevent: 1000, finish: 1000, block: 1000 }, names: ["Argentin", "Rebellin", "Roche", "Rominger", "Bauer", "Di Luca"] },
+            { id: 115, name: "AS Romandie", pools: { poss: 920, create: 980, prevent: 1020, finish: 990, block: 1020 }, names: ["Gimondi", "Moser", "Chiappucci", "Pantani", "Basso", "Bitossi"] },
+            { id: 112, name: "Club Brugge - De Panne", pools: { poss: 950, create: 1000, prevent: 1000, finish: 1000, block: 1000 }, names: ["Argentin", "Rebellin", "Roche", "Rominger", "Bauer", "Di Luca"] },
             { id: 104, name: "Voltacelona", pools: { poss: 1040, create: 1030, prevent: 940, finish: 1010, block: 940 }, names: ["Purito", "Samuel Sánchez", "Pereiro", "Zubeldia", "Flecha", "Freire"] },
             { id: 101, name: "Bayern Merckxnich", pools: { poss: 960, create: 1030, prevent: 1000, finish: 1040, block: 1000 }, names: ["Van Looy", "Maertens", "Godefroot", "Van Steenbergen", "Planckaert W.", "Sercu"] },
 
             // POT 4: De Eindbazen (~89-91 OVR equivalent -> ~1050-1100 pools)
             { id: 108, name: "Manchester Peloton", pools: { poss: 1050, create: 1060, prevent: 1040, finish: 1060, block: 1040 }, names: ["Cavendish Jr.", "Hammond", "Downing", "Hunt", "Hutchinson", "Sciandri"] },
             { id: 103, name: "Vuelta Madrid", pools: { poss: 980, create: 1070, prevent: 1050, finish: 1090, block: 1050 }, names: ["Contador Jr.", "Delgado", "Bahamontes", "Ocaña", "Lejarreta", "Arroyo"] },
-            { id: 102, name: "Paris-Roubaix SG", pools: { poss: 1020, create: 1090, prevent: 1050, finish: 1100, block: 1050 }, names: ["Duclos", "Guesdon", "Marie", "Simon", "Leblanc", "Hinault Jr."] }
+            { id: 102, name: "Paris Saint Gilbert", pools: { poss: 1020, create: 1090, prevent: 1050, finish: 1100, block: 1050 }, names: ["Duclos", "Guesdon", "Marie", "Simon", "Leblanc", "Hinault Jr."] }
         ];
 
 
@@ -4097,6 +4106,11 @@ await rollOptions(role, displayPos);
                 for (let t of standings) {
                     if (t.id === relegatedTeam.id && replacement) {
                         newStandings.push({ id: replacement.id, name: replacement.name, p: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0, pts: 0, pools: applyBoost(replacement.pools, replacement.gen) });
+                    } else if (t.id === relegatedTeam.id) {
+                        // Geen andere club in de pool: een nieuwe naam neemt de plaats (en de sterkte) van de gedegradeerde club over
+                        const newName = pickLeagueNames(1, standings.map(x => x.name))[0] || t.name;
+                        const originalOp = allOpponents.find(o => o.id === t.id);
+                        newStandings.push({ id: t.id, name: newName, p: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0, pts: 0, pools: applyBoost(originalOp.pools, originalOp.gen) });
                     } else if (t.isUser) {
                         newStandings.push({ id: 0, name: userTeamName, p: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0, pts: 0, isUser: true, pools: myTeamEnginePools });
                     } else {
@@ -4106,7 +4120,7 @@ await rollOptions(role, displayPos);
                 }
                 standings = newStandings;
                 // FIX: jij speelt tegen dezelfde (gegroeide) sterkte als in de stand
-                let nextOpponents = standings.filter(t => !t.isUser).map(t => ({ ...allOpponents.find(o => o.id === t.id), pools: t.pools }));
+                let nextOpponents = standings.filter(t => !t.isUser).map(t => ({ ...allOpponents.find(o => o.id === t.id), name: t.name, pools: t.pools }));
                 seasonSchedule = nextOpponents.sort(() => 0.5 - Math.random());
                 
             } else {
@@ -4134,6 +4148,8 @@ await rollOptions(role, displayPos);
                 }
                 selectedOpponents.sort(() => 0.5 - Math.random());
  
+                const s1Names = pickLeagueNames(selectedOpponents.length, []);
+                selectedOpponents = selectedOpponents.map((o, i) => ({ ...o, name: s1Names[i] || o.name }));
                 standings = selectedOpponents.map(o => ({ id: o.id, name: o.name, p: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0, pts: 0, pools: applyBoost(o.pools, o.gen) })); // seasonBoost is hier automatisch 0
                 standings.push({ id: 0, name: userTeamName, p: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0, pts: 0, isUser: true, pools: myTeamEnginePools });
                 // Jij speelt tegen dezelfde sterkte als in de stand (inclusief een eventuele vroege verschuiving van de gekozen generaties)
