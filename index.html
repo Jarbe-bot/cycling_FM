@@ -880,23 +880,29 @@
 
                 // Competitie: 7 clubs per carrière uit deze 12 namen. De laatste CPU-club degradeert elk seizoen;
         // een club met een andere naam neemt zijn plaats in, met exact dezelfde sterkte en speelstijl.
-        const LEAGUE_CLUB_NAMES = ['Ventoux United', 'Liège BL', 'Amstel FC', 'Inter Poggio', 'AS Champs-Élysées', "Alpe d'Huez CF",
+        const LEAGUE_CLUB_NAMES = ['Ventoux United', 'LB Liège', 'Amstel FC', 'Inter Poggio', 'AS Champs-Élysées', "Alpe d'Huez CF",
             'Tourmalet United', 'AC Stelvio', 'F.C. De Muur', 'Eendracht Koppenberg', 'Olympique Roubaix', 'Sporting La Redoute'];
         // Doelpuntenmakers per clubnaam (gestopte renners die bij het thema passen); ze verhuizen mee met de naam
         const LEAGUE_CLUB_SCORERS = {
-            'Ventoux United': ["Froome", "Pantani", "Quintana", "Bahamontes", "Gaul", "Urán"],
-            'Liège BL': ["Valverde", "Bartoli", "Gilbert", "Argentin", "Kelly", "Fuglsang"],
-            'Amstel FC': ["Raas", "Knetemann", "Kuiper", "Rebellin", "Gerrans", "Zoetemelk"],
-            'Inter Poggio': ["Zabel", "Cipollini", "Freire", "Ciolek", "Goss", "Bettini"],
-            'AS Champs-Élysées': ["Kittel", "Greipel", "Petacchi", "McEwen", "Abdoujaparov", "Ewan"],
-            "Alpe d'Huez CF": ["Hampsten", "Bugno", "Sastre", "Thomas", "Herrera", "Fignon"],
-            'Tourmalet United': ["Jalabert", "Voeckler", "Pinot", "Bardet", "Virenque", "Moreau"],
-            'AC Stelvio': ["Nibali", "Simoni", "Cunego", "Scarponi", "Aru", "Garzelli"],
-            'F.C. De Muur': ["Van Avermaet", "Van Petegem", "Devolder", "Kristoff", "Terpstra", "Ballan"],
-            'Eendracht Koppenberg': ["Vanmarcke", "Hoste", "Štybar", "Langeveld", "Pozzato", "Haussler"],
-            'Olympique Roubaix': ["Duclos-Lassalle", "Tafi", "Bäckstedt", "O'Grady", "Hayman", "Vansummeren"],
-            'Sporting La Redoute': ["Schleck", "Di Luca", "Dan Martin", "Rominger", "Boasson Hagen", "Purito"]
+            'Ventoux United': ["Froome", "Pantani", "Van Aert", "Quintana", "Bahamontes", "Gaul"],
+            'LB Liège': ["Pogačar", "Evenepoel", "Roglič", "Valverde", "Gilbert", "Fuglsang"],
+            'Amstel FC': ["Van der Poel", "Kwiatkowski", "Pidcock", "Skjelmose", "Raas", "Rebellin"],
+            'Inter Poggio': ["Van der Poel", "Philipsen", "Mohorič", "Stuyven", "Zabel", "Cipollini"],
+            'AS Champs-Élysées': ["Van Aert", "Philipsen", "Meeus", "Kittel", "Greipel", "Ewan"],
+            "Alpe d'Huez CF": ["Pidcock", "Thomas", "Sastre", "Hampsten", "Bugno", "Kuiper"],
+            'Tourmalet United': ["Pinot", "Bardet", "Voeckler", "Jalabert", "Gaudu", "Martinez"],
+            'AC Stelvio': ["Nibali", "Ciccone", "Tiberi", "Simoni", "Cunego", "Scarponi"],
+            'F.C. De Muur': ["Van Aert", "Van Avermaet", "Van Petegem", "Devolder", "Kristoff", "Terpstra"],
+            'Eendracht Koppenberg': ["Pogačar", "Van der Poel", "Asgreen", "Vanmarcke", "Štybar", "Pozzato"],
+            'Olympique Roubaix': ["Van der Poel", "Van Baarle", "Colbrelli", "Hayman", "Vansummeren", "Tafi"],
+            'Sporting La Redoute': ["Alaphilippe", "Healy", "Schleck", "Dan Martin", "Di Luca", "Rominger"]
         };
+        // Doelpuntenmakers van de tegenstander, zonder renners die in jouw team zitten
+        function cpuScorerPool(names) {
+            const mine = Object.values(userTeam).filter(Boolean).map(p => p.name.split(' ').slice(1).join(' ').toLowerCase());
+            const left = (names || []).filter(n => !mine.includes(n.toLowerCase()));
+            return left.length ? left : (names && names.length ? names : ["Striker"]);
+        }
         function pickLeagueNames(n, used) {
             const free = LEAGUE_CLUB_NAMES.filter(x => !used.includes(x)).sort(() => 0.5 - Math.random());
             return free.slice(0, n);
@@ -4288,7 +4294,7 @@ await rollOptions(role, displayPos);
                 if(scorer) userGoals.push({ min: m, name: scorer.name, p: scorer });
             }
             for(let m of cpuGoalMins) {
-                const cpuScorers = cpuOp.names || ["Striker"];
+                const cpuScorers = cpuScorerPool(cpuOp.names);
                 cpuGoals.push({ min: m, name: cpuScorers[Math.floor(Math.random() * cpuScorers.length)] });
             }
 
@@ -4366,7 +4372,7 @@ await rollOptions(role, displayPos);
                 while(homeGoals.length > 0 && homeGoals[0].min === min) {
                     hScore++;
                     document.getElementById('tv-home-score').innerText = hScore;
-                    document.getElementById('tv-home-scorers').innerHTML += `<div class="goal-item text-green-400 font-bold text-[10px] md:text-xs flex items-center gap-1">⚽ ${homeGoals.shift().name} <span class="text-slate-500 font-normal ml-auto">${min}'</span></div>`;
+                    document.getElementById('tv-home-scorers').innerHTML += `<div class="goal-item text-green-400 font-bold text-[10px] md:text-xs flex items-center gap-1">⚽ ${pitchName(homeGoals.shift().name)} <span class="text-slate-500 font-normal ml-auto">${min}'</span></div>`;
                     playerScored = true;
                 }
                 while(awayGoals.length > 0 && awayGoals[0].min === min) {
@@ -4729,7 +4735,7 @@ await rollOptions(role, displayPos);
                 if(scorer) userGoals.push({ min: m, name: scorer.name, p: scorer });
             }
             for(let m of cpuGoalMins) {
-                const cpuScorers = cupOp.names;
+                const cpuScorers = cpuScorerPool(cupOp.names);
                 cpuGoals.push({ min: m, name: cpuScorers[Math.floor(Math.random() * cpuScorers.length)] });
             }
 
@@ -4752,7 +4758,7 @@ await rollOptions(role, displayPos);
                 let cETMins = getUniqueMinutes(rCET, 91, 119, usedETMins);
 
                 for(let m of uETMins) { let s = getWeightedScorer(); userET.push({min: m, name:s.name, p:s}); }
-                for(let m of cETMins) { cpuET.push({min: m, name: cupOp.names[Math.floor(Math.random() * cupOp.names.length)]}); }
+                for(let m of cETMins) { { const pool = cpuScorerPool(cupOp.names); cpuET.push({min: m, name: pool[Math.floor(Math.random() * pool.length)]}); } }
 
                 userET.sort((a,b)=>a.min-b.min);
                 cpuET.sort((a,b)=>a.min-b.min);
