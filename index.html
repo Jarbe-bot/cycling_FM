@@ -62,7 +62,7 @@
             <div class="flex items-start justify-between gap-4 bg-slate-900/60 border border-slate-700 rounded-xl p-3">
                 <div class="min-w-0">
                     <p class="text-white font-black text-sm">Position rating (OVR) on cards</p>
-                    <p class="text-slate-400 text-[11px] leading-snug mt-1"><span class="text-green-400 font-bold">On:</span> every card shows how good that Pok&eacute;mon is in the position you are filling. Handy to learn what works.<br><span class="text-orange-300 font-bold">Off:</span> judge the stats yourself, a challenge for experienced players. Your own squad on the pitch and in the list keeps its ratings.</p>
+                    <p class="text-slate-400 text-[11px] leading-snug mt-1"><span class="text-green-400 font-bold">On:</span> every card shows how good that rider is in the position you are filling. Handy to learn what works.<br><span class="text-orange-300 font-bold">Off:</span> judge the stats yourself, a challenge for experienced players. Your own squad on the pitch and in the list keeps its ratings.</p>
                 </div>
                 <button id="opt-ovr" role="switch" aria-checked="true" onclick="toggleOptionOvr()" class="shrink-0 relative w-12 h-7 rounded-full transition-colors bg-green-500">
                     <span id="opt-ovr-knob" class="absolute top-0.5 left-0.5 w-6 h-6 bg-white rounded-full shadow transition-transform translate-x-5"></span>
@@ -134,6 +134,8 @@
                         <li><strong class="text-sky-400">The board's mood:</strong> From Ecstatic to Furious. The board evaluates whether you improve the squad (the wrong stats on the wrong players do not count) and how you finish compared to what it hoped for. A bad season hurts more than a good one helps, and repeated bad seasons hurt more each time. Tap the Board badge to see how it feels.</li>
                         <li><strong class="text-white">Furious means last chance.</strong> A board that has lost all faith sacks you, and so does finishing last from season 2 onwards.</li>
                         <li><strong class="text-green-400">Title odds:</strong> Tap ODDS to see the title race, with every club's chance of winning the league.</li>
+                        <li><strong class="text-yellow-300">Club vision:</strong> Before the draft the board names a country or a team it wants to see in your starting eleven. Field enough of those riders at the kick-off of any season within five seasons and you get a free training camp. Popular countries ask for more riders than small ones. There is no penalty for ignoring it, and after five seasons a new vision follows.</li>
+                        <li><strong class="text-sky-300">Assists:</strong> Most goals have an assist. Creative riders (Hills) in attacking positions give the most, and Sprint helps too. Goals and assists both count for the Season MVP.</li>
                     </ul>
                 </div>
                 <div>
@@ -198,14 +200,6 @@
                     <input type="text" id="team-name-input" placeholder="e.g. My Team" maxlength="20" class="bg-slate-900/80 border-2 border-slate-700 rounded-none px-4 py-2 text-center text-white font-bold w-full focus:outline-none focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400 font-mono text-sm uppercase">
                 </div>
 
-                <div class="hidden flex justify-between items-end mb-4 px-2">
-                    <h2 class="pixel-font text-[11px] md:text-sm font-black text-white uppercase tracking-wider leading-relaxed">1. Select Generations</h2>
-                    <div class="flex gap-2">
-                        <button onclick="selectAllGens()" class="px-3 py-1.5 bg-slate-900/80 hover:bg-slate-800 text-slate-300 text-[10px] font-bold rounded border border-slate-600 uppercase transition-colors backdrop-blur">Select All</button>
-                        <button onclick="deselectAllGens()" class="px-3 py-1.5 bg-slate-900/80 hover:bg-slate-800 text-slate-300 text-[10px] font-bold rounded border border-slate-600 uppercase transition-colors backdrop-blur">Clear All</button>
-                    </div>
-                </div>
-                <div class="hidden grid grid-cols-3 md:grid-cols-5 gap-3 mb-10" id="gen-grid"></div>
                 <div class="flex justify-center pb-8">
                     <button onclick="proceedToFormations()" class="px-10 py-4 md:px-12 md:py-5 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-400 text-white font-black text-base md:text-xl rounded-full shadow-[0_10px_40px_rgba(37,99,235,0.5)] transition-transform uppercase tracking-widest transform hover:-translate-y-1">
                         Find Formations
@@ -247,6 +241,7 @@
                 <div class="flex items-center gap-1.5 md:gap-2 flex-wrap">
                     <span id="ui-season-counter" class="bg-blue-600 text-white text-[9px] md:text-xs font-bold px-2 py-0.5 md:py-1 rounded shadow-inner uppercase tracking-widest shrink-0">Season 1</span>
                     <span id="ui-board-trust" onclick="openBoardBriefing(false)" role="button" title="The board: tap to see what it thinks" class="cursor-pointer bg-slate-800 border border-slate-600 text-[9px] md:text-xs font-bold px-2 py-0.5 md:py-1 rounded shadow-inner uppercase tracking-widest shrink-0"></span>
+                    <span id="ui-vision" onclick="openBoardBriefing(false)" role="button" class="hidden cursor-pointer bg-slate-800 border border-yellow-600/60 text-yellow-300 text-[9px] md:text-xs font-bold px-2 py-0.5 md:py-1 rounded shadow-inner tracking-widest shrink-0 whitespace-nowrap"></span>
                     
                     <div id="ui-trophies" class="flex items-center gap-0.5 text-[10px] sm:text-xs md:text-sm drop-shadow-md shrink-0"></div>
                     
@@ -410,6 +405,7 @@
                             </div>
                             <span id="tv-matchday-text" class="text-slate-400 text-xs transition-colors">Matchday 1</span>
                             <span id="tv-clock" class="font-mono text-yellow-400">00'</span>
+                            <button id="btn-skip-match" onclick="skipMatch = true; this.classList.add('hidden');" class="hidden ml-1 px-2.5 py-0.5 rounded bg-slate-700 hover:bg-slate-600 border border-slate-500 text-[10px] md:text-xs text-slate-100 font-black uppercase tracking-widest">Skip &#9197;</button>
                         </div>
                         
                         <div class="tv-body-bg flex justify-between items-center p-4 md:p-6 bg-gradient-to-b from-slate-800 to-slate-900 relative z-10 transition-colors">
@@ -447,6 +443,11 @@
                                 </div>
                             </div>
                         </div>
+                    </div>
+
+                    <div id="news-ticker" class="hidden order-4 lg:order-none w-full bg-slate-100 text-slate-900 rounded-xl border-2 border-slate-300 shadow-lg px-3 py-2.5 flex items-start gap-2">
+                        <span class="text-lg leading-none shrink-0">&#128240;</span>
+                        <p id="news-text" class="font-black text-sm md:text-base leading-snug" style="font-family: Georgia, 'Times New Roman', serif;"></p>
                     </div>
 
                     <div id="results-feed" class="order-4 lg:order-none bg-slate-800 rounded-2xl border border-slate-700 shadow-inner flex flex-col hidden h-[220px] md:h-[250px] overflow-hidden w-full">
@@ -586,8 +587,7 @@
             // De clubs behouden hun eigen profiel; alleen hun sterkte wordt bijgesteld.
             // Zwakkere generaties (minder sterke Pokémon) beginnen met iets zwakkere CPU-clubs, in punten teamsterkte S bij seizoen 1.
             // Alle clubs krijgen dezelfde verschuiving, zodat de verhoudingen (en dus de odds) realistisch blijven; ze vervalt vanzelf naarmate je team groeit.
-            GEN_EARLY_SHIFT: { 1: -4.9, 2: -4.7, 3: -4.2, 4: -1.9, 5: -2.8, 6: -2.9, 7: -1.2, 8: -2, 9: 0 },
-            GEN_POOL_BONUS: 3.4,           // bij een combinatie van generaties is de draft gemiddeld zoveel S beter dan het gemiddelde van de losse generaties (gemeten met een speler die op chemistry let)
+            GEN_EARLY_SHIFT: { 1: -4.9 },
             GEN_EARLY_TAU: 15,             // na hoeveel seizoenen de verschuiving nog 37% is (e^-1); past bij hoe snel spelers in zwakke generaties inlopen
             EARLY_HARDEN: 8,               // de eerste seizoenen zijn zwaarder: de sterkste CPU-clubs krijgen zoveel punten teamsterkte S extra, dat vanzelf wegvalt (0 = uit)
             EARLY_HARDEN_TAU: 5,           // na hoeveel seizoenen die extra nog 37% is
@@ -605,17 +605,9 @@
             GEN_TARGET_SHIFT: 0.6,         // alle generaties tegelijk zwaarder (+) of makkelijker (-), in punten teamsterkte S
             // Typische startsterkte (S) van een draft per generatie, gemeten met een bot die kiest op de kaart-OVR én op chemistry zoals een speler
             // (jouw zes gewone drafts in Gen 1+2+3: gemiddeld 75,3; de bot: 74,9). Ter documentatie en voor de tests; bijstellen kan met de echte start-S uit de export.
-            GEN_TYPICAL_S1: { 1: 71.2, 2: 70.9, 3: 71.3, 4: 75.5, 5: 71.8, 6: 73.6, 7: 76.7, 8: 74.3, 9: 78.2 },
+            GEN_TYPICAL_S1: { 1: 71.2 },
             GEN_CLUB_TARGETS: {
                 1: [81.5, 80.0, 78.5, 74.5, 73.0, 72.0, 70.8],   // Wielerversie: drie kanshebbers (was 84.1, 78.9, 75.7, 74.3, 73.3, 72.5, 71.5: een Bayern met een uitdager)
-                2: [83.6, 78.6, 75.6, 74.4, 73.6, 72.7, 71.7],   // Gen 2: Een Bayern met een uitdager
-                3: [81.5, 79.0, 77.3, 74.1, 72.9, 71.9, 70.9],   // Gen 3: Drie kanshebbers
-                4: [87.5, 79.9, 78.4, 76.9, 75.9, 74.9, 73.9],   // Gen 4: Een Bayern met grote voorsprong
-                5: [82.5, 81.0, 75.8, 74.3, 73.3, 72.3, 71.3],   // Gen 5: Twee sterke clubs
-                6: [81.4, 79.9, 78.4, 76.9, 75.4, 73.9, 72.4],   // Gen 6: Open: geen Bayern
-                7: [86.4, 81.6, 78.6, 77.2, 76.2, 75.2, 74.2],   // Gen 7: Een Bayern met een uitdager
-                8: [83.1, 81.6, 76.4, 74.9, 73.9, 72.9, 71.9],   // Gen 8: Twee sterke clubs
-                9: [85.0, 83.5, 78.3, 76.8, 75.8, 74.8, 73.8],   // Gen 9: Twee sterke clubs
             },
             // Hoe zwaar sterkte telt in een uitslag: met hogere waarden wint de sterkere ploeg vaker (een echte Bayern).
             // Twee gelijke ploegen blijven gelijk en maken evenveel doelpunten als vroeger; alleen het verschil telt zwaarder.
@@ -641,11 +633,7 @@
             CUP_GROWTH_MAX: 250
         };
         const genData = [
-            { id: 1, name: "Gen 1", range: [1, 232], active: true }, { id: 2, name: "Gen 2", range: [152, 251], active: false },
-            { id: 3, name: "Gen 3", range: [252, 386], active: false }, { id: 4, name: "Gen 4", range: [387, 493], active: false },
-            { id: 5, name: "Gen 5", range: [494, 649], active: false }, { id: 6, name: "Gen 6", range: [650, 721], active: false },
-            { id: 7, name: "Gen 7", range: [722, 809], active: false }, { id: 8, name: "Gen 8", range: [810, 898], active: false },
-            { id: 9, name: "Gen 9", range: [899, 1025], active: false }
+            { id: 1, name: "Gen 1", range: [1, 232], active: true }   // de wielerversie heeft één rennerspool
         ];
 
         const formations = {
@@ -789,74 +777,14 @@
             { id: 6, gen: 1, name: "Stelvio Control", pools: { poss: 650, create: 900, prevent: 850, finish: 800, block: 850 }, names: ["Voeckler", "Gerrans", "Herrera", "Kuiper", "Scarponi", "Vanmarcke"] },
             { id: 7, gen: 1, name: "Real Ventoux", pools: { poss: 750, create: 1000, prevent: 1000, finish: 1050, block: 1000 }, names: ["Pinot", "Cummings", "Flecha", "Zoetemelk", "Aru", "Hoste"] },
             
-            { id: 8, gen: 2, name: "Club 2", pools: { poss: 500, create: 750, prevent: 750, finish: 750, block: 750 }, names: [] },
-            { id: 9, gen: 2, name: "Club 2", pools: { poss: 580, create: 800, prevent: 800, finish: 800, block: 800 }, names: [] },
-            { id: 10, gen: 2, name: "Club 2", pools: { poss: 620, create: 850, prevent: 800, finish: 850, block: 800 }, names: [] },
-            { id: 11, gen: 2, name: "Club 2", pools: { poss: 550, create: 700, prevent: 900, finish: 750, block: 900 }, names: [] },
-            { id: 12, gen: 2, name: "Club 2", pools: { poss: 650, create: 900, prevent: 900, finish: 950, block: 900 }, names: [] },
-            { id: 13, gen: 2, name: "Club 2", pools: { poss: 750, create: 1000, prevent: 1000, finish: 1000, block: 1000 }, names: [] },
-            { id: 59, gen: 2, name: "Club 2", pools: { poss: 550, create: 800, prevent: 850, finish: 800, block: 850 }, names: [] },
             
-            { id: 14, gen: 3, name: "Club 3", pools: { poss: 500, create: 700, prevent: 850, finish: 700, block: 850 }, names: [] },
-            { id: 15, gen: 3, name: "Club 3", pools: { poss: 550, create: 900, prevent: 750, finish: 800, block: 750 }, names: [] },
-            { id: 16, gen: 3, name: "Club 3", pools: { poss: 550, create: 850, prevent: 750, finish: 900, block: 750 }, names: [] },
-            { id: 17, gen: 3, name: "Club 3", pools: { poss: 620, create: 900, prevent: 900, finish: 800, block: 900 }, names: [] },
-            { id: 18, gen: 3, name: "Club 3", pools: { poss: 620, create: 850, prevent: 950, finish: 900, block: 950 }, names: [] },
-            { id: 19, gen: 3, name: "Club 3", pools: { poss: 750, create: 1000, prevent: 1000, finish: 1000, block: 1000 }, names: [] },
-            { id: 60, gen: 3, name: "Club 3", pools: { poss: 600, create: 850, prevent: 800, finish: 850, block: 800 }, names: [] },
             
-            { id: 20, gen: 4, name: "Club 4", pools: { poss: 550, create: 700, prevent: 800, finish: 750, block: 800 }, names: [] },
-            { id: 21, gen: 4, name: "Club 4", pools: { poss: 620, create: 850, prevent: 800, finish: 900, block: 800 }, names: [] },
-            { id: 22, gen: 4, name: "Club 4", pools: { poss: 580, create: 900, prevent: 800, finish: 950, block: 800 }, names: [] },
-            { id: 23, gen: 4, name: "Club 4", pools: { poss: 620, create: 950, prevent: 800, finish: 850, block: 800 }, names: [] },
-            { id: 24, gen: 4, name: "Club 4", pools: { poss: 800, create: 1050, prevent: 1050, finish: 1100, block: 1000 }, names: [] },
-            { id: 61, gen: 4, name: "Club 4", pools: { poss: 580, create: 800, prevent: 850, finish: 800, block: 850 }, names: [] },
-            { id: 62, gen: 4, name: "Club 4", pools: { poss: 600, create: 850, prevent: 900, finish: 800, block: 900 }, names: [] },
 
             
-            { id: 25, gen: 5, name: "Club 5", pools: { poss: 550, create: 800, prevent: 800, finish: 750, block: 800 }, names: [] },
-            { id: 26, gen: 5, name: "Club 5", pools: { poss: 580, create: 850, prevent: 800, finish: 800, block: 800 }, names: [] },
-            { id: 27, gen: 5, name: "Club 5", pools: { poss: 620, create: 1000, prevent: 750, finish: 900, block: 800 }, names: [] },
-            { id: 28, gen: 5, name: "Club 5", pools: { poss: 620, create: 850, prevent: 950, finish: 850, block: 950 }, names: [] },
-            { id: 29, gen: 5, name: "Club 5", pools: { poss: 700, create: 950, prevent: 1000, finish: 1000, block: 950 }, names: [] },
-            { id: 30, gen: 5, name: "Club 5", pools: { poss: 800, create: 1050, prevent: 1100, finish: 1100, block: 1050 }, names: [] },
-            { id: 63, gen: 5, name: "Club 5", pools: { poss: 620, create: 850, prevent: 850, finish: 850, block: 850 }, names: [] },
         
-            // Gen 6
-            { id: 31, gen: 6, name: "Club 6", pools: { poss: 650, create: 900, prevent: 850, finish: 850, block: 800 }, names: [] },
-            { id: 32, gen: 6, name: "Club 6", pools: { poss: 550, create: 800, prevent: 900, finish: 750, block: 900 }, names: [] },
-            { id: 33, gen: 6, name: "Club 6", pools: { poss: 600, create: 850, prevent: 800, finish: 900, block: 750 }, names: [] },
-            { id: 44, gen: 6, name: "Club 6", pools: { poss: 580, create: 750, prevent: 850, finish: 800, block: 850 }, names: [] },
-            { id: 35, gen: 6, name: "Club 6", pools: { poss: 620, create: 800, prevent: 850, finish: 850, block: 900 }, names: [] },
-            { id: 36, gen: 6, name: "Club 6", pools: { poss: 700, create: 950, prevent: 800, finish: 900, block: 850 }, names: [] },
-            { id: 37, gen: 6, name: "Club 6", pools: { poss: 750, create: 1000, prevent: 1050, finish: 950, block: 1000 }, names: [] },
 
-            // Gen 7
-            { id: 38, gen: 7, name: "Club 7", pools: { poss: 550, create: 750, prevent: 750, finish: 800, block: 750 }, names: [] },
-            { id: 39, gen: 7, name: "Club 7", pools: { poss: 600, create: 800, prevent: 800, finish: 850, block: 800 }, names: [] },
-            { id: 40, gen: 7, name: "Club 7", pools: { poss: 580, create: 850, prevent: 850, finish: 800, block: 850 }, names: [] },
-            { id: 41, gen: 7, name: "Club 7", pools: { poss: 650, create: 900, prevent: 900, finish: 950, block: 900 }, names: [] },
-            { id: 42, gen: 7, name: "Club 7", pools: { poss: 620, create: 850, prevent: 950, finish: 900, block: 950 }, names: [] },
-            { id: 43, gen: 7, name: "Club 7", pools: { poss: 700, create: 950, prevent: 800, finish: 1000, block: 800 }, names: [] },
-            { id: 34, gen: 7, name: "Club 7", pools: { poss: 800, create: 1050, prevent: 1100, finish: 1050, block: 1050 }, names: [] },
 
-            // Gen 8
-            { id: 45, gen: 8, name: "Club 8", pools: { poss: 550, create: 800, prevent: 750, finish: 850, block: 750 }, names: [] },
-            { id: 46, gen: 8, name: "Club 8", pools: { poss: 600, create: 850, prevent: 800, finish: 800, block: 850 }, names: [] },
-            { id: 47, gen: 8, name: "Club 8", pools: { poss: 580, create: 800, prevent: 900, finish: 750, block: 900 }, names: [] },
-            { id: 48, gen: 8, name: "Club 8", pools: { poss: 750, create: 1000, prevent: 1050, finish: 1050, block: 1000 }, names: [] },
-            { id: 49, gen: 8, name: "Club 8", pools: { poss: 650, create: 950, prevent: 850, finish: 900, block: 850 }, names: [] },
-            { id: 50, gen: 8, name: "Club 8", pools: { poss: 620, create: 850, prevent: 950, finish: 900, block: 950 }, names: [] },
-            { id: 51, gen: 8, name: "Club 8", pools: { poss: 800, create: 1100, prevent: 1050, finish: 1100, block: 1050 }, names: [] },
 
-            // Gen 9
-            { id: 52, gen: 9, name: "Club 9", pools: { poss: 600, create: 850, prevent: 850, finish: 850, block: 850 }, names: [] },
-            { id: 53, gen: 9, name: "Club 9", pools: { poss: 550, create: 750, prevent: 800, finish: 800, block: 750 }, names: [] },
-            { id: 54, gen: 9, name: "Club 9", pools: { poss: 580, create: 800, prevent: 850, finish: 750, block: 850 }, names: [] },
-            { id: 55, gen: 9, name: "Club 9", pools: { poss: 650, create: 900, prevent: 900, finish: 850, block: 900 }, names: [] },
-            { id: 56, gen: 9, name: "Club 9", pools: { poss: 700, create: 850, prevent: 950, finish: 900, block: 950 }, names: [] },
-            { id: 57, gen: 9, name: "Club 9", pools: { poss: 750, create: 950, prevent: 1000, finish: 1000, block: 950 }, names: [] },
-            { id: 58, gen: 9, name: "Club 9", pools: { poss: 780, create: 1050, prevent: 950, finish: 1050, block: 900 }, names: [] }
         ];
 
         // Herverdeling van de competitieclubs (zie BALANCE.LEAGUE_POSS_RATIO en LEAGUE_OTHER_FACTOR)
@@ -938,6 +866,10 @@
         let activeFormation = null;
         let globalIdPool = [];
         let hasReroll = true;
+        // Wat al geloot is, ligt vast (ook na het herladen van de pagina): de scoutopties van een positie en de lopende wedstrijd
+        let pendingRoll = null;    // { posId, ids, transfer }
+        let pendingMatch = null;   // { type: 'league' | 'cup', season, matchday | round, userChances, userGoals, cpuGoals, userET, cpuET, penSeed }
+        let skipMatch = false;     // de speler slaat de beelden van de lopende wedstrijd over
         let userTeamName = "My Team";
         let userTeam = {};
         let currentDraftPos = null;
@@ -1084,6 +1016,10 @@
         };
 
         // --- FOOLPROOF ACHIEVEMENT HELPERS ---
+        // Rangschikking: punten, doelsaldo, gemaakte doelpunten, aantal zeges, en dan de naam (zodat het nooit toeval is)
+        function tableOrder(a, b) {
+            return (b.pts - a.pts) || ((b.gf - b.ga) - (a.gf - a.ga)) || (b.gf - a.gf) || (b.w - a.w) || String(a.name).localeCompare(String(b.name));
+        }
         function getUserStandingObj() {
             if (!standings || standings.length === 0) return null;
             return standings.find(t => t.isUser || t.id === 0 || t.name === userTeamName);
@@ -1091,10 +1027,7 @@
 
         function finalPosCheck() {
             if (!standings || standings.length === 0) return 99;
-            const sorted = [...standings].sort((a,b) => { 
-                if (b.pts !== a.pts) return b.pts - a.pts; 
-                return (b.gf - b.ga) - (a.gf - a.ga); 
-            });
+            const sorted = [...standings].sort(tableOrder);
             const userIndex = sorted.findIndex(t => t.isUser || t.id === 0 || t.name === userTeamName);
             return userIndex !== -1 ? userIndex + 1 : 99;
         }
@@ -1111,8 +1044,6 @@
         function getChemMistakeProof() {
             let liveCalc = 0;
             if (activeFormation && formations[activeFormation]) {
-                const activeGensCount = genData.filter(g => g.active).length;
-                const isSingleGen = activeGensCount === 1;
                 formations[activeFormation].links.forEach(link => {
                     const p1 = userTeam[link[0]];
                     const p2 = userTeam[link[1]];
@@ -1153,19 +1084,6 @@
             });
         }
 
-        function checkAllGensEnabled() { 
-            return genData.every(g => g.active) || (globalIdPool && globalIdPool.length >= 1000); 
-        }
-
-        function checkOnlyGen(genId) { 
-            const players = Object.values(userTeam).filter(p => p !== null);
-            return players.length === 11 && players.every(p => p.generation === genId);
-        }
-
-        function checkActiveGensCount() { 
-            return genData.filter(g => g.active).length; 
-        }
-
         function checkSeasonGoals(amount) { 
             const myStats = getUserStandingObj(); 
             return myStats ? myStats.gf > amount : false; 
@@ -1181,8 +1099,6 @@
             const players = Object.values(userTeam).filter(p => p !== null);
             if (players.length < 11) return false;
 
-            const activeGensCount = genData.filter(g => g.active).length;
-            const isSingleGen = activeGensCount === 1;
             
             return formations[activeFormation].links.every(link => {
                 const p1 = userTeam[link[0]]; 
@@ -1197,24 +1113,10 @@
             return myStats ? (myStats.p === 7 && myStats.l === 0) : false; 
         }
 
-        function checkKantoStarters() { 
-            return checkTeamHas("Venusaur") && checkTeamHas("Charizard") && checkTeamHas("Blastoise"); 
-        }
-
         function checkGoldenBoot(amount) {
             return Object.values(playerStats).some(ps => ps.seasonGoals >= amount);
         }
 
-        function checkEeveelutions() {
-            const eons = ['vaporeon', 'jolteon', 'flareon', 'espeon', 'umbreon', 'leafeon', 'glaceon', 'sylveon'];
-            const count = Object.values(userTeam).filter(p => p && eons.includes(p.name.toLowerCase())).length;
-            return count >= 3;
-        }
-
-        function checkWeatherTrio() {
-            return checkTeamHas("Kyogre") && checkTeamHas("Groudon") && checkTeamHas("Rayquaza");
-        }
-        
         // --- AUTO-SAVE ENGINE ---
         const SaveManager = {
             save: function() {
@@ -1226,7 +1128,8 @@
                     currentSeason, isTransferWindow, actionPoints, domesticTitles,
                     rivalBoost, rivalSeason, clubForm, clubFormSeason, freeCamps, cupMilestones,
                     trustPct: boardTrust, negStreak, finHist, kickNow, kickPrev, boardExpectNow, boardExpectCache, boardBriefSeason, lastVerdict,
-                    leagueReady, trainCounts, careerLog,
+                    leagueReady, trainCounts, careerLog, hasReroll, pendingRoll, pendingMatch,
+                    clubVision, visionLog, seasonNews, seasonLeagueResults, newsMemory,
                     savePhase, seasonMatchday, cupPath, finalSummary,
                     resultsFeedHtml: (document.getElementById('results-feed-list') || {}).innerHTML || '',
                     genDataActive: genData.map(g => g.active)
@@ -1256,6 +1159,10 @@
                     lastVerdict = data.lastVerdict || null;
                     leagueReady = !!data.leagueReady;
                     trainCounts = data.trainCounts || {};
+                    if (typeof data.hasReroll === 'boolean') hasReroll = data.hasReroll;
+                    pendingRoll = data.pendingRoll || null; pendingMatch = data.pendingMatch || null;
+                    clubVision = data.clubVision || null; visionLog = data.visionLog || []; seasonNews = data.seasonNews || []; seasonLeagueResults = data.seasonLeagueResults || [];
+                    newsMemory = data.newsMemory || { last: '', used: {} };
                     careerLog = data.careerLog || newCareerLog(currentSeason);
                     savePhase = data.savePhase || (data.isTransferWindow ? 'transfer' : 'draft');
                     seasonMatchday = data.seasonMatchday || 0;
@@ -1263,7 +1170,7 @@
                     finalSummary = data.finalSummary || null;
                     window._resumeFeedHtml = data.resultsFeedHtml || '';
                     renormalizeTeam();
-                    data.genDataActive.forEach((isActive, i) => genData[i].active = isActive);
+                    genData[0].active = true;
                     
                     document.getElementById('ui-team-name').innerText = userTeamName;
                     document.getElementById('ui-season-counter').innerText = `Season ${currentSeason}`;
@@ -1300,6 +1207,10 @@
                             document.getElementById('btn-simulate').classList.add('hidden');
                             document.getElementById('btn-resign').classList.remove('hidden');
                             document.getElementById('btn-resign').classList.add('block');
+                            if (pendingRoll && pendingRoll.transfer) {
+                                const pc = formations[activeFormation].positions.find(f => f.id === pendingRoll.posId);
+                                if (pc) setTimeout(() => openDraft(pc.id, pc.display, pc.role), 700);
+                            }
                         } else {
                             document.body.className = 'min-h-screen flex flex-col relative bg-landing';
                             document.getElementById('pitch-view').classList.remove('hidden');
@@ -1724,21 +1635,7 @@ const AudioManager = {
             }, 300);
         }
 
-        function selectAllGens() { return; genData.forEach(g => g.active = true); initStartScreen(); }
-        function deselectAllGens() { return; genData.forEach(g => g.active = false); genData[0].active = true; initStartScreen(); }
-
-
-        function initStartScreen() {
-            const grid = document.getElementById('gen-grid');
-            grid.innerHTML = '';
-            genData.forEach((g, index) => {
-                const btn = document.createElement('button');
-                btn.className = `gen-toggle flex flex-col items-center justify-center py-2.5 md:py-3 px-1 rounded-lg border-2 cursor-pointer ${g.active ? 'active' : 'border-slate-600 bg-slate-800 text-slate-400 hover:border-slate-500'}`;
-                btn.onclick = () => toggleGen(index);
-                btn.innerHTML = `<span class="font-black text-xs md:text-base">${g.name}</span>`;
-                grid.appendChild(btn);
-            });
-        }
+        function initStartScreen() {}
 
         function enterSettings() {
             AudioManager.playBGM(BGM_TRACK, BGM_VOL);
@@ -1765,12 +1662,6 @@ const AudioManager = {
                     step1.classList.replace('translate-y-8', 'translate-y-0');
                 }, 50);
             }, 500);
-        }
-
-        function toggleGen(index) { return;
-            genData[index].active = !genData[index].active;
-            if (!genData.some(g => g.active)) genData[index].active = true;
-            initStartScreen();
         }
 
         function proceedToFormations() {
@@ -1829,12 +1720,14 @@ const AudioManager = {
             currentSeason = 1;
             hasPlayedCup = false;
             isTransferWindow = false;
-            hasReroll = true;
+            hasReroll = true; pendingRoll = null; pendingMatch = null;
+            clubVision = null; visionLog = []; seasonNews = []; seasonLeagueResults = []; newsMemory = { last: '', used: {} };
             userTeam = {};
             playerStats = {};
             formations[activeFormation].positions.forEach(pos => userTeam[pos.id] = null);
 
             domesticTitles = 0; resetBoardState();
+            newClubVision(1);
             updateTrophiesUI();
 
             AudioManager.playBGM(BGM_TRACK, BGM_VOL);
@@ -1847,11 +1740,9 @@ const AudioManager = {
                 document.getElementById('game-ui').classList.remove('hidden');
                 document.getElementById('game-ui').classList.add('flex');
                 initPitch();
+                updateVisionUI();
+                openVisionIntro();
             }, 450);
-        }
-
-        function getGeneration(id) {
-            for (let g of genData) { if (id >= g.range[0] && id <= g.range[1]) return g.id; } return 1;
         }
 
         const scaleStat = (val) => val <= 130
@@ -2072,8 +1963,6 @@ const AudioManager = {
             const player = userTeam[posId];
             if (!player) return { score: 0, closurePct: 0 };
             
-            const activeGensCount = genData.filter(g => g.active).length;
-            const isSingleGen = activeGensCount === 1;
 
             formations[activeFormation].links.forEach(link => {
                 if (link[0] === posId || link[1] === posId) {
@@ -2199,6 +2088,7 @@ const AudioManager = {
                 if (userTeam[pos.id]) pCount++;
             });
 
+            updateVisionUI();
             if(pCount > 0) {
                 // Bereken de 5 verborgen motor-onderdelen
                 const scorePoss = calculateTeamPhaseScore('poss');
@@ -2305,14 +2195,14 @@ const AudioManager = {
             };
 
             let html = '<div class="overflow-x-auto pb-2"><table class="w-full text-left text-[9px] md:text-xs text-slate-300 whitespace-nowrap">';
-            html += '<thead class="bg-slate-900 text-slate-400 uppercase border-b border-slate-700"><tr><th class="px-1 py-2 md:p-3">Pos</th><th class="px-1 py-2 md:p-3">Player</th><th class="px-1 py-2 text-center">SPR</th><th class="px-1 py-2 text-center">GC</th><th class="px-1 py-2 text-center">CLS</th><th class="px-1 py-2 text-center">TT</th><th class="px-1 py-2 text-center">HIL</th><th class="px-1 py-2 text-center">CLB</th><th class="px-1 py-2 text-center bg-slate-900/50">OVR</th><th class="px-1 py-2 text-center">Act</th></tr></thead>';
+            html += '<thead class="bg-slate-900 text-slate-400 uppercase border-b border-slate-700"><tr><th class="px-1 py-2 md:p-3">Pos</th><th class="px-1 py-2 md:p-3">Player</th><th class="px-1 py-2 text-center">SPR</th><th class="px-1 py-2 text-center">GC</th><th class="px-1 py-2 text-center">CLS</th><th class="px-1 py-2 text-center">TT</th><th class="px-1 py-2 text-center">HIL</th><th class="px-1 py-2 text-center">CLB</th><th class="px-1 py-2 text-center bg-slate-900/50">OVR</th><th class="px-1 py-2 text-center" title="Goals for the club">G</th><th class="px-1 py-2 text-center" title="Assists for the club">A</th><th class="px-1 py-2 text-center">Act</th></tr></thead>';
             html += '<tbody class="divide-y divide-slate-800">';
 
             for (let [groupName, roles] of Object.entries(groups)) {
                 let positionsInGroup = formations[activeFormation].positions.filter(pos => roles.includes(pos.role));
 
                 if (positionsInGroup.length > 0) {
-                    html += `<tr class="bg-slate-900/60"><td colspan="10" class="p-1 md:p-2 text-center font-black text-yellow-500 uppercase tracking-widest text-[8px] md:text-[10px] border-y border-slate-700/50">${groupName}</td></tr>`;
+                    html += `<tr class="bg-slate-900/60"><td colspan="12" class="p-1 md:p-2 text-center font-black text-yellow-500 uppercase tracking-widest text-[8px] md:text-[10px] border-y border-slate-700/50">${groupName}</td></tr>`;
                     
                     positionsInGroup.forEach(pos => {
                         const p = userTeam[pos.id];
@@ -2333,6 +2223,8 @@ const AudioManager = {
                                 <td class="px-1 py-2 text-center ${statColor(p.stats.spa)}">${p.stats.spa}</td>
                                 <td class="px-1 py-2 text-center ${statColor(p.stats.spd)}">${p.stats.spd}</td>
                                 <td class="px-1 py-2 text-center font-black text-yellow-400 bg-slate-900/50 border-x border-slate-700/50">${ovr}</td>
+                                <td class="px-1 py-2 text-center text-slate-200 font-bold">${(playerStats[p.id] && playerStats[p.id].goals) || 0}</td>
+                                <td class="px-1 py-2 text-center text-slate-200 font-bold">${(playerStats[p.id] && playerStats[p.id].assists) || 0}</td>
                                 <td class="px-1 py-2 text-center">${actionBtn}</td>
                             </tr>`;
                         } else {
@@ -2343,6 +2235,7 @@ const AudioManager = {
                                 <td class="px-1 py-2 text-center text-slate-600">-</td><td class="px-1 py-2 text-center text-slate-600">-</td>
                                 <td class="px-1 py-2 text-center text-slate-600">-</td><td class="px-1 py-2 text-center text-slate-600">-</td>
                                 <td class="px-1 py-2 text-center font-black text-slate-600 bg-slate-900/50 border-x border-slate-700/50">-</td>
+                                <td class="px-1 py-2 text-center text-slate-600">-</td><td class="px-1 py-2 text-center text-slate-600">-</td>
                                 <td class="px-1 py-2 text-center"><button onclick="openDraft('${pos.id}', '${pos.display}', '${pos.role}')" class="bg-green-600 hover:bg-green-500 text-white px-1.5 py-1 rounded shadow text-[10px]">🔍</button></td>
                             </tr>`;
                         }
@@ -2429,8 +2322,6 @@ const AudioManager = {
             let svgHTML = '';
             teamChemScore = 0;
             
-            const activeGensCount = genData.filter(g => g.active).length;
-            const isSingleGen = activeGensCount === 1;
 
             formations[activeFormation].links.forEach(link => {
                 const pos1 = formations[activeFormation].positions.find(p => p.id === link[0]);
@@ -2608,6 +2499,470 @@ function updateObjectiveLine() {
     }
 }
 
+
+// =====================================================================================
+// CLUBVISIE: het bestuur wil renners van één land of één ploeg in je elftal. Vijf seizoenen tijd, beloning: een gratis trainingskamp.
+// =====================================================================================
+let clubVision = null;      // { type: 'nat' | 'team', key, need, from, until, done }
+let visionLog = [];         // afgelopen visies
+const VISION = { SEASONS: 5, NAT_NEED: [[26, 4], [15, 3], [7, 2]], TEAM_NEED: 2 };
+const NAT_ADJ = { 'Belgium': 'Belgian', 'Italy': 'Italian', 'France': 'French', 'Netherlands': 'Dutch', 'Great Britain': 'British', 'Spain': 'Spanish', 'Australia': 'Australian',
+    'Germany': 'German', 'United States': 'American', 'Norway': 'Norwegian', 'Switzerland': 'Swiss', 'Denmark': 'Danish', 'Colombia': 'Colombian' };
+// Hoe meer renners van een land in de pool zitten, hoe meer het bestuur er vraagt
+function visionGroups() {
+    const nat = {}, team = {};
+    RIDERS.forEach(r => { if (r.team === 'Legends') return; nat[r.nat] = (nat[r.nat] || 0) + 1; team[r.team] = (team[r.team] || 0) + 1; });
+    const out = [];
+    Object.entries(nat).forEach(([key, n]) => { const t = VISION.NAT_NEED.find(x => n >= x[0]); if (t && NAT_ADJ[key]) out.push({ type: 'nat', key, need: t[1], size: n }); });
+    Object.entries(team).forEach(([key, n]) => { if (n >= 8) out.push({ type: 'team', key, need: VISION.TEAM_NEED, size: n }); });
+    return out;
+}
+function visionCount(v) {
+    if (!v) return 0;
+    return Object.values(userTeam).filter(p => p && (v.type === 'nat' ? p.nat === v.key : p.team === v.key)).length;
+}
+function visionTarget(v) { return v.type === 'nat' ? `${v.need} ${NAT_ADJ[v.key] || v.key} riders` : `${v.need} riders from ${v.key}`; }
+function newClubVision(fromSeason) {
+    if (clubVision) visionLog.push(clubVision);
+    const prev = clubVision;
+    const open = visionGroups().filter(g => visionCount(g) < g.need && !(prev && prev.type === g.type && prev.key === g.key));
+    const far = open.filter(g => g.need - visionCount(g) >= 2);   // liefst nog minstens twee renners te gaan
+    let groups = far.length ? far : open;
+    if (!groups.length) { clubVision = null; return null; }
+    const wantType = Math.random() < 0.5 ? 'nat' : 'team';
+    const pool = groups.filter(g => g.type === wantType);
+    const g = (pool.length ? pool : groups)[Math.floor(Math.random() * (pool.length ? pool : groups).length)];
+    clubVision = { type: g.type, key: g.key, need: g.need, from: fromSeason, until: fromSeason + VISION.SEASONS - 1, done: 0 };
+    return clubVision;
+}
+function visionStatusHtml() {
+    const v = clubVision;
+    if (!v) return '';
+    const have = visionCount(v);
+    const state = v.done
+        ? `<span class="text-green-400 font-black">Achieved in season ${v.done}.</span> The board keeps this vision until season ${v.until}.`
+        : `You have <span class="text-white font-black">${have} of ${v.need}</span>. Deadline: the kick-off of season ${v.until}. Reward: a free training camp.`;
+    return `<div class="mt-3 bg-slate-900 border border-yellow-600/50 rounded-xl p-3 text-center">
+        <p class="text-[10px] text-yellow-400 font-black uppercase tracking-widest mb-1">&#127919; ${v.from === currentSeason && currentSeason > 1 && !v.done ? 'New club vision' : 'Club vision'} &middot; seasons ${v.from}-${v.until}</p>
+        <p class="text-sm text-white font-bold">"We want at least ${visionTarget(v)} in your starting eleven."</p>
+        <p class="text-xs text-slate-300 mt-1">${state}</p>
+    </div>`;
+}
+function updateVisionUI() {
+    const el = document.getElementById('ui-vision');
+    if (!el) return;
+    const v = clubVision;
+    if (!v) { el.classList.add('hidden'); return; }
+    el.classList.remove('hidden');
+    el.innerHTML = v.done ? '&#127919; &#10003;' : `&#127919; ${Math.min(visionCount(v), v.need)}/${v.need}`;
+    el.title = `Club vision: ${visionTarget(v)} by season ${v.until}`;
+}
+function infoToast(icon, title, text) {
+    const container = document.getElementById('toast-container');
+    if (!container) return;
+    const toast = document.createElement('div');
+    toast.className = 'bg-slate-900 border-2 border-yellow-400 p-3 rounded-xl shadow-[0_10px_30px_rgba(234,179,8,0.4)] flex items-center gap-3 toast-enter pointer-events-auto';
+    toast.innerHTML = `<div class="text-3xl shrink-0">${icon}</div><div><p class="text-[10px] text-yellow-400 font-black uppercase tracking-widest">${title}</p><p class="text-white font-bold text-sm leading-tight">${text}</p></div>`;
+    container.appendChild(toast);
+    setTimeout(() => { toast.classList.replace('toast-enter', 'toast-exit'); setTimeout(() => toast.remove(), 500); }, 6000);
+}
+// Bij elke aftrap: staat de gevraagde groep in je elftal?
+function checkClubVision() {
+    const v = clubVision;
+    if (!v || v.done || currentSeason > v.until) return;
+    if (visionCount(v) >= v.need) {
+        v.done = currentSeason;
+        freeCamps++;
+        infoToast('&#127919;', 'Club vision achieved!', `${visionTarget(v)}: the board grants you a free training camp.`);
+    }
+    updateVisionUI();
+}
+// Voor de draft: het bestuur legt zijn visie uit
+function openVisionIntro() {
+    if (!clubVision) return;
+    const v = clubVision;
+    document.getElementById('board-modal-content').innerHTML = `
+        <h2 class="text-2xl md:text-3xl font-black text-yellow-400 mb-1 uppercase tracking-wider text-center">The Board</h2>
+        <p class="text-center text-slate-400 text-xs md:text-sm font-bold uppercase tracking-widest mb-3">Club vision &middot; seasons ${v.from} to ${v.until}</p>
+        <p class="text-center text-white font-bold text-base md:text-lg mb-2">"Welcome, coach! This club has an identity. We want at least ${visionTarget(v)} in your starting eleven."</p>
+        <p class="text-xs md:text-sm text-slate-300 text-center leading-relaxed">You have until the kick-off of season ${v.until}. Field them at the start of any season before that and the board rewards you with a <span class="text-yellow-300 font-bold">free training camp</span>. There is no penalty if you choose another path. Keep it in mind during the draft: tap the &#127919; in the top bar to see your progress.</p>
+        <button onclick="closeBoardBriefing(false, false)" class="mt-4 w-full px-6 py-3.5 bg-gradient-to-r from-purple-600 to-purple-500 hover:from-purple-400 text-white font-black rounded-full uppercase tracking-widest text-sm">Start the draft</button>`;
+    const modal = document.getElementById('board-modal');
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+}
+
+// =====================================================================================
+// KRANTENKOPPEN: na elke wedstrijd één kop, gekozen uit wat er echt gebeurd is
+// =====================================================================================
+let seasonNews = [];            // { md, text } van dit seizoen
+let seasonLeagueResults = [];   // [{ gf, ga }] van jouw competitiewedstrijden dit seizoen
+let roundCpuResults = [];       // de andere uitslagen van de laatste speeldag
+let newsMemory = { last: '', used: {} };
+const _pick = arr => arr[Math.floor(Math.random() * arr.length)];
+const _sn = name => pitchName(name || '');
+const NEWS = {
+    // ---- het seizoen wordt beslist ----
+    title_won: { tier: 0, t: [
+        c => `CHAMPIONS! ${c.T} crowned on the final day`,
+        c => `${c.T} are champions: the title is theirs after ${c.SC} against ${c.O}`,
+        c => `Party time: ${c.T} finish top of the league`,
+        c => `It is done! ${c.T} lift the league trophy` ] },
+    title_missed: { tier: 0, t: [
+        c => `So close: ${c.T} finish second behind ${c.leader}`,
+        c => `Heartbreak for ${c.T} as ${c.leader} take the title`,
+        c => `${c.leader} champions, ${c.T} left to wonder what might have been`,
+        c => `Runners-up: ${c.T} fall just short in the title race` ] },
+    survived: { tier: 0, t: [
+        c => `The great escape! ${c.T} climb off the bottom on the final day`,
+        c => `${c.T} survive: last-day result against ${c.O} saves their season`,
+        c => `Relief at ${c.T}: bottom spot avoided at the very last moment` ] },
+    finished_last: { tier: 0, t: [
+        c => `Rock bottom: ${c.T} end the season in last place`,
+        c => `A season to forget: ${c.T} finish bottom of the league`,
+        c => `${c.T} prop up the table as the season ends` ] },
+    season_end: { tier: 1, t: [
+        c => `Season over: ${c.T} finish ${c.posTxt}, ${c.champ} are champions`,
+        c => `${c.champ} take the title, ${c.T} end the campaign in ${c.posTxt} place`,
+        c => `Final whistle on the season: ${c.posTxt} place for ${c.T}`,
+        c => `${c.T} sign off with ${c.SC} against ${c.O} and finish ${c.posTxt}` ] },
+    // ---- een bijzondere wedstrijd ----
+    hat_trick: { tier: 1, t: [
+        c => `${c.P3} hat-trick sinks ${c.O}`,
+        c => `Three for ${c.P3}! ${c.T} beat ${c.O} ${c.SC}`,
+        c => `${c.P3} takes the match ball home after ${c.SC}`,
+        c => `Unstoppable ${c.P3} scores three against ${c.O}` ] },
+    comeback: { tier: 1, t: [
+        c => `What a comeback! ${c.T} turn it around against ${c.O}`,
+        c => `${c.T} come from behind to beat ${c.O} ${c.SC}`,
+        c => `Never beaten: ${c.T} fight back to stun ${c.O}`,
+        c => `${c.O} led, ${c.T} won: a turnaround to remember` ] },
+    late_winner: { tier: 1, t: [
+        c => `${c.PL} strikes in minute ${c.minL} to beat ${c.O}`,
+        c => `Late drama: ${c.PL} wins it for ${c.T} at the death`,
+        c => `Minute ${c.minL}: ${c.PL} breaks ${c.O} hearts`,
+        c => `${c.T} leave it late, ${c.PL} the hero against ${c.O}` ] },
+    late_blow: { tier: 1, t: [
+        c => `Agony for ${c.T}: ${c.O} strike in minute ${c.minL}`,
+        c => `${c.OPL} silences the stadium with a late goal for ${c.O}`,
+        c => `Points slip away in minute ${c.minL} against ${c.O}`,
+        c => `Late sucker punch from ${c.O} stuns ${c.T}` ] },
+    collapse: { tier: 1, t: [
+        c => `${c.T} throw away a two-goal lead against ${c.O}`,
+        c => `From comfortable to costly: ${c.T} let ${c.O} back in`,
+        c => `Two up and still no win: questions for ${c.T}` ] },
+    upset_win: { tier: 1, t: [
+        c => `Giant-killing! ${c.T} stun favourites ${c.O} ${c.SC}`,
+        c => `Nobody saw this coming: ${c.T} beat ${c.O}`,
+        c => `${c.O} humbled by ${c.T}`,
+        c => `The bookmakers got it wrong: ${c.T} ${c.SC} ${c.O}` ] },
+    upset_loss: { tier: 1, t: [
+        c => `Embarrassment: ${c.T} beaten by underdogs ${c.O}`,
+        c => `${c.O} shock ${c.T} with a ${c.CS} win`,
+        c => `A day to forget: ${c.T} slip up against ${c.O}`,
+        c => `Banana skin: lowly ${c.O} take all three points off ${c.T}` ] },
+    thrash_win: { tier: 1, t: [
+        c => `${c.T} run riot: ${c.SC} against ${c.O}`,
+        c => `Demolition job: ${c.T} put ${c.gf} past ${c.O}`,
+        c => `${c.O} swept aside as ${c.T} win ${c.SC}`,
+        c => `Statement win: ${c.T} hammer ${c.O}` ] },
+    thrash_loss: { tier: 1, t: [
+        c => `Humiliation: ${c.O} put ${c.ga} past ${c.T}`,
+        c => `${c.T} torn apart by ${c.O}, ${c.CS}`,
+        c => `Dark day for ${c.T}: heavy defeat against ${c.O}`,
+        c => `${c.O} show no mercy against ${c.T}` ] },
+    rival_win: { tier: 1, t: [
+        c => `Sweet revenge: ${c.T} finally beat old rivals ${c.O}`,
+        c => `${c.T} get one over on ${c.O}, ${c.SC}`,
+        c => `The rivalry turns: ${c.T} take down ${c.O}` ] },
+    rival_loss: { tier: 1, t: [
+        c => `${c.O} do it again: ${c.T} beaten by their old rivals`,
+        c => `Same old story for ${c.T} against ${c.O}`,
+        c => `${c.O} remain the team ${c.T} cannot crack` ] },
+    // ---- de stand en reeksen ----
+    takes_lead: { tier: 2, t: [
+        c => `${c.T} go top of the league`,
+        c => `New leaders: ${c.T} move into first place`,
+        c => `${c.T} take over at the top after beating ${c.O}`,
+        c => `Top of the pile: ${c.T} overtake ${c.leaderBefore}` ] },
+    loses_lead: { tier: 2, t: [
+        c => `${c.T} knocked off the top, ${c.leader} take over`,
+        c => `${c.leader} are the new leaders as ${c.T} stumble`,
+        c => `First place gone: ${c.T} drop to ${c.posTxt}` ] },
+    top_clash: { tier: 2, t: [
+        c => `${c.T} win the big one against ${c.O}`,
+        c => `Six-pointer goes to ${c.T}: ${c.SC} against ${c.O}`,
+        c => `Title rivals ${c.O} beaten: a huge win for ${c.T}` ] },
+    win_streak: { tier: 2, t: [
+        c => `${c.N} wins in a row: ${c.T} are flying`,
+        c => `Nobody can stop ${c.T}: win number ${c.N} on the bounce`,
+        c => `${c.T} make it ${c.N} straight wins`,
+        c => `The winning run goes on: ${c.N} and counting for ${c.T}` ] },
+    unbeaten: { tier: 2, t: [
+        c => `${c.T} still unbeaten after ${c.N} matches`,
+        c => `${c.N} without defeat: ${c.T} are hard to beat`,
+        c => `Unbeaten run reaches ${c.N} for ${c.T}` ] },
+    losing_streak: { tier: 2, t: [
+        c => `Crisis at ${c.T}: ${c.N} defeats in a row`,
+        c => `${c.N} straight losses: pressure mounts on the ${c.T} coach`,
+        c => `Free fall: ${c.T} lose again, that makes ${c.N}`,
+        c => `No end in sight: defeat number ${c.N} in a row for ${c.T}` ] },
+    winless: { tier: 2, t: [
+        c => `${c.N} matches without a win for ${c.T}`,
+        c => `Still waiting: ${c.T} winless in ${c.N}`,
+        c => `The wait goes on for ${c.T}: no win in ${c.N}` ] },
+    clean_sheets: { tier: 2, t: [
+        c => `${c.T} defence stands firm: ${c.N} clean sheets in a row`,
+        c => `No way through: ${c.T} keep clean sheet number ${c.N} on the bounce`,
+        c => `${c.KP} unbeatable: ${c.N} matches without conceding` ] },
+    drought: { tier: 2, t: [
+        c => `Where are the goals? ${c.T} fail to score again`,
+        c => `${c.N} matches without a goal for ${c.T}`,
+        c => `Blunt ${c.T} attack draws another blank` ] },
+    danger: { tier: 2, t: [
+        c => `${c.T} bottom of the league: the alarm bells are ringing`,
+        c => `Last place for ${c.T} with ${c.left} to play`,
+        c => `Trouble at ${c.T}: rooted to the bottom of the table` ] },
+    goal_fest: { tier: 2, t: [
+        c => `${c.total}-goal thriller between ${c.T} and ${c.O}`,
+        c => `Goals galore: ${c.T} ${c.SC} ${c.O}`,
+        c => `Defences on holiday in a ${c.SC} spectacle` ] },
+    debut_goal: { tier: 2, t: [
+        c => `${c.PD} opens his account for ${c.T}`,
+        c => `First goal in ${c.T} colours for ${c.PD}`,
+        c => `${c.PD} off the mark as ${c.T} face ${c.O}` ] },
+    brace: { tier: 2, t: [
+        c => `${c.P2} at the double against ${c.O}`,
+        c => `Two-goal ${c.P2} leads the way for ${c.T}`,
+        c => `${c.P2} scores twice in the ${c.SC} against ${c.O}` ] },
+    // ---- elders in de competitie ----
+    leader_slips: { tier: 3, t: [
+        c => `Leaders ${c.A} beaten by ${c.B}: the title race opens up`,
+        c => `${c.B} do the rest of the league a favour by beating ${c.A}`,
+        c => `Shock at the top: ${c.A} lose to ${c.B}` ] },
+    cpu_thrash: { tier: 3, t: [
+        c => `Elsewhere: ${c.A} put ${c.ag} past ${c.B}`,
+        c => `${c.A} in ruthless mood: ${c.ag}-${c.bg} against ${c.B}`,
+        c => `${c.B} hammered ${c.ag}-${c.bg} by ${c.A}` ] },
+    bottom_shock: { tier: 3, t: [
+        c => `Bottom club ${c.A} stun ${c.B}`,
+        c => `Upset of the round: ${c.A} beat ${c.B}`,
+        c => `${c.B} slip up against the league's bottom side` ] },
+    fav_crisis: { tier: 3, t: [
+        c => `What is wrong with ${c.A}? Pre-season favourites down in ${c.posA}`,
+        c => `Favourites ${c.A} in trouble: only ${c.posA} in the table`,
+        c => `Crisis talks at ${c.A} after another poor result` ] },
+    surprise_leader: { tier: 3, t: [
+        c => `Fairytale: outsiders ${c.A} lead the league`,
+        c => `Nobody tipped them, but ${c.A} are top`,
+        c => `${c.A} keep defying the odds at the top of the table` ] },
+    // ---- gewone uitslagen ----
+    goalless: { tier: 4, t: [
+        c => `Stalemate: no goals between ${c.T} and ${c.O}`,
+        c => `0-0: ${c.T} and ${c.O} cancel each other out`,
+        c => `A point each in a match short on chances` ] },
+    win: { tier: 4, t: [
+        c => `${c.T} beat ${c.O} ${c.SC}`,
+        c => `Three points for ${c.T} against ${c.O}`,
+        c => `${c.PS} on target as ${c.T} see off ${c.O}`,
+        c => `Job done: ${c.T} too strong for ${c.O}`,
+        c => `${c.T} take the points, ${c.O} go home empty-handed` ] },
+    draw: { tier: 4, t: [
+        c => `${c.T} and ${c.O} share the points, ${c.SC}`,
+        c => `Honours even between ${c.T} and ${c.O}`,
+        c => `A point apiece: ${c.T} held by ${c.O}`,
+        c => `${c.T} have to settle for a draw against ${c.O}` ] },
+    loss: { tier: 4, t: [
+        c => `${c.O} too strong for ${c.T}, ${c.CS}`,
+        c => `Defeat for ${c.T} against ${c.O}`,
+        c => `${c.T} leave empty-handed after ${c.CS} loss to ${c.O}`,
+        c => `No points for ${c.T}: ${c.O} take the win` ] },
+    // ---- de cup ----
+    cup_final_win: { tier: 0, t: [
+        c => `EUROPEAN GLORY! ${c.T} win the Continental Cup`,
+        c => `${c.T} are kings of the continent after beating ${c.O}`,
+        c => `History made: the Continental Cup belongs to ${c.T}` ] },
+    cup_final_loss: { tier: 0, t: [
+        c => `Final heartbreak: ${c.O} deny ${c.T} the Continental Cup`,
+        c => `So near: ${c.T} beaten in the Continental final`,
+        c => `${c.O} lift the cup, ${c.T} left with silver` ] },
+    cup_pens_win: { tier: 1, t: [
+        c => `Nerves of steel: ${c.T} beat ${c.O} on penalties`,
+        c => `Shootout joy for ${c.T} in the ${c.round}`,
+        c => `${c.T} hold their nerve from the spot against ${c.O}` ] },
+    cup_pens_loss: { tier: 1, t: [
+        c => `Penalty pain: ${c.T} out of the cup against ${c.O}`,
+        c => `The cruellest exit: ${c.T} lose the shootout`,
+        c => `${c.O} win from the spot, ${c.T} go home` ] },
+    cup_giant: { tier: 1, t: [
+        c => `European shock: ${c.T} knock out ${c.O}`,
+        c => `${c.T} send favourites ${c.O} packing`,
+        c => `A night to remember: ${c.T} beat ${c.O} ${c.SC}` ] },
+    cup_win: { tier: 2, t: [
+        c => `${c.T} through: ${c.SC} against ${c.O} in the ${c.round}`,
+        c => `European run continues for ${c.T}`,
+        c => `${c.O} beaten, ${c.T} march on in the Continental Cup`,
+        c => `Next round! ${c.T} too good for ${c.O}` ] },
+    cup_exit: { tier: 2, t: [
+        c => `European dream over: ${c.T} out against ${c.O}`,
+        c => `${c.O} end the cup run of ${c.T} in the ${c.round}`,
+        c => `End of the road in the ${c.round} for ${c.T}`,
+        c => `${c.T} bow out of the Continental Cup` ] }
+};
+// Kies een kop: de belangrijkste soort gebeurtenis wint, nooit twee keer dezelfde soort na elkaar als er iets anders is, en nooit dezelfde zin als de vorige keer
+function chooseHeadline(keys, c) {
+    keys = keys.filter(k => NEWS[k]);
+    if (!keys.length) return '';
+    let cand = keys.filter(k => k !== newsMemory.last);
+    if (!cand.length) cand = keys;
+    let best = Math.min(...cand.map(k => NEWS[k].tier));
+    // af en toe gaat de krant over de rest van de competitie
+    const other = cand.filter(k => NEWS[k].tier === 3);
+    if (other.length && best >= 2 && Math.random() < (best === 2 ? 0.3 : 0.7)) best = 3;
+    const key = _pick(cand.filter(k => NEWS[k].tier === best));
+    // elke zin van een soort komt één keer aan bod voor er een terugkomt
+    const n = NEWS[key].t.length;
+    let used = Array.isArray(newsMemory.used[key]) ? newsMemory.used[key] : [];
+    let free = [...Array(n).keys()].filter(i => !used.includes(i));
+    if (!free.length) { const lastIdx = used[used.length - 1]; used = []; free = [...Array(n).keys()].filter(i => n === 1 || i !== lastIdx); }
+    const idx = _pick(free);
+    used.push(idx);
+    newsMemory.used[key] = used; newsMemory.last = key;
+    return NEWS[key].t[idx](c);
+}
+function leagueRivalName() {
+    const cnt = {};
+    ((careerLog && careerLog.seasons) || []).forEach(s => { const ch = s.table && s.table[0]; if (ch && !ch.user) cnt[ch.name] = (cnt[ch.name] || 0) + 1; });
+    const top = Object.entries(cnt).sort((a, b) => b[1] - a[1])[0];
+    return top && top[1] >= 2 ? top[0] : null;
+}
+function matchStory(userGoals, cpuGoals) {
+    const ev = [...userGoals.map(g => ({ min: g.min, u: 1, g })), ...cpuGoals.map(g => ({ min: g.min, u: 0, g }))].sort((a, b) => a.min - b.min);
+    let u = 0, o = 0, trailed = false, ledByTwo = false;
+    ev.forEach(e => { if (e.u) u++; else o++; if (o > u) trailed = true; if (u - o >= 2) ledByTwo = true; });
+    const last = ev[ev.length - 1] || null;
+    let lateU = false, lateO = false;
+    if (last && last.min >= 84) {
+        const bu = u - (last.u ? 1 : 0), bo = o - (last.u ? 0 : 1);
+        if (last.u && bu === bo) lateU = true;                      // gelijk -> winst
+        if (!last.u && (bu === bo || bu - bo === 1)) lateO = true;  // gelijk -> verlies, of winst -> gelijk
+    }
+    return { trailed, ledByTwo, last, lateU, lateO };
+}
+function pushNews(md, text) {
+    if (!text) return;
+    seasonNews.push({ md, text });
+    const lr = careerLog && careerLog.seasons.find(x => x.season === currentSeason);
+    if (lr) lr.news = seasonNews.slice();
+    renderNewsTicker();
+}
+function renderNewsTicker() {
+    const box = document.getElementById('news-ticker'), el = document.getElementById('news-text');
+    if (!box || !el) return;
+    const last = seasonNews[seasonNews.length - 1];
+    if (!last) { box.classList.add('hidden'); return; }
+    box.classList.remove('hidden');
+    el.textContent = last.text;
+    el.classList.remove('goal-item'); void el.offsetWidth; el.classList.add('goal-item');
+}
+function seasonNewsHtml() {
+    if (!seasonNews.length) return '';
+    return `<div class="poke-box-dark p-4 md:p-5 text-left shadow-2xl">
+        <p class="text-[10px] text-slate-400 font-black uppercase tracking-widest mb-2 border-b border-slate-700 pb-1">&#128240; The season in headlines</p>
+        <div class="flex flex-col gap-1.5">${seasonNews.map(n => `<p class="text-xs md:text-sm text-slate-200 leading-snug"><span class="text-slate-500 font-black mr-2">${n.md}</span>${n.text}</p>`).join('')}</div>
+    </div>`;
+}
+// Na een competitiewedstrijd. before = stand voor de speeldag (gesorteerd), de huidige standings zijn al bijgewerkt.
+function leagueHeadline(matchday, cpuOp, userGoals, cpuGoals, before) {
+    const gf = userGoals.length, ga = cpuGoals.length;
+    const after = [...standings].sort(tableOrder);
+    const posOf = (tbl, fn) => tbl.findIndex(fn) + 1;
+    const afterPos = posOf(after, t => t.isUser), beforePos = posOf(before, t => t.isUser);
+    const lg = (kickNow && kickNow.season === currentSeason && kickNow.league) || [];
+    const info = name => lg.find(r => r.name === name) || {};
+    const me = lg.find(r => r.user) || {};
+    const userS = me.S || clubS(myTeamEnginePools), oppS = info(cpuOp.name).S || clubS(cpuOp.pools);
+    const res = seasonLeagueResults;
+    const streak = fn => { let n = 0; for (let i = res.length - 1; i >= 0 && fn(res[i]); i--) n++; return n; };
+    const counts = {}; userGoals.forEach(g => { counts[g.name] = (counts[g.name] || 0) + 1; });
+    const by = n => Object.keys(counts).find(k => counts[k] === n) || Object.keys(counts).find(k => counts[k] > n);
+    const story = matchStory(userGoals, cpuGoals);
+    const debut = userGoals.find(g => g.p && playerStats[g.p.id] && playerStats[g.p.id].goals === counts[g.name]);
+    const leaderAfter = after[0], leaderBefore = before[0];
+    const gk = userTeam['GK'];
+    const c = { T: userTeamName, O: cpuOp.name, SC: `${gf}-${ga}`, CS: `${ga}-${gf}`, gf, ga, total: gf + ga,
+        P3: _sn(by(3)), P2: _sn(by(2)), PS: _sn(Object.keys(counts)[0] || userTeamName), PD: debut ? _sn(debut.name) : '',
+        PL: story.last && story.last.u ? _sn(story.last.g.name) : '', OPL: story.last && !story.last.u ? story.last.g.name : cpuOp.name, minL: story.last ? story.last.min : 90,
+        leader: leaderAfter.isUser ? (after[1] || {}).name : leaderAfter.name, leaderBefore: leaderBefore ? leaderBefore.name : '',
+        champ: leaderAfter.name, posTxt: ordinalText(afterPos), left: 7 - matchday === 1 ? 'one match' : `${7 - matchday} matches`, KP: gk ? _sn(gk.name) : userTeamName, N: 0 };
+    const keys = [];
+    const win = gf > ga, loss = gf < ga, draw = gf === ga;
+    const last = matchday >= 7;
+    if (last && afterPos === 1) keys.push('title_won');
+    if (last && afterPos === 2 && after[0].pts - after[1].pts <= 3) keys.push('title_missed');
+    if (last && afterPos === after.length) keys.push('finished_last');
+    if (last && beforePos === before.length && afterPos < after.length) keys.push('survived');
+    if (last && afterPos > 2 && afterPos < after.length) keys.push('season_end');
+    if (Object.values(counts).some(n => n >= 3)) keys.push('hat_trick');
+    if (win && story.trailed) keys.push('comeback');
+    if (win && story.lateU) keys.push('late_winner');
+    if (!win && story.lateO) keys.push('late_blow');
+    if (!win && story.ledByTwo) keys.push('collapse');
+    if (win && oppS - userS >= 4) keys.push('upset_win');
+    if (loss && userS - oppS >= 5) keys.push('upset_loss');
+    if (gf - ga >= 3) keys.push('thrash_win');
+    if (ga - gf >= 3) keys.push('thrash_loss');
+    const rival = leagueRivalName();
+    if (rival && rival === cpuOp.name && win) keys.push('rival_win');
+    if (rival && rival === cpuOp.name && loss) keys.push('rival_loss');
+    if (!last && matchday >= 2 && afterPos === 1 && beforePos > 1) keys.push('takes_lead');
+    if (!last && matchday >= 3 && beforePos === 1 && afterPos > 1) keys.push('loses_lead');
+    if (win && matchday >= 3 && beforePos <= 3 && posOf(before, t => t.id === cpuOp.id) <= 3) keys.push('top_clash');
+    const wS = streak(r => r.gf > r.ga), ubS = streak(r => r.gf >= r.ga), lS = streak(r => r.gf < r.ga), wlS = streak(r => r.gf <= r.ga), csS = streak(r => r.ga === 0), drS = streak(r => r.gf === 0);
+    if (wS >= 3) { keys.push('win_streak'); c.N = wS; }
+    else if (ubS >= 5) { keys.push('unbeaten'); c.N = ubS; }
+    else if (lS >= 3) { keys.push('losing_streak'); c.N = lS; }
+    else if (wlS >= 4) { keys.push('winless'); c.N = wlS; }
+    else if (csS >= 3) { keys.push('clean_sheets'); c.N = csS; }
+    else if (drS >= 2) { keys.push('drought'); c.N = drS; }
+    if (!last && matchday >= 4 && afterPos === after.length) keys.push('danger');
+    if (gf + ga >= 6 && Math.abs(gf - ga) <= 2) keys.push('goal_fest');
+    if (debut && !Object.values(counts).some(n => n >= 3)) keys.push('debut_goal');
+    if (Object.values(counts).some(n => n === 2)) keys.push('brace');
+    // de rest van de competitie
+    const cpu = roundCpuResults || [];
+    const bRank = name => posOf(before, t => t.name === name);
+    const slip = cpu.find(m => matchday >= 2 && ((bRank(m.a) === 1 && m.ag < m.bg) || (bRank(m.b) === 1 && m.bg < m.ag)));
+    const big = cpu.find(m => Math.abs(m.ag - m.bg) >= 4);
+    const shock = cpu.find(m => matchday >= 3 && ((bRank(m.a) === before.length && m.ag > m.bg && bRank(m.b) <= 3) || (bRank(m.b) === before.length && m.bg > m.ag && bRank(m.a) <= 3)));
+    const fav = lg.find(r => !r.user && r.oddsRank === 1);
+    const favPos = fav ? posOf(after, t => t.name === fav.name) : 0;
+    const out = leaderAfter && !leaderAfter.isUser && (info(leaderAfter.name).oddsRank || 0) >= 5 ? leaderAfter : null;
+    const setAB = (a, b, ag, bg) => { c.A = a; c.B = b; c.ag = ag; c.bg = bg; };
+    const cpuKeys = [];
+    if (slip) cpuKeys.push(['leader_slips', () => bRank(slip.a) === 1 ? setAB(slip.a, slip.b, slip.ag, slip.bg) : setAB(slip.b, slip.a, slip.bg, slip.ag)]);
+    if (big) cpuKeys.push(['cpu_thrash', () => big.ag > big.bg ? setAB(big.a, big.b, big.ag, big.bg) : setAB(big.b, big.a, big.bg, big.ag)]);
+    if (shock) cpuKeys.push(['bottom_shock', () => shock.ag > shock.bg ? setAB(shock.a, shock.b, shock.ag, shock.bg) : setAB(shock.b, shock.a, shock.bg, shock.ag)]);
+    if (fav && matchday >= 4 && favPos >= 5) cpuKeys.push(['fav_crisis', () => { c.A = fav.name; c.posA = ordinalText(favPos) + ' place'; }]);
+    if (out && matchday >= 3) cpuKeys.push(['surprise_leader', () => { c.A = out.name; }]);
+    // hooguit één verhaal over de andere clubs per speeldag, zodat de juiste namen in de kop staan
+    if (cpuKeys.length) { const k = _pick(cpuKeys.filter(x => x[0] !== newsMemory.last).length ? cpuKeys.filter(x => x[0] !== newsMemory.last) : cpuKeys); k[1](); keys.push(k[0]); }
+    if (draw && gf === 0) keys.push('goalless');
+    keys.push(win ? 'win' : (draw ? 'draw' : 'loss'));
+    return chooseHeadline(keys, c);
+}
+function cupHeadline(roundName, cupOp, gf, ga, won, pens) {
+    const lgS = clubS(myTeamEnginePools), oppS = clubS(cupOp.pools);
+    const c = { T: userTeamName, O: cupOp.name, SC: `${gf}-${ga}`, CS: `${ga}-${gf}`, round: roundName };
+    const keys = [];
+    const fin = roundName === 'Continental Final';
+    if (fin) keys.push(won ? 'cup_final_win' : 'cup_final_loss');
+    if (pens) keys.push(won ? 'cup_pens_win' : 'cup_pens_loss');
+    if (won && oppS - lgS >= 3) keys.push('cup_giant');
+    keys.push(won ? 'cup_win' : 'cup_exit');
+    return chooseHeadline(keys, c);
+}
+
 // ---------- krachtentabel ----------
 const _tot = o => o.poss + o.create + o.prevent + o.finish + o.block;
 function clubS(pools) { return Math.sqrt(7.5 * _tot(pools) / 5); }
@@ -2615,12 +2970,7 @@ function clubS(pools) { return Math.sqrt(7.5 * _tot(pools) / 5); }
 // Vroege verschuiving van de CPU voor de gekozen generaties: speel je met één zwakke generatie, dan zijn de clubs in het begin zwakker;
 // speel je met alle generaties, dan verandert er niets (daar is de moeilijkheid al goed). Ertussen schuift het evenredig mee.
 function activeEarlyShift() {
-    const act = genData.filter(g => g.active).map(g => g.id);
-    if (!act.length || !BALANCE.GEN_EARLY_SHIFT) return 0;
-    const avgShift = act.reduce((a, g) => a + (BALANCE.GEN_EARLY_SHIFT[g] || 0), 0) / act.length;
-    // Een grotere pool geeft betere kaarten (bij 2+ generaties ongeveer +2,5 S): dan hoeft de CPU minder zwakker te worden
-    const bonus = act.length > 1 ? BALANCE.GEN_POOL_BONUS : 0;
-    return (avgShift + bonus) * (genData.length - act.length) / (genData.length - 1);
+    return (BALANCE.GEN_EARLY_SHIFT && BALANCE.GEN_EARLY_SHIFT[1]) || 0;   // één rennerspool: de vaste vroege verschuiving
 }
 // Cuptegenstanders: groei, rondeverschuiving en de vroege verschuiving van zwakke generaties
 function cupLateEase(season) { return (BALANCE.CUP_LATE_EASE || 0) * (1 - Math.exp(-(Math.max(1, season) - 1) / BALANCE.CUP_LATE_EASE_TAU)); }
@@ -2689,6 +3039,14 @@ function mulberry32(a) {
         return ((t ^ t >>> 14) >>> 0) / 4294967296;
     };
 }
+// Verdeling van de kansen volgens balbezit. Een deel van een kans wordt geloot (5,6 kansen = 60% kans op een zesde),
+// zodat elke verbetering van je middenveld meetelt in plaats van pas bij een drempel.
+function splitChances(ratio, total, rnd) {
+    const x = (ratio || 0) * total;
+    let u = Math.floor(x);
+    if ((rnd || Math.random)() < x - u) u++;
+    return Math.max(0, Math.min(total, u));
+}
 // Kans dat een aanval de verdediging verslaat. Bij gelijke ploegen is dit 1/2,1 (zoals altijd); een sterkere aanval krijgt meer voordeel.
 function convProb(att, def) {
     const p = BALANCE.MATCH_CONV_POWER;
@@ -2701,7 +3059,7 @@ function cpuEdgeProb(s1, s2) {
 }
 function mcUserMatch(u, c, rnd) {
     const pu = Math.pow(u.poss, BALANCE.MATCH_POSS_EXP), pc = Math.pow(c.poss, BALANCE.MATCH_POSS_EXP);
-    const uc = Math.round(pu / (pu + pc) * 10) || 0, cc = 10 - uc;
+    const uc = splitChances(pu / (pu + pc), 10, rnd), cc = 10 - uc;
     const cl = convProb;
     const a = cl(u.create, c.prevent), b = cl(u.finish, c.block), d = cl(c.create, u.prevent), e = cl(c.finish, u.block);
     let ug = 0, cg = 0;
@@ -2725,7 +3083,7 @@ function titleOdds(rows, runs) {
     const thr = 4200 * BALANCE.LEAGUE_BASE_FACTOR * leagueGrowthFactor(currentSeason);
     const wins = new Array(n).fill(0);
     for (let r = 0; r < runs; r++) {
-        const pts = new Array(n).fill(0), gd = new Array(n).fill(0);
+        const pts = new Array(n).fill(0), gd = new Array(n).fill(0), gf = new Array(n).fill(0);
         let order = rows.map((_, i) => i);
         for (let round = 0; round < n - 1; round++) {
             for (let k = 0; k < n / 2; k++) {
@@ -2733,13 +3091,13 @@ function titleOdds(rows, runs) {
                 if (rows[a].isUser) { const x = mcUserMatch(rows[a].pools, rows[b].pools, rnd); ga = x[0]; gb = x[1]; }
                 else if (rows[b].isUser) { const x = mcUserMatch(rows[b].pools, rows[a].pools, rnd); ga = x[1]; gb = x[0]; }
                 else { const x = mcCpuMatch(rows[a].pools, rows[b].pools, thr, rnd); ga = x[0]; gb = x[1]; }
-                gd[a] += ga - gb; gd[b] += gb - ga;
+                gd[a] += ga - gb; gd[b] += gb - ga; gf[a] += ga; gf[b] += gb;
                 if (ga > gb) pts[a] += 3; else if (ga < gb) pts[b] += 3; else { pts[a]++; pts[b]++; }
             }
             order = [order[0], order[n - 1], ...order.slice(1, n - 1)];
         }
         let best = 0;
-        for (let i = 1; i < n; i++) if (pts[i] > pts[best] || (pts[i] === pts[best] && gd[i] > gd[best])) best = i;
+        for (let i = 1; i < n; i++) if (pts[i] > pts[best] || (pts[i] === pts[best] && (gd[i] > gd[best] || (gd[i] === gd[best] && gf[i] > gf[best])))) best = i;
         wins[best]++;
     }
     return wins.map(w => w / runs);
@@ -2914,6 +3272,7 @@ window.openBoardBriefing = function(auto, opts) {
         <p class="text-center text-sm font-black mb-2">The board is currently <span class="${w.color}">${w.word.toLowerCase()}</span> with you.</p>
         ${crit ? '<p class="text-center text-red-400 font-black text-xs uppercase tracking-wider mb-2">Last chance: another bad season and you are out.</p>' : ''}
         ${recap}
+        ${visionStatusHtml()}
         <p class="text-xs md:text-sm text-slate-300 text-center leading-relaxed mt-2">The board evaluates two things: whether you improve the squad, and how you finish compared to what it hoped for.${opts.kickoff ? '' : ' Tap ODDS in the top bar to see how your changes move the title race.'}</p>
         <button onclick="closeBoardBriefing(${auto ? 'true' : 'false'}, ${opts.kickoff ? 'true' : 'false'})" class="mt-4 w-full px-6 py-3.5 bg-gradient-to-r from-purple-600 to-purple-500 hover:from-purple-400 text-white font-black rounded-full uppercase tracking-widest text-sm md:text-base">${btnLabel}</button>`;
     const modal = document.getElementById('board-modal');
@@ -3342,6 +3701,9 @@ function recordSeasonInLog(finalPos, boardResult) {
         cup: finalPos <= 2 ? 0 : -1,          // -1 niet gekwalificeerd, 0..3 rondes gewonnen, 4 = cup gewonnen
         rating,
         topScorer: best && best.seasonGoals > 0 ? { name: best.p.name, goals: best.seasonGoals } : null,
+        topAssister: (a => a && (a.seasonAssists || 0) > 0 ? { name: a.p.name, assists: a.seasonAssists } : null)(Object.values(playerStats).filter(ps => ps && ps.p).sort((x, y) => (y.seasonAssists || 0) - (x.seasonAssists || 0))[0]),
+        news: seasonNews.slice(),
+        vision: clubVision ? { ...clubVision, have: visionCount(clubVision) } : null,
         board: boardResult ? { name: boardResult.name, text: boardResult.text, outcome: boardResult.resolved ? boardResult.outcome : 'pending' } : null
     };
     const idx = L.seasons.findIndex(x => x.season === currentSeason);
@@ -3476,7 +3838,7 @@ window.openCareerOverview = function(final = false) {
     const cups = S.filter(x => x.cup === 4);
     const statusTxt = { active: 'Active career', retired: '👑 Retired as a legend', sacked: '❌ Sacked' }[L.status] || 'Active career';
     const squadIds = Object.values(userTeam).filter(Boolean).map(p => p.id);
-    const scorers = Object.values(playerStats).filter(ps => ps && ps.p && ps.goals > 0).sort((a, b) => b.goals - a.goals).slice(0, 10);
+    const scorers = Object.values(playerStats).filter(ps => ps && ps.p && (ps.goals > 0 || (ps.assists || 0) > 0)).sort((a, b) => (b.goals - a.goals) || ((b.assists || 0) - (a.assists || 0))).slice(0, 10);
     const bestSeason = S.length ? [...S].sort((a, b) => b.pts - a.pts || (b.gf - b.ga) - (a.gf - a.ga))[0] : null;
     const M = L.matches;
     const seasonList = arr => arr.length ? arr.map(x => 'S' + x.season).join(', ') : '–';
@@ -3497,7 +3859,7 @@ window.openCareerOverview = function(final = false) {
             <span class="text-slate-500 font-black w-5 text-right text-sm">${i + 1}</span>
             <img src="${ps.p.sprite}" class="w-9 h-9 object-contain">
             <span class="text-white font-bold text-sm flex-1 truncate">${ps.p.name}${squadIds.includes(ps.p.id) ? '' : ' <span class="text-[9px] text-slate-500 font-bold uppercase ml-1">left the club</span>'}</span>
-            <span class="text-yellow-400 font-black text-sm">${ps.goals} ⚽</span>
+            <span class="text-yellow-400 font-black text-sm">${ps.goals} ⚽</span><span class="text-sky-300 font-black text-sm w-12 text-right">${ps.assists || 0} A</span>
         </div>`).join('') : '<p class="text-slate-400 text-sm text-center py-3">No goals scored yet.</p>';
 
     const rows = S.map(r => `
@@ -3531,7 +3893,7 @@ window.openCareerOverview = function(final = false) {
             <thead><tr class="text-slate-500 uppercase tracking-wider"><th class="py-1 px-1.5 md:px-2 whitespace-nowrap">Season</th><th class="py-1 px-1.5 md:px-2 whitespace-nowrap">Finish</th><th class="py-1 px-1.5 md:px-2 whitespace-nowrap">Pts</th><th class="py-1 px-1.5 md:px-2 whitespace-nowrap">Rating</th><th class="py-1 px-1.5 md:px-2 whitespace-nowrap">W-D-L</th><th class="py-1 px-1.5 md:px-2 whitespace-nowrap">Cup</th><th class="py-1 px-1.5 md:px-2 whitespace-nowrap">Scorer</th></tr></thead>
             <tbody>${rows}</tbody></table></div>` : ''}
 
-        <h3 class="text-sm md:text-base font-black text-white uppercase tracking-widest mt-5 mb-2">All-time top scorers</h3>
+        <h3 class="text-sm md:text-base font-black text-white uppercase tracking-widest mt-5 mb-2">All-time goals and assists</h3>
         <div class="flex flex-col gap-1.5">${scorersHtml}</div>
 
         <h3 class="text-sm md:text-base font-black text-white uppercase tracking-widest mt-5 mb-2">Career stats</h3>
@@ -3580,6 +3942,7 @@ function resumeMatchCenter() {
     document.getElementById('results-feed-list').innerHTML = window._resumeFeedHtml || '';
     updateObjectiveLine();
     updateTableUI();
+    renderNewsTicker();
 
     const awards = document.getElementById('post-season-awards');
     if (savePhase === 'season') {
@@ -3792,6 +4155,16 @@ function handleModalClick(event) {
             modal.classList.remove('hidden');
             modal.classList.add('flex');
 
+            if (userTeam[posId] && isTransferWindow && pendingRoll && pendingRoll.transfer && pendingRoll.posId === posId) {
+                modalTitle.innerText = "Transfer Scout";
+                btnCancel.classList.add('hidden');
+                btnFloatingClose.classList.add('hidden');
+                btnReroll.classList.add('hidden');
+                btnReroll.classList.remove('flex');
+                rerollWrapper.classList.add('hidden');
+                await rollOptions(role, displayPos);
+                return;
+            }
             if (userTeam[posId] !== null) {
                 modalTitle.innerText = "Current Player";
                 btnReroll.classList.add('hidden');
@@ -3970,6 +4343,7 @@ await rollOptions(role, displayPos);
     document.getElementById('btn-reroll').classList.add('hidden');
     document.getElementById('btn-reroll').classList.remove('flex');
     document.getElementById('reroll-wrapper').classList.add('hidden');
+    pendingRoll = { posId: currentDraftPos, ids: null, transfer: true };   // de transfer is betaald: de opties liggen vast tot je kiest
     await rollOptions(role, displayPos);
 }
 
@@ -3980,19 +4354,22 @@ await rollOptions(role, displayPos);
             document.getElementById('btn-reroll').classList.add('hidden');
             document.getElementById('btn-reroll').classList.remove('flex');
             const posConfig = formations[activeFormation].positions.find(f => f.id === currentDraftPos);
-            await rollOptions(posConfig.role, posConfig.display);
+            await rollOptions(posConfig.role, posConfig.display, true);
         }
 
-        async function rollOptions(role, displayPos) {
+        async function rollOptions(role, displayPos, forceNew) {
             const gacha = document.getElementById('gacha-container');
             gacha.innerHTML = `<div class="col-span-full flex flex-col items-center justify-center py-10"><div class="spinner mb-4"></div><p class="text-yellow-400 font-bold uppercase tracking-widest animate-pulse text-sm">Scouting...</p></div>`;
             const draftedIds = Object.values(userTeam).filter(p => p !== null).map(p => p.id);
             let availableIds = globalIdPool.filter(id => !draftedIds.includes(id));
             let chosenIds = [];
+            const mine = pendingRoll && pendingRoll.posId === currentDraftPos ? pendingRoll : null;
+            const kept = (!forceNew && mine && Array.isArray(mine.ids)) ? mine.ids.filter(id => RIDER_BY_ID[id] && !draftedIds.includes(id)) : [];
             // Legendes verschijnen minder vaak: gewicht LEGEND_DRAFT_WEIGHT tegenover 1 voor een gewone renner
             // (0,4 geeft ongeveer 2% legendes per kaart, zoals de sterkste pokémon in Gen 1)
             const weightOf = id => (RIDER_BY_ID[id] && RIDER_BY_ID[id].team === 'Legends') ? LEGEND_DRAFT_WEIGHT : 1;
-            for(let i=0; i<4; i++) {
+            if (kept.length) chosenIds = kept;
+            else for(let i=0; i<4; i++) {
                 if(availableIds.length === 0) break;
                 const total = availableIds.reduce((a, id) => a + weightOf(id), 0);
                 let x = Math.random() * total, r = 0;
@@ -4000,6 +4377,8 @@ await rollOptions(role, displayPos);
                 chosenIds.push(availableIds[r]);
                 availableIds.splice(r, 1);
             }
+            pendingRoll = { posId: currentDraftPos, ids: chosenIds, transfer: !!(mine && mine.transfer) };
+            SaveManager.save();
             const pokemonList = await Promise.all(chosenIds.map(id => fetchPokemonDetail(id)));
             currentRolledOptions = pokemonList.filter(p => p !== null);
             renderGachaCards(currentRolledOptions, role);
@@ -4074,9 +4453,10 @@ await rollOptions(role, displayPos);
 
             AudioManager.playCry(pData.cry);
             userTeam[currentDraftPos] = pData;
+            pendingRoll = null;
 
             if(!playerStats[pData.id]) {
-                playerStats[pData.id] = { p: pData, goals: 0, seasonGoals: 0, cleanSheets: 0, perfScore: 0, seasonPerfScore: 0 };
+                playerStats[pData.id] = { p: pData, goals: 0, seasonGoals: 0, assists: 0, seasonAssists: 0, cleanSheets: 0, perfScore: 0, seasonPerfScore: 0 };
             }
             
             closeModal();
@@ -4123,6 +4503,53 @@ await rollOptions(role, displayPos);
             });
             if(pool.length === 0) return { name: "Striker" };
             return pool[Math.floor(Math.random() * pool.length)];
+        }
+
+        // Wie gaf de voorzet? De positie bepaalt de basis; daarbovenop tellen Hills (zwaar) en Sprint (licht) kwadratisch mee,
+        // zodat een creatieve, snelle renner duidelijk meer assists geeft. De doelpuntenmaker zelf nooit.
+        function pickAssister(scorer) {
+            const base = { AM: 10, WG: 8, WM: 7, CM: 6, FB: 3, ST: 3, DM: 2, CB: 1, GK: 0 };
+            const cand = [];
+            formations[activeFormation].positions.forEach(pos => {
+                const p = userTeam[pos.id];
+                if (!p || (scorer && p.id === scorer.id)) return;
+                const craft = Math.max(20, p.normStats.spa * 0.7 + p.normStats.spe * 0.3);
+                const w = (base[pos.role] || 0) * Math.pow(craft / 60, 2);
+                if (w > 0) cand.push([p, w]);
+            });
+            const total = cand.reduce((a, c) => a + c[1], 0);
+            if (!total) return null;
+            let x = Math.random() * total;
+            for (const [p, w] of cand) { if ((x -= w) <= 0) return p; }
+            return cand[cand.length - 1][0];
+        }
+        // Een doelpunt van jouw team: de maker en (in 8 op de 10 gevallen) de aangever liggen meteen vast
+        function makeUserGoal(min) {
+            const sc = getWeightedScorer();
+            const as = Math.random() < 0.8 ? pickAssister(sc) : null;
+            return { min, name: sc.name, p: sc, a: as ? { id: as.id, name: as.name } : null };
+        }
+        // Punten voor de speler van het seizoen: goal 3, voorzet 2, en bij een clean sheet verdedigers en keeper 4,
+        // de verdedigende middenvelder 3 en de andere middenvelders 2.
+        function awardMatchPerformance(goalList, conceded) {
+            const add = (p, pts) => { const ps = p && playerStats[p.id]; if (ps) { ps.perfScore += pts; ps.seasonPerfScore += pts; } };
+            goalList.forEach(g => {
+                if (!g.p || !playerStats[g.p.id]) return;
+                playerStats[g.p.id].goals += 1;
+                playerStats[g.p.id].seasonGoals += 1;
+                add(g.p, 3);
+                const ap = g.a && playerStats[g.a.id];
+                if (ap) { ap.assists = (ap.assists || 0) + 1; ap.seasonAssists = (ap.seasonAssists || 0) + 1; add({ id: g.a.id }, 2); }
+            });
+            if (conceded === 0) {
+                formations[activeFormation].positions.forEach(pos => {
+                    const p = userTeam[pos.id];
+                    if (!p || !playerStats[p.id]) return;
+                    if (['GK', 'CB', 'FB'].includes(pos.role)) { playerStats[p.id].cleanSheets += 1; add(p, 4); }
+                    else if (pos.role === 'DM') add(p, 3);
+                    else if (pos.role === 'CM' || pos.role === 'WM') add(p, 2);
+                });
+            }
         }
 
         function getDefenders() {
@@ -4247,6 +4674,7 @@ await rollOptions(role, displayPos);
             
             Object.values(playerStats).forEach(ps => { 
                 ps.seasonGoals = 0; 
+                ps.seasonAssists = 0;
                 ps.seasonPerfScore = 0; 
             });
             document.body.className = 'min-h-screen flex flex-col relative bg-stadium';
@@ -4264,6 +4692,8 @@ await rollOptions(role, displayPos);
             
             if (!leagueReady) initStandings();
             leagueReady = false;
+            checkClubVision();
+            seasonNews = []; seasonLeagueResults = []; roundCpuResults = []; renderNewsTicker();
             takeKickoffSnapshot();
             updateObjectiveLine();
             updateTableUI();
@@ -4299,14 +4729,17 @@ await rollOptions(role, displayPos);
             document.getElementById('tv-home-scorers').innerHTML = '';
             document.getElementById('tv-away-scorers').innerHTML = '';
             
-           // 📉 Verlaagd van 13 naar 10 totale kansen per wedstrijd
-            const totalChances = 10; 
+            const totalChances = 10;
+            skipMatch = false;
+            document.getElementById('btn-skip-match').classList.remove('hidden');
+            // Een wedstrijd die al begonnen was (pagina herladen) krijgt dezelfde uitslag
+            const pm = pendingMatch && pendingMatch.type === 'league' && pendingMatch.season === currentSeason && pendingMatch.matchday === matchday ? pendingMatch : null;
             
             const uPoss = myTeamEnginePools.poss || 0;
             const cPoss = cpuOp.pools.poss || 0;
             const possRatio = (Math.pow(uPoss, BALANCE.MATCH_POSS_EXP)) / (Math.pow(uPoss, BALANCE.MATCH_POSS_EXP) + Math.pow(cPoss, BALANCE.MATCH_POSS_EXP));
             
-            const userChances = Math.round(possRatio * totalChances) || 0; 
+            const userChances = pm ? pm.userChances : splitChances(possRatio, totalChances);
             const cpuChances = totalChances - userChances;
             
             const userPossPct = Math.round(possRatio * 100) || 50;
@@ -4341,8 +4774,7 @@ await rollOptions(role, displayPos);
             const cpuGoalMins = getUniqueMinutes(rawCpuGoals, 1, 89, usedMins);
 
             for(let m of userGoalMins) {
-                const scorer = getWeightedScorer();
-                if(scorer) userGoals.push({ min: m, name: scorer.name, p: scorer });
+                userGoals.push(makeUserGoal(m));
             }
             for(let m of cpuGoalMins) {
                 const cpuScorers = cpuScorerPool(cpuOp.names);
@@ -4351,27 +4783,18 @@ await rollOptions(role, displayPos);
 
             userGoals.sort((a,b)=>a.min-b.min);
             cpuGoals.sort((a,b)=>a.min-b.min);
+            if (pm) { userGoals = pm.userGoals || []; cpuGoals = pm.cpuGoals || []; }
+            else { pendingMatch = { type: 'league', season: currentSeason, matchday, userChances, userGoals, cpuGoals }; SaveManager.save(); }
             await runLiveMatch([...userGoals], [...cpuGoals], 90, false);
+            const tableBefore = [...standings].sort(tableOrder);
             processResult(0, cpuOp.id, userGoals.length, cpuGoals.length);
             logMatch('League', userGoals.length, cpuGoals.length, cpuOp.name);
             
-            userGoals.forEach(g => { 
-                if(g.p && playerStats[g.p.id]) { 
-                    playerStats[g.p.id].goals += 1; 
-                    playerStats[g.p.id].seasonGoals += 1; 
-                    playerStats[g.p.id].perfScore += 3; 
-                    playerStats[g.p.id].seasonPerfScore += 3;
-                } 
-            });
-            if(cpuGoals.length === 0) {
-                getDefenders().forEach(d => { 
-                    if(d && playerStats[d.id]) { 
-                        playerStats[d.id].cleanSheets += 1; 
-                        playerStats[d.id].perfScore += 4; 
-                        playerStats[d.id].seasonPerfScore += 4;
-                    } 
-                });
-            }
+            awardMatchPerformance(userGoals, cpuGoals.length);
+            seasonLeagueResults.push({ gf: userGoals.length, ga: cpuGoals.length });
+            try { pushNews('MD' + matchday, leagueHeadline(matchday, cpuOp, userGoals, cpuGoals, tableBefore)); } catch (e) { console.error('headline', e); }
+            pendingMatch = null;
+            document.getElementById('btn-skip-match').classList.add('hidden');
 
             updateTableUI();
             
@@ -4400,7 +4823,7 @@ await rollOptions(role, displayPos);
             const isCupFinal = (savePhase === 'cup' || savePhase === 'cupwon') && currentCupRound === 3;
             let hScore = parseInt(document.getElementById('tv-home-score').innerText);
             let aScore = parseInt(document.getElementById('tv-away-score').innerText); 
-            const delay = ms => new Promise(res => setTimeout(res, ms));
+            const delay = ms => skipMatch ? Promise.resolve() : new Promise(res => setTimeout(res, ms));
             let startMin = isExtraTime ? 91 : 1;
 
             // NIEUW: De robuuste CSS-animatie trigger
@@ -4423,7 +4846,7 @@ await rollOptions(role, displayPos);
                 while(homeGoals.length > 0 && homeGoals[0].min === min) {
                     hScore++;
                     document.getElementById('tv-home-score').innerText = hScore;
-                    document.getElementById('tv-home-scorers').innerHTML += `<div class="goal-item text-green-400 font-bold text-[10px] md:text-xs flex items-center gap-1">⚽ ${pitchName(homeGoals.shift().name)} <span class="text-slate-500 font-normal ml-auto">${min}'</span></div>`;
+                    document.getElementById('tv-home-scorers').innerHTML += `<div class="goal-item text-green-400 font-bold text-[10px] md:text-xs flex items-center gap-1">⚽ ${(g => pitchName(g.name) + (g.a ? ' <span class="text-slate-400 font-normal">(' + pitchName(g.a.name) + ')</span>' : ''))(homeGoals.shift())} <span class="text-slate-500 font-normal ml-auto">${min}'</span></div>`;
                     playerScored = true;
                 }
                 while(awayGoals.length > 0 && awayGoals[0].min === min) {
@@ -4435,11 +4858,11 @@ await rollOptions(role, displayPos);
                 
                if(playerScored) {
                     // Voeg de 1200ms fade-out toe als derde parameter
-                    AudioManager.playSFX('audio/goal1.mp3', 0.9, 1000); 
+                    if (!skipMatch) AudioManager.playSFX('audio/goal1.mp3', 0.9, 1000); 
                     await delay(isCupFinal ? 2300 : 1500); 
                 } else if (cpuScored) {
                     // Voeg de 1000ms fade-out toe als derde parameter
-                    AudioManager.playSFX('audio/groan.mp3', 0.7, 600); 
+                    if (!skipMatch) AudioManager.playSFX('audio/groan.mp3', 0.7, 600); 
                     await delay(1200); 
                 } else {
                     await delay(25); 
@@ -4454,11 +4877,32 @@ await rollOptions(role, displayPos);
             }
             
             AudioManager.playSFX('audio/whistle-end.mp3', 0.6);
-            await delay(1200);
+            await new Promise(res => setTimeout(res, skipMatch ? 900 : 1200));   // ook na overslaan blijft de uitslag even staan
             return { h: hScore, a: aScore };
         }
         
+        // De andere duels van deze speeldag. Samen met jouw wedstrijden vormt dit een volledige competitie:
+        // elke club speelt elke andere club precies één keer (cirkelmethode, jij staat vast).
+        function cpuFixtures(round, homeId, awayId) {
+            const byId = id => standings.find(t => t.id === id);
+            const ids = (seasonSchedule || []).map(o => o.id);
+            const cpuIds = standings.filter(t => !t.isUser).map(t => t.id);
+            if (ids.length === 7 && cpuIds.length === 7 && cpuIds.every(id => ids.includes(id)) && ids[round] === awayId) {
+                let order = [homeId, ...ids.slice().reverse()];
+                for (let r = 0; r < round; r++) order = [order[0], order[7], ...order.slice(1, 7)];
+                const out = [];
+                for (let k = 1; k < 4; k++) out.push([byId(order[k]), byId(order[7 - k])]);
+                return out;
+            }
+            // Vangnet (onverwachte kalender): loten zoals vroeger
+            const rest = standings.filter(t => t.id !== homeId && t.id !== awayId).sort(() => 0.5 - Math.random());
+            const out = [];
+            for (let i = 0; i + 1 < rest.length; i += 2) out.push([rest[i], rest[i + 1]]);
+            return out;
+        }
+
         function processResult(homeId, awayId, hGoals, aGoals) {
+            roundCpuResults = [];
             let h = standings.find(t => t.id === homeId);
             let a = standings.find(t => t.id === awayId);
             h.p++; a.p++; h.gf += hGoals; h.ga += aGoals; a.gf += aGoals; a.ga += hGoals;
@@ -4466,10 +4910,7 @@ await rollOptions(role, displayPos);
             else if (hGoals < aGoals) { a.w++; a.pts+=3; h.l++; }
             else { h.d++; a.d++; h.pts++; a.pts++; }
             
-            let otherTeams = standings.filter(t => t.id !== homeId && t.id !== awayId);
-            otherTeams.sort(() => 0.5 - Math.random());
-            for(let i=0; i<otherTeams.length; i+=2) {
-                let t1 = otherTeams[i]; let t2 = otherTeams[i+1];
+            for (const [t1, t2] of cpuFixtures(h.p - 1, homeId, awayId)) {
                 if(t1 && t2 && t1.p < h.p) {
                     t1.p++; t2.p++;
                     
@@ -4487,6 +4928,7 @@ await rollOptions(role, displayPos);
                     if(s1 > eliteThreshold && Math.random() < 0.25) cpuGoalsA++;
                     if(s2 > eliteThreshold && Math.random() < 0.25) cpuGoalsB++;
 
+                    roundCpuResults.push({ a: t1.name, b: t2.name, ag: cpuGoalsA, bg: cpuGoalsB });
                     t1.gf += cpuGoalsA; t1.ga += cpuGoalsB; t2.gf += cpuGoalsB; t2.ga += cpuGoalsA;
                     if (cpuGoalsA > cpuGoalsB) { t1.w++; t1.pts+=3; t2.l++; }
                     else if (cpuGoalsA < cpuGoalsB) { t2.w++; t2.pts+=3; t1.l++; }
@@ -4506,7 +4948,7 @@ await rollOptions(role, displayPos);
             });
 
             // 2. Sorteer de tabel
-            standings.sort((a,b) => { if(b.pts !== a.pts) return b.pts - a.pts; return (b.gf - b.ga) - (a.gf - a.ga); });
+            standings.sort(tableOrder);
             tbody.innerHTML = '';
             
             // 3. Teken de nieuwe HTML
@@ -4562,7 +5004,7 @@ await rollOptions(role, displayPos);
          let allPlayers = Object.values(playerStats).filter(ps => currentSquadIds.includes(ps.p.id));
 
          let topScorer = [...allPlayers].sort((a,b) => b.seasonGoals - a.seasonGoals)[0];
-         let mvp = [...allPlayers].sort((a,b) => b.seasonPerfScore - a.seasonPerfScore)[0];
+         let mvp = [...allPlayers].sort((a,b) => (b.seasonPerfScore - a.seasonPerfScore) || (b.seasonGoals - a.seasonGoals) || (b.p.bst - a.p.bst))[0];
 
          const finalPos = standings.findIndex(t => t.isUser) + 1;
          const qualified = finalPos <= 2;
@@ -4588,10 +5030,10 @@ await rollOptions(role, displayPos);
          let mvpContent = mvp && mvp.seasonPerfScore > 0 ? `<img src="${mvp.p.sprite}" class="w-14 h-14 object-contain bg-slate-800 rounded-full border-2 border-purple-500 shrink-0"><div class="text-left min-w-0"><p class="text-[10px] text-purple-400 font-bold uppercase tracking-widest">Season MVP</p><p class="text-base font-black text-white leading-tight truncate">${mvp.p.name}</p><p class="text-xs text-slate-400">${mvp.seasonPerfScore} Match Pts</p></div>` : `<div class="w-14 h-14 bg-slate-800 rounded-full border-2 border-slate-600 flex items-center justify-center text-xl shrink-0">😴</div><div class="text-left"><p class="text-[10px] text-purple-400 font-bold uppercase tracking-widest">Season MVP</p><p class="text-base font-black text-white leading-tight">Nobody</p><p class="text-xs text-slate-400">0 Match Pts</p></div>`;
 
          let allScorersHtml = '';
-         let goalscorers = [...allPlayers].filter(p => p.seasonGoals > 0 || p.goals > 0).sort((a,b) => b.seasonGoals - a.seasonGoals);
+         let goalscorers = [...allPlayers].filter(p => p.seasonGoals > 0 || p.goals > 0 || (p.assists || 0) > 0).sort((a,b) => (b.seasonGoals - a.seasonGoals) || ((b.seasonAssists || 0) - (a.seasonAssists || 0)));
          if(goalscorers.length > 0) {
-             allScorersHtml = `<div class="w-full mt-4 bg-slate-900 rounded-xl p-3 border border-slate-700 text-left"><p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-2 border-b border-slate-700 pb-1">Squad Goalscorers (Season / Career)</p><div class="flex flex-wrap gap-2">` + 
-             goalscorers.map(g => `<span class="bg-slate-800 text-xs px-2.5 py-1 rounded text-white shadow-inner">${g.p.name} <strong class="text-yellow-400 ml-1">${g.seasonGoals}</strong> <span class="text-slate-400 text-[10px]">(${g.goals} Tot)</span></span>`).join('') + `</div></div>`;
+             allScorersHtml = `<div class="w-full mt-4 bg-slate-900 rounded-xl p-3 border border-slate-700 text-left"><p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-2 border-b border-slate-700 pb-1">Goals &middot; Assists this season (career total)</p><div class="flex flex-wrap gap-2">` + 
+             goalscorers.map(g => `<span class="bg-slate-800 text-xs px-2.5 py-1 rounded text-white shadow-inner">${g.p.name} <strong class="text-yellow-400 ml-1">${g.seasonGoals}</strong><span class="text-slate-500 mx-0.5">&middot;</span><strong class="text-sky-300">${g.seasonAssists || 0}</strong> <span class="text-slate-400 text-[10px]">(${g.goals} &middot; ${g.assists || 0})</span></span>`).join('') + `</div></div>`;
          }
 
          let actionHtml = '';
@@ -4626,6 +5068,7 @@ await rollOptions(role, displayPos);
          awards.classList.add('flex', 'order-first');
          awards.innerHTML = `<div class="poke-box-dark p-5 md:p-6 text-center shadow-2xl relative overflow-hidden"><h2 class="pixel-font text-lg md:text-xl font-black text-white mb-2 uppercase tracking-wide" style="line-height:1.4;">Season ${currentSeason} Finished</h2><p class="${qualified ? 'text-blue-400' : (isSacked ? 'text-red-500' : (isFirstSeasonWarning ? 'text-orange-400' : 'text-yellow-400'))} text-xs md:text-sm font-bold mb-5">You finished in position ${finalPos}!</p><div class="flex flex-col sm:flex-row gap-3 justify-center"><div class="bg-slate-900/50 p-3 rounded-xl border border-slate-700/50 w-full sm:w-1/2 flex items-center gap-3">${mvpContent}</div><div class="bg-slate-900/50 p-3 rounded-xl border border-slate-700/50 w-full sm:w-1/2 flex items-center gap-3">${topScorerContent}</div></div>${allScorersHtml}${boardVerdictHtml(boardResult)}${actionHtml}<button onclick="viewTeam()" class="mt-4 px-6 py-3 bg-slate-700 hover:bg-slate-600 text-white font-bold text-xs md:text-sm rounded-full transition-colors border border-slate-500 uppercase tracking-wide w-full">View Team</button></div>`;
          
+         awards.insertAdjacentHTML('beforeend', seasonNewsHtml());
          // NIEUW: Trigger alle seizoens-achievements (Perfect Harmony, Bidoof, Goals, Iron Wall)
          AchievementManager.check('end_season');
          if (isSacked) {
@@ -4792,15 +5235,17 @@ await rollOptions(role, displayPos);
             const roundNames = ["Round of 16", "Quarter Final", "Semi Final", "Continental Final"];
             const cupOp = continentalOpponents[currentCupRound];
 
-            // 📉 Verlaagd van 13 naar 10 totale kansen per wedstrijd
-            const totalChances = BALANCE.CUP_CHANCES; 
+            const totalChances = BALANCE.CUP_CHANCES;
+            skipMatch = false;
+            document.getElementById('btn-skip-match').classList.remove('hidden');
+            const pm = pendingMatch && pendingMatch.type === 'cup' && pendingMatch.season === currentSeason && pendingMatch.round === currentCupRound ? pendingMatch : null;
             
             const uPoss = myTeamEnginePools.poss || 0;
             // FIX: Veranderd van cpuOp naar cupOp
             const cPoss = cupOp.pools.poss || 0; 
             const possRatio = (Math.pow(uPoss, BALANCE.CUP_POSS_EXP)) / (Math.pow(uPoss, BALANCE.CUP_POSS_EXP) + Math.pow(cPoss, BALANCE.CUP_POSS_EXP));
             
-            const userChances = Math.round(possRatio * totalChances) || 0; 
+            const userChances = pm ? pm.userChances : splitChances(possRatio, totalChances);
             const cpuChances = totalChances - userChances;
             
             const userPossPct = Math.round(possRatio * 100) || 50;
@@ -4836,8 +5281,7 @@ await rollOptions(role, displayPos);
             const cpuGoalMins = getUniqueMinutes(rawCpuGoals, 1, 89, usedMins);
 
             for(let m of userGoalMins) {
-                const scorer = getWeightedScorer();
-                if(scorer) userGoals.push({ min: m, name: scorer.name, p: scorer });
+                userGoals.push(makeUserGoal(m));
             }
             for(let m of cpuGoalMins) {
                 const cpuScorers = cpuScorerPool(cupOp.names);
@@ -4846,7 +5290,25 @@ await rollOptions(role, displayPos);
 
             userGoals.sort((a,b)=>a.min-b.min);
             cpuGoals.sort((a,b)=>a.min-b.min);
+            // Verlenging en strafschoppen worden vooraf geloot en bewaard, zodat herladen niets verandert
+            if (pm) { userGoals = pm.userGoals || []; cpuGoals = pm.cpuGoals || []; userET = pm.userET || []; cpuET = pm.cpuET || []; }
+            else {
+                let rUET = 0, rCET = 0;
+                for(let i=0; i<3; i++) { if(Math.random() < userCreateProb && Math.random() < userFinishProb) rUET++; }
+                for(let i=0; i<3; i++) { if(Math.random() < cpuCreateProb && Math.random() < cpuFinishProb) rCET++; }
+                const usedETMins = new Set();
+                let uETMins = getUniqueMinutes(rUET, 91, 119, usedETMins);
+                let cETMins = getUniqueMinutes(rCET, 91, 119, usedETMins);
+                for(let m of uETMins) { userET.push(makeUserGoal(m)); }
+                for(let m of cETMins) { const pool = cpuScorerPool(cupOp.names); cpuET.push({min: m, name: pool[Math.floor(Math.random() * pool.length)]}); }
+                userET.sort((a,b)=>a.min-b.min);
+                cpuET.sort((a,b)=>a.min-b.min);
+                pendingMatch = { type: 'cup', season: currentSeason, round: currentCupRound, userChances, userGoals, cpuGoals, userET, cpuET, penSeed: Math.floor(Math.random() * 2147483647) };
+                SaveManager.save();
+            }
+            const penSeed = (pm || pendingMatch).penSeed || 1;
             let finalScore = await runLiveMatch([...userGoals], [...cpuGoals], 90, false);
+            if (finalScore.h !== finalScore.a) { userET = []; cpuET = []; }   // geen verlenging gespeeld
 
             AudioManager.fadeOutStadium(BGM_TRACK);
             
@@ -4854,46 +5316,16 @@ await rollOptions(role, displayPos);
                 document.getElementById('tv-status-text').innerText = 'EXTRA TIME';
                 document.getElementById('tv-status-dot').classList.add('animate-pulse');
                 
-                let rUET = 0, rCET = 0;
-                for(let i=0; i<3; i++) { if(Math.random() < userCreateProb && Math.random() < userFinishProb) rUET++; }
-                for(let i=0; i<3; i++) { if(Math.random() < cpuCreateProb && Math.random() < cpuFinishProb) rCET++; }
-                
-                const usedETMins = new Set();
-                let uETMins = getUniqueMinutes(rUET, 91, 119, usedETMins);
-                let cETMins = getUniqueMinutes(rCET, 91, 119, usedETMins);
-
-                for(let m of uETMins) { let s = getWeightedScorer(); userET.push({min: m, name:s.name, p:s}); }
-                for(let m of cETMins) { { const pool = cpuScorerPool(cupOp.names); cpuET.push({min: m, name: pool[Math.floor(Math.random() * pool.length)]}); } }
-
-                userET.sort((a,b)=>a.min-b.min);
-                cpuET.sort((a,b)=>a.min-b.min);
-                
                 finalScore = await runLiveMatch([...userET], [...cpuET], 120, true);
             }
             
-            [...userGoals, ...userET].forEach(g => { 
-                if(g.p && playerStats[g.p.id]) { 
-                    playerStats[g.p.id].goals += 1; 
-                    playerStats[g.p.id].seasonGoals += 1;
-                    playerStats[g.p.id].perfScore += 3; 
-                    playerStats[g.p.id].seasonPerfScore += 3;
-                } 
-            });
-            if(finalScore.a === 0) {
-                getDefenders().forEach(d => { 
-                    if(d && playerStats[d.id]) { 
-                        playerStats[d.id].cleanSheets += 1; 
-                        playerStats[d.id].perfScore += 4; 
-                        playerStats[d.id].seasonPerfScore += 4;
-                    } 
-                });
-            }
+            awardMatchPerformance([...userGoals, ...userET], finalScore.a);
 
             if (finalScore.h === finalScore.a) {
                 document.getElementById('tv-status-text').innerText = 'PENALTIES';
                 document.getElementById('tv-status-dot').classList.add('animate-pulse');
                 document.getElementById('tv-clock').innerText = 'PENS';
-                finalScore = await simulatePenalties(finalScore.h, finalScore.a, cupOp);
+                finalScore = await simulatePenalties(finalScore.h, finalScore.a, cupOp, penSeed);
             }
 
             const feed = document.getElementById('results-feed-list');
@@ -4902,7 +5334,10 @@ await rollOptions(role, displayPos);
             newResult.innerHTML = `<span class="text-blue-400 font-bold">${roundNames[currentCupRound]}</span><span class="font-bold text-white">${userTeamName} ${finalScore.h} - ${finalScore.a} ${cupOp.name}</span>`;
             feed.insertBefore(newResult, feed.firstChild);
 
+            pendingMatch = null;
+            document.getElementById('btn-skip-match').classList.add('hidden');
             logMatch('Cup', finalScore.h, finalScore.a, cupOp.name);
+            try { pushNews(['R16', 'QF', 'SF', 'FINAL'][currentCupRound] || 'CUP', cupHeadline(roundNames[currentCupRound], cupOp, finalScore.h, finalScore.a, finalScore.h > finalScore.a, document.getElementById('tv-clock').innerText === 'PENS')); } catch (e) { console.error('headline', e); }
             const cupNote = (userET.length + cpuET.length > 0 ? 'AET' : '') + (document.getElementById('tv-clock').innerText === 'PENS' ? (userET.length + cpuET.length > 0 ? ', ' : '') + 'pens' : '');
             cupPath.push(cupPathEntry(roundNames[currentCupRound], cupOp, finalScore.h, finalScore.a, cupNote));
             if (careerLog) { const lr = careerLog.seasons.find(x => x.season === currentSeason); if (lr) lr.cupPath = cupPath.slice(); }
@@ -4952,10 +5387,12 @@ await rollOptions(role, displayPos);
            return own.concat(extra).slice(0, 11);
        }
        // Eén penalty: scoort hij? (apart zodat de tests de uitkomst kunnen sturen)
-       function penaltyScores(chance) { return Math.random() < chance; }
+       function penaltyScores(chance, rnd) { return (rnd || Math.random)() < chance; }
 
-       async function simulatePenalties(baseHome, baseAway, cupOp) {
-            const delay = ms => new Promise(res => setTimeout(res, ms));
+       async function simulatePenalties(baseHome, baseAway, cupOp, seed) {
+            const delay = ms => new Promise(res => setTimeout(res, skipMatch ? 40 : ms));
+            const rnd = seed ? mulberry32(seed) : Math.random;
+            const sfx = (...a) => { if (!skipMatch) AudioManager.playSFX(...a); };
             let hPens = 0, aPens = 0; let hTaken = 0, aTaken = 0;
             
             let userTakers = Object.values(userTeam).filter(p => p !== null).sort((a, b) => b.normStats.atk - a.normStats.atk);
@@ -4978,14 +5415,14 @@ await rollOptions(role, displayPos);
                 chance = Math.max(0.35, Math.min(0.85, chance)); 
                 
                 hTaken++;
-                const isHomeGoal = penaltyScores(chance); 
+                const isHomeGoal = penaltyScores(chance, rnd); 
                 if(isHomeGoal) {
                     hPens++;
                     // Jij scoort: Luid gejuich (700ms fade timer)
-                    AudioManager.playSFX('audio/goal1.mp3', 0.9, 700);
+                    sfx('audio/goal1.mp3', 0.9, 700);
                 } else {
                     // Jij mist: Teleurstelling (600ms fade timer)
-                    AudioManager.playSFX('audio/groan.mp3', 0.7, 600);
+                    sfx('audio/groan.mp3', 0.7, 600);
                 }
 
                 document.getElementById('tv-home-scorers').innerHTML += `<div class="goal-item text-white text-[10px] md:text-xs">${isHomeGoal ? '✅' : '❌'} ${takerName}</div>`;
@@ -4996,19 +5433,19 @@ await rollOptions(role, displayPos);
 
                 // --- CPU BEURT ---
                 let cpuTakerName = cpuTakers[aTaken % cpuTakers.length];
-                let cpuTakerAtk = 65 + Math.floor(Math.random() * 26); 
+                let cpuTakerAtk = 65 + Math.floor(rnd() * 26); 
                 let cpuChance = 0.65 + ((cpuTakerAtk - userGkDef) / 250); 
                 cpuChance = Math.max(0.35, Math.min(0.85, cpuChance));
 
                 aTaken++;
-                const isAwayGoal = penaltyScores(cpuChance);
+                const isAwayGoal = penaltyScores(cpuChance, rnd);
                 if(isAwayGoal) {
                     aPens++;
                     // CPU scoort: Teleurstelling
-                    AudioManager.playSFX('audio/groan.mp3', 0.7, 600);
+                    sfx('audio/groan.mp3', 0.7, 600);
                 } else {
                     // CPU mist: Het stadion ontploft van vreugde!
-                    AudioManager.playSFX('audio/goal1.mp3', 0.9, 700);
+                    sfx('audio/goal1.mp3', 0.9, 700);
                 }
 
                 document.getElementById('tv-away-scorers').innerHTML += `<div class="goal-item text-white text-[10px] md:text-xs text-right">${cpuTakerName} ${isAwayGoal ? '✅' : '❌'}</div>`;
@@ -5020,7 +5457,7 @@ await rollOptions(role, displayPos);
 
             if (hPens === aPens) {
                 // Onbereikbaar in de praktijk (100 rondes gelijk), maar nooit een onzichtbaar doelpunt: loot, en toon de uitslag
-                if (Math.random() < 0.5) hPens++; else aPens++;
+                if (rnd() < 0.5) hPens++; else aPens++;
                 document.getElementById('tv-home-score').innerText = `${baseHome} (${hPens})`;
                 document.getElementById('tv-away-score').innerText = `${baseAway} (${aPens})`;
             }
@@ -5040,7 +5477,9 @@ await rollOptions(role, displayPos);
     document.getElementById('ui-season-counter').innerText = `Season ${currentSeason}`;
     isTransferWindow = true;
     actionPoints = BALANCE.BASE_AP;
-    hasReroll = false;
+    hasReroll = false; pendingRoll = null;
+    if (!clubVision || currentSeason > clubVision.until) newClubVision(currentSeason);
+    updateVisionUI();
     trainCounts = {};
 
     document.body.className = 'min-h-screen flex flex-col relative bg-office';        
@@ -5081,7 +5520,7 @@ await rollOptions(role, displayPos);
 }
 
        function finishTransfers() {
-            isTransferWindow = false;
+            isTransferWindow = false; pendingRoll = null;
             document.getElementById('transfer-banner').classList.add('hidden');
             document.getElementById('transfer-banner').classList.remove('flex');
             document.getElementById('btn-finish-transfers').classList.add('hidden');
@@ -5219,7 +5658,8 @@ await rollOptions(role, displayPos);
             document.getElementById('btn-resign').classList.remove('hidden'); document.getElementById('btn-resign').classList.add('block');
             document.getElementById('btn-back-to-stats').classList.add('hidden'); document.getElementById('btn-back-to-stats').classList.remove('flex');
             
-            hasReroll = true;
+            hasReroll = true; pendingRoll = null; pendingMatch = null;
+            clubVision = null; visionLog = []; seasonNews = []; seasonLeagueResults = []; newsMemory = { last: '', used: {} };
             userTeam = {};
             playerStats = {};
             standings = [];
