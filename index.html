@@ -4927,6 +4927,9 @@ await rollOptions(role, displayPos);
                 // Promotie / Degradatie Logica
                 let cpuTeams = standings.filter(t => !t.isUser);
                 let relegatedTeam = cpuTeams[cpuTeams.length - 1]; 
+                // Namen die niet mogen terugkomen: alle clubs van vorig seizoen (ook de gedegradeerden) en de play-offwinnaar
+                const poNow = playoffDrop && playoffDrop.lost && playoffDrop.season === currentSeason - 1 ? playoffDrop : null;
+                const blockedNames = standings.map(x => x.name).concat(poNow ? [poNow.newName] : []);
                 
                 let currentTeamIds = standings.map(t => t.id);
                 let availableReplacements = pool.filter(o => !currentTeamIds.includes(o.id));
@@ -4950,10 +4953,10 @@ await rollOptions(role, displayPos);
                 let newStandings = [];
                 for (let t of standings) {
                     if (t.id === relegatedTeam.id && replacement) {
-                        newStandings.push({ id: replacement.id, name: pickLeagueNames(1, standings.map(x => x.name))[0] || replacement.name, p: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0, pts: 0, pools: applyBoost(replacement.pools, replacement.gen, replacement.id) });
+                        newStandings.push({ id: replacement.id, name: pickLeagueNames(1, blockedNames)[0] || replacement.name, p: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0, pts: 0, pools: applyBoost(replacement.pools, replacement.gen, replacement.id) });
                     } else if (t.id === relegatedTeam.id) {
                         // Geen andere club in de pool: een nieuwe naam neemt de plaats (en de sterkte) van de gedegradeerde club over
-                        const newName = pickLeagueNames(1, standings.map(x => x.name))[0] || t.name;
+                        const newName = pickLeagueNames(1, blockedNames)[0] || t.name;
                         const originalOp = allOpponents.find(o => o.id === t.id);
                         newStandings.push({ id: t.id, name: newName, p: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0, pts: 0, pools: applyBoost(originalOp.pools, originalOp.gen, t.id) });
                     } else if (t.isUser) {
@@ -4973,7 +4976,7 @@ await rollOptions(role, displayPos);
                         const used = standings.map(t => t.id);
                         const cands = pool.filter(o => !used.includes(o.id)).sort((a, b) => Math.abs(base(a) - base(goneOrig)) - Math.abs(base(b) - base(goneOrig)));
                         const rep = cands[0] || goneOrig;
-                        const nm = standings.some(t => t.name === playoffDrop.newName) ? (pickLeagueNames(1, standings.map(x => x.name))[0] || gone.name) : playoffDrop.newName;
+                        const nm = standings.some(t => t.name === playoffDrop.newName) ? (pickLeagueNames(1, blockedNames.concat(standings.map(x => x.name)))[0] || gone.name) : playoffDrop.newName;
                         Object.assign(gone, { id: rep.id, name: nm, pools: applyBoost(rep.pools, rep.gen, rep.id) });
                     }
                 }
