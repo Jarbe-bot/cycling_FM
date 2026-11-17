@@ -15,6 +15,10 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
+    <style>
+        /* 10 clubs: de stand groeit mee met zijn inhoud, zodat ook de laatste plaats en de legende zichtbaar zijn */
+        #standings-panel.standings { height: auto !important; }
+    </style>
     <link rel="preload" as="image" href="cycling-fm-bg2.webp">
 </head>
 <body class="min-h-screen flex flex-col relative bg-landing">
@@ -378,7 +382,7 @@
                         <p id="season-objective-line" class="hidden text-[10px] md:text-xs font-black uppercase tracking-wider whitespace-nowrap shrink-0 ml-2"></p>
                     </div>
                     <div class="overflow-y-auto flex-grow bg-slate-800/50 relative rounded-b-2xl">
-                        <table class="w-full text-left text-xs sm:text-sm md:text-base border-collapse">
+                        <table class="w-full text-left text-xs sm:text-sm border-collapse">
                             <thead class="text-slate-400 uppercase bg-slate-900/90 sticky top-0 text-[10px] md:text-xs z-10 backdrop-blur-sm shadow-sm">
                                 <tr>
                                     <th class="px-3 py-3.5">Club</th><th class="px-2 py-3.5 text-center">Pld</th><th class="px-2 py-3.5 text-center font-bold text-white">Pts</th>
