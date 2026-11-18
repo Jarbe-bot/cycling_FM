@@ -148,7 +148,7 @@
                         <li><strong class="text-purple-400">Action Points:</strong> 3 per off-season, plus the bonus from the board objective you choose.</li>
                         <li><strong class="text-red-400">Transfers (1 AP):</strong> Swap out a weak link for a new scout. You must pick one of the four options.</li>
                         <li><strong class="text-blue-400">Training (1 AP):</strong> Train one stat of one player. A training closes about a third of the gap to 130 (with a small dice roll): weak stats grow fast, elite stats barely. A second training on the same player in one off-season gives half.</li>
-                        <li><strong class="text-green-400">Training Camp (2 AP):</strong> Your whole squad trains one stat. Every player improves a little, weak stats the most.</li>
+                        <li><strong class="text-green-400">Training Camp (2 AP):</strong> Your whole squad trains one stat. Every player improves a little, weak stats the most. One camp per season.</li>
                         <li><strong class="text-yellow-400">Position Swap (1 AP):</strong> Two players in the same line (attack, midfield or defence) trade places. The goalkeeper stays in goal.</li>
                     </ul>
                 </div>
@@ -160,7 +160,7 @@
                         <li><strong class="text-white">Furious means last chance.</strong> A board that has lost all faith sacks you, and so does relegation (finishing last, or losing the play-off in ninth), from your very first season.</li>
                         <li><strong class="text-green-400">Title odds:</strong> Tap ODDS to see the title race, with every club's chance of winning the league.</li>
                         <li><strong class="text-yellow-300">Season length:</strong> You choose it when you start a career. A short season has 9 matchdays: every club plays each other once, and you get 3 actions in the off-season. A long season has 18 matchdays, home and away, with a small home advantage. After matchday 9 comes a winter break with 2 actions (transfers, training or a camp, no board review), on top of the 3 actions in the off-season. Because you get more actions per season, the other clubs and the cup opponents grow faster too.</li>
-                        <li><strong class="text-yellow-300">Club vision:</strong> Before the draft the board offers three directions, each a country or a team it wants to see in your starting eleven, and you pick one. Field enough of those riders at the kick-off of any season within five seasons and you get a free training camp. Popular countries ask for more riders than small ones. There is no penalty for ignoring it. When a vision is over (all its rewards paid or missed, or its five seasons are up), the board offers three new ones in the next off-season and you pick one. Later visions build on riders you already have. Its reward is bigger but paid out season by season: the second vision gives a camp, then 1 extra action point, then another; from the third vision on a camp, 1 point, a camp, 1 point. Each part is only paid if your eleven still matches the vision at that kick-off, so selling the riders right after the first reward costs you the rest.</li>
+                        <li><strong class="text-yellow-300">Club vision:</strong> Before the draft the board offers three directions, each a country or a team it wants to see in your starting eleven, and you pick one. Field enough of those riders at the kick-off of any season within five seasons and you get 1 extra action point for the next off-season. In a long season you only collect if they are still in your eleven after the winter break. Popular countries ask for more riders than small ones. There is no penalty for ignoring it. When a vision is over (all its rewards paid or missed, or its five seasons are up), the board offers three new ones in the next off-season and you pick one. Later visions build on riders you already have. Its reward is paid out season by season: the second vision gives 1 extra action point for two seasons, from the third vision on for three seasons. Each part is only paid if your eleven still matches the vision at that kick-off, so selling the riders right after the first reward costs you the rest.</li>
                         <li><strong class="text-sky-300">Assists:</strong> Most goals have an assist. Creative riders (Hills) in attacking positions give the most, and Sprint helps too. Goals and assists both count for the Season MVP.</li>
                     </ul>
                 </div>
@@ -981,16 +981,20 @@
         // Vorm van de CPU-clubs: elk seizoen schommelt elke club een beetje rond zijn eigen niveau (in S-punten).
         // De vorm draagt deels over naar het volgende seizoen, zodat een club een paar seizoenen sterk of zwak kan zijn.
         let clubForm = {}, clubFormSeason = 0;
-        // Cupmijlpalen: eerste kwartfinale en (in een later seizoen) eerste halve finale geven elk een gratis trainingskamp
-        let freeCamps = 0, cupMilestones = { qf: 0, sf: 0 };
+        // Cupmijlpalen: eerste kwartfinale en (in een later seizoen) eerste halve finale geven elk +1 actiepunt
+        let freeCamps = 0, cupMilestones = { qf: 0, sf: 0 };   // freeCamps: alleen nog voor oude saves (wordt omgezet naar actiepunten)
+        let bonusLog = [];          // waar de extra actiepunten voor het volgende tussenseizoen vandaan komen
+        let windowBonusNote = null; // overzicht dat het bestuur toont bij het begin van het tussenseizoen
+        let campSeason = 0;         // seizoen waarin je al een trainingskamp deed (maximaal één per seizoen)
+        function addBonusAP(n, label) { bonusAP += n; bonusLog.push(`${label} +${n}`); }
         function grantCupMilestone(roundWon) {
             if (roundWon === 0 && !cupMilestones.qf) {
-                cupMilestones.qf = currentSeason; freeCamps++;
-                return 'First Continental quarter-final! The board grants you a <span class="text-yellow-300">free training camp</span>. Reach the semi-finals in a future season for another.';
+                cupMilestones.qf = currentSeason; addBonusAP(1, 'first Cup quarter-final');
+                return 'First Continental quarter-final! The board grants you <span class="text-yellow-300">+1 action</span> next off-season. Reach the semi-finals in a future season for another.';
             }
             if (roundWon === 1 && !cupMilestones.sf && cupMilestones.qf && cupMilestones.qf < currentSeason) {
-                cupMilestones.sf = currentSeason; freeCamps++;
-                return 'First Continental semi-final! The board grants you another <span class="text-yellow-300">free training camp</span>.';
+                cupMilestones.sf = currentSeason; addBonusAP(1, 'first Cup semi-final');
+                return 'First Continental semi-final! The board grants you another <span class="text-yellow-300">+1 action</span> next off-season.';
             }
             return '';
         }
@@ -1000,11 +1004,12 @@
             const playedBefore = cupMilestones.qf || (careerLog && careerLog.seasons.some(x => x.season < currentSeason && typeof x.cup === 'number' && x.cup >= 0));
             if (playedBefore) { cupMilestones.debut = -1; return ''; }   // oudere save: de cup al eerder gespeeld
             cupMilestones.debut = currentSeason;
-            bonusAP += 1;
+            addBonusAP(1, 'first Cup qualification');
             try { pushNews('CUP', `European debut for ${userTeamName}!`); } catch (e) {}
             return 'First Continental Cup qualification! The board grants you <span class="text-yellow-300">+1 action</span> next off-season.';
         }
         const campCost = () => freeCamps > 0 ? 0 : BALANCE.CAMP_COST;
+        const campUsedThisSeason = () => campSeason === currentSeason;
         const CLUB_FORM = { CARRY: 0.5, SPREAD: 1.4, MAX: 3 };
         function updateClubForm(ids) {
             if (clubFormSeason === currentSeason) return;
@@ -1249,7 +1254,7 @@
                     myTeamEnginePools, teamChemScore, playerStats, standings,
                     seasonSchedule, continentalOpponents, currentCupRound, hasPlayedCup,
                     currentSeason, isTransferWindow, actionPoints, domesticTitles, seasonLength, winterSeason,
-                    rivalBoost, rivalSeason, clubForm, clubFormSeason, freeCamps, cupMilestones,
+                    rivalBoost, rivalSeason, clubForm, clubFormSeason, freeCamps, cupMilestones, bonusLog, windowBonusNote, campSeason,
                     trustPct: boardTrust, negStreak, finHist, kickNow, kickPrev, boardExpectNow, boardExpectCache, boardBriefSeason, lastVerdict,
                     leagueReady, trainCounts, careerLog, hasReroll, pendingRoll, pendingMatch,
                     clubVision, visionLog, visionChoices, bonusAP, seasonNews, seasonLeagueResults, newsMemory,
@@ -1272,7 +1277,8 @@
                     isTransferWindow = data.isTransferWindow; actionPoints = data.actionPoints; domesticTitles = data.domesticTitles || 0;
                     boardTrust = (typeof data.trustPct === 'number') ? data.trustPct : BALANCE.TRUST_START;   // oude saves (hartjes) starten op 70%
                     seasonLength = data.seasonLength === 'long' ? 'long' : 'short'; winterSeason = data.winterSeason || 0;
-                    rivalBoost = data.rivalBoost || 0; rivalSeason = data.rivalSeason || 0; clubForm = data.clubForm || {}; clubFormSeason = data.clubFormSeason || 0; freeCamps = data.freeCamps || 0; cupMilestones = data.cupMilestones || { qf: 0, sf: 0 };
+                    rivalBoost = data.rivalBoost || 0; rivalSeason = data.rivalSeason || 0; clubForm = data.clubForm || {}; clubFormSeason = data.clubFormSeason || 0; freeCamps = data.freeCamps || 0; cupMilestones = data.cupMilestones || { qf: 0, sf: 0 }; bonusLog = data.bonusLog || []; windowBonusNote = data.windowBonusNote || null; campSeason = data.campSeason || 0;
+                    if (freeCamps > 0) { bonusAP = (data.bonusAP || 0) + 2 * freeCamps; bonusLog.push(`saved free camps +${2 * freeCamps}`); freeCamps = 0; data.bonusAP = bonusAP; }   // oude gratis kampen worden actiepunten
                     boardObjective = null;
                     negStreak = data.negStreak || 0;
                     finHist = data.finHist || [];
@@ -2586,7 +2592,7 @@ function resetBoardState() {
     savePhase = 'draft';
     seasonMatchday = 0;
     boardTrust = BALANCE.TRUST_START;
-    rivalBoost = 0; rivalSeason = 0; clubForm = {}; clubFormSeason = 0; freeCamps = 0; cupMilestones = { qf: 0, sf: 0 };
+    rivalBoost = 0; rivalSeason = 0; clubForm = {}; clubFormSeason = 0; freeCamps = 0; cupMilestones = { qf: 0, sf: 0 }; bonusLog = []; windowBonusNote = null; campSeason = 0;
     boardObjective = null;
     negStreak = 0; finHist = []; kickNow = null; kickPrev = null; boardExpectNow = null; boardExpectCache = null; boardBriefSeason = 0; lastVerdict = null;
     leagueReady = false;
@@ -2714,9 +2720,9 @@ function visionCount(v) {
 // Visie 1 (bij de draft): één gratis kamp. Visie 2: kamp, +1 AP, +1 AP. Visie 3 en later: kamp, +1 AP, kamp, +1 AP.
 function visionPlan(v) {
     const n = (v && v.n) || 1;
-    if (n === 1) return ['camp'];
-    if (n === 2) return ['camp', 'ap', 'ap'];
-    return ['camp', 'ap', 'camp', 'ap'];
+    if (n === 1) return ['ap'];
+    if (n === 2) return ['ap', 'ap'];
+    return ['ap', 'ap', 'ap'];
 }
 // Het deel van het plan dat nog binnen de visieperiode valt: beloningen lopen nooit door na seizoen v.until
 function visionPlanNow(v) {
@@ -2726,6 +2732,7 @@ function visionPlanNow(v) {
 // Is de visie afgerond? Gehaald en alle delen uitbetaald of vervallen (na de aftrap van dit seizoen), of de periode is voorbij.
 function visionFinished(v) {
     if (!v) return true;
+    if (v.pendingWinter && v.pendingWinter === currentSeason) return false;   // wacht nog op de bevestiging na de winterstop
     if (v.checked === v.until && currentSeason >= v.until) return true;
     return !!(v.done && v.checked >= v.done && (v.checked - v.done) >= visionPlanNow(v).length - 1);
 }
@@ -2865,11 +2872,32 @@ function checkClubVision() {
     const v = clubVision;
     if (!v) return;
     if (v.checked === currentSeason) { updateVisionUI(); return; }   // één controle per seizoen, ook na herladen
-    const plan = visionPlanNow(v);
     const meets = visionCount(v) >= v.need;
+    v.checked = currentSeason;
+    // Lang seizoen: pas uitbetalen als je de visie ook na de winterstop nog haalt (geen renner erin voor de aftrap en er weer uit in de winter)
+    if (isLongSeason() && meets && (!v.done || (currentSeason - v.done > 0 && currentSeason - v.done < visionPlanNow(v).length))) {
+        v.pendingWinter = currentSeason;
+        infoToast('&#127919;', 'Club vision on track', `You field ${visionTarget(v)}. Keep them in your eleven after the winter break to collect the reward.`);
+        updateVisionUI();
+        return;
+    }
+    settleClubVision(meets);
+}
+// Na de winterstop (lang seizoen): de voorlopige visie bevestigen of laten vallen
+function confirmVisionAfterWinter() {
+    const v = clubVision;
+    if (!v || v.pendingWinter !== currentSeason) return;
+    v.pendingWinter = 0;
+    const meets = visionCount(v) >= v.need;
+    if (!meets && !v.done) infoToast('&#127919;', 'Vision slipped away', `You no longer have ${visionTarget(v)}. No reward this season.`);
+    settleClubVision(meets);
+}
+function settleClubVision(meets) {
+    const v = clubVision;
+    const plan = visionPlanNow(v);
     v.paid = v.paid || []; v.missed = v.missed || [];
     const pay = i => {
-        if (plan[i] === 'camp') freeCamps++; else bonusAP++;
+        addBonusAP(1, 'club vision');
         v.paid.push(i);
     };
     if (!v.done) {
@@ -2886,7 +2914,6 @@ function checkClubVision() {
             else { v.missed.push(i); infoToast('&#127919;', 'Vision abandoned', `You no longer have ${visionTarget(v)}. The board withholds this season's reward.`); }
         }
     }
-    v.checked = currentSeason;
     updateVisionUI();
 }
 // Voor de draft: het bestuur legt zijn visie uit
@@ -2909,7 +2936,7 @@ function openVisionIntro() {
         <h2 class="text-2xl md:text-3xl font-black text-yellow-400 mb-1 uppercase tracking-wider text-center">The Board</h2>
         <p class="text-center text-slate-400 text-xs md:text-sm font-bold uppercase tracking-widest mb-3">Club vision &middot; seasons ${v.from} to ${v.until}</p>
         <p class="text-center text-white font-bold text-base md:text-lg mb-2">"Good choice, coach. We want at least ${visionTarget(v)} in your starting eleven."</p>
-        <p class="text-xs md:text-sm text-slate-300 text-center leading-relaxed">You have until the kick-off of season ${v.until}. Field them at the start of any season before that and the board rewards you with a <span class="text-yellow-300 font-bold">free training camp</span>. Every new vision after this one brings a bigger reward. There is no penalty if you choose another path. Keep it in mind during the draft: tap the &#127919; in the top bar to see your progress.</p>
+        <p class="text-xs md:text-sm text-slate-300 text-center leading-relaxed">You have until the kick-off of season ${v.until}. Field them at the start of any season before that and the board rewards you with <span class="text-yellow-300 font-bold">1 extra action point</span> for the next off-season. Every new vision after this one pays out over more seasons. There is no penalty if you choose another path. Keep it in mind during the draft: tap the &#127919; in the top bar to see your progress.</p>
         <button onclick="closeBoardBriefing(false, false)" class="mt-4 w-full px-6 py-3.5 bg-gradient-to-r from-purple-600 to-purple-500 hover:from-purple-400 text-white font-black rounded-full uppercase tracking-widest text-sm">Start the draft</button>`;
     const modal = document.getElementById('board-modal');
     modal.classList.remove('hidden');
@@ -3685,6 +3712,7 @@ window.openBoardBriefing = function(auto, opts) {
         <p class="text-center text-sm font-black mb-2">The board is currently <span class="${w.color}">${w.word.toLowerCase()}</span> with you.</p>
         ${crit ? '<p class="text-center text-red-400 font-black text-xs uppercase tracking-wider mb-2">Last chance: another bad season and you are out.</p>' : ''}
         ${recap}
+        ${windowBonusNote && windowBonusNote.season === currentSeason && isTransferWindow && savePhase !== 'winter' ? `<p class="text-center text-sm text-white font-bold mb-1">This off-season: ${windowBonusNote.base} actions${windowBonusNote.bonus ? ` <span class="text-yellow-300">+ ${windowBonusNote.bonus} bonus</span>` : ''}</p>${windowBonusNote.list.length ? `<p class="text-center text-[11px] text-slate-400 mb-2">${windowBonusNote.list.join(' \u00B7 ')}</p>` : ''}` : ''}
         ${visionStatusHtml()}
         <p class="text-xs md:text-sm text-slate-300 text-center leading-relaxed mt-2">The board evaluates two things: whether you improve the squad, and how you finish compared to what it hoped for.${opts.kickoff ? '' : ' Tap ODDS in the top bar to see how your changes move the title race.'}</p>
         ${visionChoices
@@ -3820,6 +3848,7 @@ function openModalShell(title, label) {
 
 window.openTrainingCamp = function(lastStat = null, lastSummary = '') {
     if (!isTransferWindow) return;
+    if (campUsedThisSeason() && lastStat === null) { infoToast('&#9978;', 'Training camp', 'You already held a training camp this season. One per season.'); return; }
     openModalShell(freeCamps > 0 ? `Training Camp (FREE)` : `Training Camp (${BALANCE.CAMP_COST} AP)`, freeCamps > 0 ? `${freeCamps} free camp${freeCamps > 1 ? 's' : ''} · ${actionPoints} AP left` : `${actionPoints} AP left`);
     const players = formations[activeFormation].positions.map(pos => userTeam[pos.id]).filter(Boolean);
     const roleOf = {}; formations[activeFormation].positions.forEach(pos => { if (userTeam[pos.id]) roleOf[userTeam[pos.id].id] = pos.role; });
@@ -3887,6 +3916,7 @@ window.runTrainingCamp = function(statKey) {
         total += gain; n++;
     });
     if (freeCamps > 0) freeCamps--; else actionPoints -= BALANCE.CAMP_COST;
+    campSeason = currentSeason;
     if (careerLog) careerLog.counts.camps++;
     document.getElementById('action-count').innerText = actionPoints;
     checkOffSeasonActions();
@@ -4635,7 +4665,7 @@ function checkOffSeasonActions() {
     const btn = document.getElementById('btn-finish-transfers');
     if (!btn) return;
     const campBtn = document.getElementById('btn-camp');
-    if (campBtn) { campBtn.disabled = !(isTransferWindow && actionPoints >= campCost()); campBtn.innerHTML = freeCamps > 0 ? '&#127873; Free camp' : '&#9978; Camp'; }
+    if (campBtn) { campBtn.disabled = !(isTransferWindow && actionPoints >= campCost() && !campUsedThisSeason()); campBtn.innerHTML = campUsedThisSeason() ? '&#9978; Camp done' : '&#9978; Camp'; }
     updateSwapButton();
     
     // Geen 'overslaan' meer: de startknop verschijnt pas als alle actiepunten gebruikt zijn
@@ -5003,11 +5033,12 @@ await rollOptions(role, displayPos);
             formations[activeFormation].positions.forEach(pos => {
                 const p = userTeam[pos.id];
                 if(p) {
+                    // Relatieve kans om te scoren (het aantal goals zelf hangt hier niet van af). Spits ongeveer 40% van de goals in een systeem met één spits.
                     let baseWeight = 1; 
-                    if(pos.role === 'ST') baseWeight = 50;
+                    if(pos.role === 'ST') baseWeight = 30;
                     else if(pos.role === 'WG') baseWeight = 20;
-                    else if(pos.role === 'AM') baseWeight = 15;
-                    else if(pos.role === 'CM' || pos.role === 'WM') baseWeight = 5;
+                    else if(pos.role === 'AM') baseWeight = 18;
+                    else if(pos.role === 'CM' || pos.role === 'WM') baseWeight = 8;
                     else if(pos.role === 'DM') baseWeight = 2;
                     else if(pos.role === 'CB' || pos.role === 'FB') baseWeight = 1;
 
@@ -6063,8 +6094,10 @@ await rollOptions(role, displayPos);
     currentSeason++;
     document.getElementById('ui-season-counter').innerText = `Season ${currentSeason}`;
     isTransferWindow = true;
-    actionPoints = (isLongSeason() ? BALANCE.LONG_BASE_AP : BALANCE.BASE_AP) + bonusAP;
-    bonusAP = 0;
+    const baseAP = isLongSeason() ? BALANCE.LONG_BASE_AP : BALANCE.BASE_AP;
+    actionPoints = baseAP + bonusAP;
+    windowBonusNote = { season: currentSeason, base: baseAP, bonus: bonusAP, list: bonusLog.slice() };
+    bonusAP = 0; bonusLog = [];
     setTransferBannerTitle('Off-Season Window');
     hasReroll = false; pendingRoll = null;
     // Nieuwe visie zodra de vorige afgerond is: periode voorbij, of gehaald en alle beloningen uitbetaald of vervallen
@@ -6158,6 +6191,7 @@ await rollOptions(role, displayPos);
        function resumeAfterWinter() {
             winterSeason = currentSeason;
             updateScores();
+            try { confirmVisionAfterWinter(); } catch (e) { console.error('vision', e); }
             document.body.className = 'min-h-screen flex flex-col relative bg-stadium';
             document.getElementById('pitch-view').classList.add('hidden');
             document.getElementById('match-center').classList.remove('hidden');
