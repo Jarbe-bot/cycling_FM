@@ -519,6 +519,7 @@
     </div>
 
     <div id="board-modal" class="fixed inset-0 bg-slate-900/95 z-[400] hidden flex-col items-center justify-center p-4 overflow-y-auto backdrop-blur-sm">
+        <button id="btn-board-peek" onclick="toggleBoardPeek()" class="hidden fixed top-3 left-1/2 -translate-x-1/2 z-[410] px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold rounded-full border border-slate-600 shadow-lg pointer-events-auto">&#128065;&#65039; Peek Team</button>
         <div id="board-modal-content" class="max-w-2xl w-full poke-box-dark p-5 md:p-6 shadow-2xl relative my-auto"></div>
     </div>
 
@@ -992,6 +993,16 @@
             }
             return '';
         }
+        // Eerste cupkwalificatie (rechtstreeks of via de qualifier): eenmalig +1 actiepunt voor het volgende tussenseizoen
+        function grantCupDebut() {
+            if (cupMilestones.debut) return '';
+            const playedBefore = cupMilestones.qf || (careerLog && careerLog.seasons.some(x => x.season < currentSeason && typeof x.cup === 'number' && x.cup >= 0));
+            if (playedBefore) { cupMilestones.debut = -1; return ''; }   // oudere save: de cup al eerder gespeeld
+            cupMilestones.debut = currentSeason;
+            bonusAP += 1;
+            try { pushNews('CUP', `European debut for ${userTeamName}!`); } catch (e) {}
+            return 'First Continental Cup qualification! The board grants you <span class="text-yellow-300">+1 action</span> next off-season.';
+        }
         const campCost = () => freeCamps > 0 ? 0 : BALANCE.CAMP_COST;
         const CLUB_FORM = { CARRY: 0.5, SPREAD: 1.4, MAX: 3 };
         function updateClubForm(ids) {
@@ -1240,7 +1251,7 @@
                     rivalBoost, rivalSeason, clubForm, clubFormSeason, freeCamps, cupMilestones,
                     trustPct: boardTrust, negStreak, finHist, kickNow, kickPrev, boardExpectNow, boardExpectCache, boardBriefSeason, lastVerdict,
                     leagueReady, trainCounts, careerLog, hasReroll, pendingRoll, pendingMatch,
-                    clubVision, visionLog, bonusAP, seasonNews, seasonLeagueResults, newsMemory,
+                    clubVision, visionLog, visionChoices, bonusAP, seasonNews, seasonLeagueResults, newsMemory,
                     savePhase, seasonMatchday, cupPath, finalSummary, extraMatch, playoffDrop,
                     resultsFeedHtml: (document.getElementById('results-feed-list') || {}).innerHTML || '',
                     genDataActive: genData.map(g => g.active)
@@ -1273,7 +1284,7 @@
                     trainCounts = data.trainCounts || {};
                     if (typeof data.hasReroll === 'boolean') hasReroll = data.hasReroll;
                     pendingRoll = data.pendingRoll || null; pendingMatch = data.pendingMatch || null;
-                    clubVision = data.clubVision || null; visionLog = data.visionLog || []; bonusAP = data.bonusAP || 0; seasonNews = data.seasonNews || []; seasonLeagueResults = data.seasonLeagueResults || [];
+                    clubVision = data.clubVision || null; visionLog = data.visionLog || []; visionChoices = data.visionChoices || null; bonusAP = data.bonusAP || 0; seasonNews = data.seasonNews || []; seasonLeagueResults = data.seasonLeagueResults || [];
                     newsMemory = data.newsMemory || { last: '', used: {} };
                     careerLog = data.careerLog || newCareerLog(currentSeason);
                     savePhase = data.savePhase || (data.isTransferWindow ? 'transfer' : 'draft');
@@ -1876,7 +1887,7 @@ const AudioManager = {
             isTransferWindow = false;
             winterSeason = 0;
             hasReroll = true; pendingRoll = null; pendingMatch = null;
-            clubVision = null; visionLog = []; bonusAP = 0; seasonNews = []; seasonLeagueResults = []; newsMemory = { last: '', used: {} };
+            clubVision = null; visionLog = []; visionChoices = null; bonusAP = 0; seasonNews = []; seasonLeagueResults = []; newsMemory = { last: '', used: {} };
             userTeam = {};
             playerStats = {};
             formations[activeFormation].positions.forEach(pos => userTeam[pos.id] = null);
@@ -2509,6 +2520,26 @@ const AudioManager = {
             document.getElementById('score-chem').innerText = teamChemScore;
         }
 
+        // Bestuursscherm: even je ploeg bekijken terwijl je een visie kiest
+        let boardPeeking = false;
+        function setBoardPeekButton() {
+            const b = document.getElementById('btn-board-peek');
+            if (!b) return;
+            const hasTeam = Object.values(userTeam || {}).some(p => p);
+            if (boardPeeking && !visionChoices) toggleBoardPeek();
+            b.classList.toggle('hidden', !(visionChoices && hasTeam));
+        }
+        function toggleBoardPeek() {
+            const modal = document.getElementById('board-modal'), content = document.getElementById('board-modal-content'), b = document.getElementById('btn-board-peek');
+            boardPeeking = !boardPeeking;
+            content.classList.toggle('opacity-0', boardPeeking); content.classList.toggle('pointer-events-none', boardPeeking);
+            modal.classList.toggle('bg-slate-900/95', !boardPeeking); modal.classList.toggle('bg-slate-900/10', boardPeeking);
+            modal.classList.toggle('backdrop-blur-sm', !boardPeeking);
+            modal.classList.toggle('pointer-events-none', boardPeeking);
+            b.innerHTML = boardPeeking ? '&#128281; Back to the board' : '&#128065;&#65039; Peek Team';
+            b.classList.toggle('bg-blue-600', boardPeeking); b.classList.toggle('bg-slate-800', !boardPeeking);
+        }
+
         function togglePeek() {
             const wrapper = document.getElementById('draft-content-wrapper');
             const modal = document.getElementById('draft-modal');
@@ -2699,41 +2730,85 @@ function visionRewardText(v) {
     return plan.map(x => PLAN_LABEL[x]).join(', then ') + ', one part per season, as long as your eleven still matches the vision at kick-off';
 }
 function visionTarget(v) { return v.type === 'nat' ? `${v.need} ${NAT_ADJ[v.key] || v.key} riders` : `${v.need} riders from ${v.key}`; }
+let visionChoices = null;   // drie voorstellen van het bestuur; de speler kiest er één
+// Drie verschillende richtingen (land/ploeg gemengd). Vanaf de tweede visie bouwen ze bij voorkeur verder op renners die je al hebt.
+function visionCandidates(n, prev) {
+    const all = visionGroups().filter(g => !(prev && prev.type === g.type && prev.key === g.key)).map(x => ({ ...x, have: visionCount(x) }));
+    const grow = n >= 2 ? all.filter(x => x.have >= 1).map(x => {
+        const step = x.type === 'team' ? 1 : (x.size >= 15 ? 2 : 1);   // grote landen: twee erbij, kleine landen en ploegen: één
+        const cap = x.type === 'team' ? 5 : Math.min(7, x.size);
+        return { ...x, need: Math.min(cap, x.have + step) };
+    }).filter(x => x.need > x.have) : [];
+    const open = all.filter(x => x.have < x.need);
+    const far = open.filter(x => x.need - x.have >= 2);
+    const picks = [];
+    const take = (arr, type) => {
+        const c = arr.filter(x => (!type || x.type === type) && !picks.some(p => p.type === x.type && p.key === x.key));
+        if (c.length) picks.push(c[Math.floor(Math.random() * c.length)]);
+    };
+    if (grow.length) { take(grow, 'nat'); take(grow, 'team'); }
+    const wantType = () => !picks.some(p => p.type === 'nat') ? 'nat' : (!picks.some(p => p.type === 'team') ? 'team' : null);
+    for (let guard = 0; picks.length < 3 && guard < 6; guard++) {
+        const before = picks.length;
+        take(far.length ? far : open, wantType());
+        if (picks.length === before) take(open);
+        if (picks.length === before) take(grow);
+        if (picks.length === before) break;
+    }
+    return picks;
+}
 function newClubVision(fromSeason) {
     if (clubVision) visionLog.push(clubVision);
-    const prev = clubVision;
+    const prev = clubVision || visionLog[visionLog.length - 1];
     const n = visionLog.length + 1;
-    const all = visionGroups().filter(g => !(prev && prev.type === g.type && prev.key === g.key));
-    let g = null;
-    if (n >= 2) {
-        // Latere visie: een land of ploeg waarvan je er al minstens één hebt; het bestuur vraagt er een paar bij
-        const have = all.map(x => ({ ...x, have: visionCount(x) })).filter(x => x.have >= 1);
-        if (have.length) {
-            const w = have.map(x => x.have);            // hoe meer je er al hebt, hoe waarschijnlijker
-            let r = Math.random() * w.reduce((a, b) => a + b, 0), i = 0;
-            while ((r -= w[i]) > 0 && i < have.length - 1) i++;
-            const x = have[i];
-            const step = x.type === 'team' ? 1 : (x.size >= 15 ? 2 : 1);   // grote landen: twee erbij, kleine landen en ploegen: één
-            const cap = x.type === 'team' ? 5 : Math.min(7, x.size);
-            g = { ...x, need: Math.min(cap, x.have + step) };
-            if (g.need <= x.have) g = null;
-        }
-    }
-    if (!g) {
-        const open = all.filter(x => visionCount(x) < x.need);
-        const far = open.filter(x => x.need - visionCount(x) >= 2);
-        const groups = far.length ? far : open;
-        if (!groups.length) { clubVision = null; return null; }
-        const wantType = Math.random() < 0.5 ? 'nat' : 'team';
-        const pool = groups.filter(x => x.type === wantType).length ? groups.filter(x => x.type === wantType) : groups;
-        g = pool[Math.floor(Math.random() * pool.length)];
-    }
-    clubVision = { type: g.type, key: g.key, need: g.need, from: fromSeason, until: fromSeason + VISION.SEASONS - 1, done: 0, seen: fromSeason === 1, n };
-    return clubVision;
+    const opts = visionCandidates(n, prev);
+    clubVision = null;
+    if (!opts.length) { visionChoices = null; return null; }
+    visionChoices = opts.map(g => ({ type: g.type, key: g.key, need: g.need, from: fromSeason, until: fromSeason + VISION.SEASONS - 1, done: 0, seen: true, n }));
+    return visionChoices;
+}
+// De speler kiest een van de drie voorstellen
+let _visionScreen = null;   // waar de keuze gemaakt werd, om dat scherm daarna opnieuw te tonen
+window.chooseVision = function(i) {
+    if (!visionChoices || !visionChoices[i]) return;
+    clubVision = visionChoices[i];
+    visionChoices = null;
+    updateVisionUI();
+    SaveManager.save();
+    setBoardPeekButton();
+    if (_visionScreen && _visionScreen.intro) openVisionIntro();
+    else if (_visionScreen) openBoardBriefing(_visionScreen.auto, _visionScreen.opts);
+};
+function visionChoicesHtml() {
+    const plan = visionPlan(visionChoices[0]);
+    const chips = plan.map((r, i) => `<span class="text-[10px] font-black uppercase tracking-wider border rounded px-1.5 py-0.5 bg-slate-800 border-slate-600 text-slate-300">${plan.length > 1 ? (i + 1) + '. ' : ''}${PLAN_SHORT[r]}</span>`).join('');
+    const v0 = visionChoices[0];
+    const old = visionLog.length ? (pv => `<p class="text-[11px] text-slate-400 mt-2">Previous vision (${visionTarget(pv)}): ${pv.done ? 'achieved' : 'not achieved'}.</p>`)(visionLog[visionLog.length - 1]) : '';
+    return `<div class="mt-3 bg-gradient-to-b from-yellow-500/25 to-slate-900 border-2 border-yellow-400 rounded-xl p-3 md:p-4 text-center shadow-[0_0_25px_rgba(234,179,8,0.35)]">
+        <span class="inline-block bg-yellow-400 text-slate-900 text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded mb-2 animate-pulse">New vision</span>
+        <p class="text-[10px] text-yellow-400 font-black uppercase tracking-widest mb-1">&#127919; Club vision &middot; seasons ${v0.from}-${v0.until}</p>
+        <p class="text-sm text-white font-bold mb-2">The board offers three directions. Tap the one you want to chase.</p>
+        <div class="flex flex-col gap-2">${visionChoices.map((c, i) => {
+            const have = visionCount(c);
+            return `<button onclick="chooseVision(${i})" class="w-full text-left bg-slate-900 hover:bg-slate-800 border border-slate-600 hover:border-yellow-400 rounded-lg px-3 py-2 transition-colors">
+                <span class="block text-white font-bold text-sm">${visionTarget(c)}</span>
+                <span class="block text-[11px] ${have > 0 ? 'text-green-300' : 'text-slate-400'} font-bold">You have ${have} of ${c.need}</span></button>`;
+        }).join('')}</div>
+        <p class="text-[11px] text-slate-300 mt-2">The reward is the same for each, paid one part per kick-off while your eleven matches the vision. The sooner you achieve it, the more you collect:</p>
+        <div class="flex flex-wrap justify-center gap-1.5 mt-1.5">${chips}</div>${old}
+    </div>`;
 }
 function visionStatusHtml() {
+    if (visionChoices) return visionChoicesHtml();
     const v = clubVision;
     if (!v) return '';
+    // Na de laatste aftrap van de periode valt er niets meer te verdienen; de nieuwe visie volgt in het volgende tussenseizoen
+    if (currentSeason >= v.until && v.checked === v.until) {
+        return `<div class="mt-3 bg-slate-900 border border-slate-700 rounded-xl p-3 text-center">
+            <p class="text-[10px] text-slate-400 font-black uppercase tracking-widest mb-1">&#127919; Club vision &middot; seasons ${v.from}-${v.until}</p>
+            <p class="text-sm text-slate-300 font-bold">${visionTarget(v)}: ${v.done ? 'achieved' : 'not achieved'}. This vision has ended.</p>
+            <p class="text-xs text-slate-400 mt-1">The board presents a new vision in the next off-season.</p></div>`;
+    }
     const have = visionCount(v);
     const isNew = !v.seen;
     const state = v.done
@@ -2761,7 +2836,8 @@ function updateVisionUI() {
     const el = document.getElementById('ui-vision');
     if (!el) return;
     const v = clubVision;
-    if (!v) { el.classList.add('hidden'); return; }
+    if (visionChoices) { el.classList.remove('hidden'); el.innerHTML = '<span class="bg-yellow-400 text-slate-900 rounded px-1 mr-1 font-black">NEW</span>&#127919; Choose'; el.classList.add('animate-pulse'); el.title = 'The board offers three visions: tap to choose'; return; }
+    if (!v || (currentSeason >= v.until && v.checked === v.until)) { el.classList.add('hidden'); return; }
     el.classList.remove('hidden');
     el.innerHTML = (v.seen ? '' : '<span class="bg-yellow-400 text-slate-900 rounded px-1 mr-1 font-black">NEW</span>') + (v.done && visionCount(v) >= v.need ? '&#127919; &#10003;' : `&#127919; ${Math.min(visionCount(v), v.need)}/${v.need}`);
     el.classList.toggle('animate-pulse', !v.seen);
@@ -2807,17 +2883,30 @@ function checkClubVision() {
 }
 // Voor de draft: het bestuur legt zijn visie uit
 function openVisionIntro() {
+    _visionScreen = { intro: true };
+    if (visionChoices) {
+        document.getElementById('board-modal-content').innerHTML = `
+            <h2 class="text-2xl md:text-3xl font-black text-yellow-400 mb-1 uppercase tracking-wider text-center">The Board</h2>
+            <p class="text-center text-white font-bold text-base md:text-lg mb-1">"Welcome, coach! This club needs an identity. Which one do you want to build?"</p>
+            ${visionChoicesHtml()}
+            <p class="text-xs text-slate-400 text-center mt-3">No penalty if you later choose another path. Keep it in mind during the draft.</p>
+            <button disabled class="mt-3 w-full px-6 py-3.5 bg-slate-700 text-slate-400 font-black rounded-full uppercase tracking-widest text-sm cursor-not-allowed">Choose a vision first</button>`;
+        const m = document.getElementById('board-modal'); m.classList.remove('hidden'); m.classList.add('flex');
+        setBoardPeekButton();
+        return;
+    }
     if (!clubVision) return;
     const v = clubVision;
     document.getElementById('board-modal-content').innerHTML = `
         <h2 class="text-2xl md:text-3xl font-black text-yellow-400 mb-1 uppercase tracking-wider text-center">The Board</h2>
         <p class="text-center text-slate-400 text-xs md:text-sm font-bold uppercase tracking-widest mb-3">Club vision &middot; seasons ${v.from} to ${v.until}</p>
-        <p class="text-center text-white font-bold text-base md:text-lg mb-2">"Welcome, coach! This club has an identity. We want at least ${visionTarget(v)} in your starting eleven."</p>
+        <p class="text-center text-white font-bold text-base md:text-lg mb-2">"Good choice, coach. We want at least ${visionTarget(v)} in your starting eleven."</p>
         <p class="text-xs md:text-sm text-slate-300 text-center leading-relaxed">You have until the kick-off of season ${v.until}. Field them at the start of any season before that and the board rewards you with a <span class="text-yellow-300 font-bold">free training camp</span>. Every new vision after this one brings a bigger reward. There is no penalty if you choose another path. Keep it in mind during the draft: tap the &#127919; in the top bar to see your progress.</p>
         <button onclick="closeBoardBriefing(false, false)" class="mt-4 w-full px-6 py-3.5 bg-gradient-to-r from-purple-600 to-purple-500 hover:from-purple-400 text-white font-black rounded-full uppercase tracking-widest text-sm">Start the draft</button>`;
     const modal = document.getElementById('board-modal');
     modal.classList.remove('hidden');
     modal.classList.add('flex');
+    setBoardPeekButton();
 }
 
 // =====================================================================================
@@ -3567,6 +3656,7 @@ function boardVerdictHtml(v) {
 // ---------- het bestuur (briefing en badge) ----------
 window.openBoardBriefing = function(auto, opts) {
     opts = opts || {};
+    _visionScreen = { intro: false, auto, opts };
     const info = boardExpectationInfo();
     const E = info.E;
     const w = boardWordInfo(boardTrust);
@@ -3589,10 +3679,13 @@ window.openBoardBriefing = function(auto, opts) {
         ${recap}
         ${visionStatusHtml()}
         <p class="text-xs md:text-sm text-slate-300 text-center leading-relaxed mt-2">The board evaluates two things: whether you improve the squad, and how you finish compared to what it hoped for.${opts.kickoff ? '' : ' Tap ODDS in the top bar to see how your changes move the title race.'}</p>
-        <button onclick="closeBoardBriefing(${auto ? 'true' : 'false'}, ${opts.kickoff ? 'true' : 'false'})" class="mt-4 w-full px-6 py-3.5 bg-gradient-to-r from-purple-600 to-purple-500 hover:from-purple-400 text-white font-black rounded-full uppercase tracking-widest text-sm md:text-base">${btnLabel}</button>`;
+        ${visionChoices
+            ? '<button disabled class="mt-4 w-full px-6 py-3.5 bg-slate-700 text-slate-400 font-black rounded-full uppercase tracking-widest text-sm md:text-base cursor-not-allowed">Choose a vision first</button>'
+            : `<button onclick="closeBoardBriefing(${auto ? 'true' : 'false'}, ${opts.kickoff ? 'true' : 'false'})" class="mt-4 w-full px-6 py-3.5 bg-gradient-to-r from-purple-600 to-purple-500 hover:from-purple-400 text-white font-black rounded-full uppercase tracking-widest text-sm md:text-base">${btnLabel}</button>`}`;
     const modal = document.getElementById('board-modal');
     modal.classList.remove('hidden');
     modal.classList.add('flex');
+    setBoardPeekButton();
 };
 
 window.closeBoardBriefing = function(auto, kickoff) {
@@ -3626,6 +3719,7 @@ window.openOddsTable = function() {
     const modal = document.getElementById('board-modal');
     modal.classList.remove('hidden');
     modal.classList.add('flex');
+    setBoardPeekButton();
 };
 
 function ordinalText(n) {
@@ -4381,8 +4475,10 @@ function finishExtraMatch(score, cupOp, note) {
     } else {
         savePhase = 'summary';
         SaveManager.save();
+        const debutMsg = (em.type === 'qual' && won) ? grantCupDebut() : '';
+        if (debutMsg) SaveManager.save();
         if (em.type === 'qual') box.innerHTML = won
-            ? card('border-sky-400', 'Qualified!', 'text-sky-300', `You beat ${cupOp.name} ${sc}. The Continental Cup awaits.`, postSeasonButtonHtml('cup'))
+            ? card('border-sky-400', 'Qualified!', 'text-sky-300', `You beat ${cupOp.name} ${sc}. The Continental Cup awaits.${debutMsg ? `<br><span class="text-sky-200 text-xs">${debutMsg}</span>` : ''}`, postSeasonButtonHtml('cup'))
             : card('border-red-500', 'No Cup This Season', 'text-red-400', `${cupOp.name} won the qualifier ${sc}.`, postSeasonButtonHtml('transfers'));
         else box.innerHTML = card('border-green-500', 'Safe!', 'text-green-400', `You beat ${cupOp.name} ${sc} and stay in the league.`, postSeasonButtonHtml('transfers'));
     }
@@ -5525,9 +5621,10 @@ await rollOptions(role, displayPos);
          awards.classList.remove('hidden');
          awards.classList.add('flex', 'order-first');
          const outcome = seasonOutcome(finalPos);
+         const debutMsg = (qualified && !isSacked) ? grantCupDebut() : '';
          const fold = (title, inner, open) => inner ? `<details class="mt-3 bg-slate-900/50 rounded-xl border border-slate-700/50 text-left group"${open ? ' open' : ''}><summary class="cursor-pointer select-none list-none px-3 py-2.5 flex justify-between items-center text-[11px] md:text-xs text-slate-300 font-black uppercase tracking-widest">${title}<span class="text-slate-500 group-open:rotate-180 transition-transform">&#9662;</span></summary><div class="px-3 pb-3">${inner}</div></details>` : '';
          const awardsInner = `<div class="flex flex-col sm:flex-row gap-3 justify-center"><div class="bg-slate-900/50 p-3 rounded-xl border border-slate-700/50 w-full sm:w-1/2 flex items-center gap-3">${mvpContent}</div><div class="bg-slate-900/50 p-3 rounded-xl border border-slate-700/50 w-full sm:w-1/2 flex items-center gap-3">${topScorerContent}</div></div>${allScorersHtml}`;
-         awards.innerHTML = `<div class="poke-box-dark p-5 md:p-6 text-center shadow-2xl relative overflow-hidden"><h2 class="pixel-font text-lg md:text-xl font-black text-white mb-2 uppercase tracking-wide" style="line-height:1.4;">Season ${currentSeason} Finished</h2><p class="${outcome.c} text-sm md:text-base font-black mb-1">${outcome.t}</p>${actionHtml}${boardVerdictHtml(boardResult)}${fold('&#127942; Players of the season', awardsInner, false)}${fold('&#128240; The season in headlines', seasonNewsList(), false)}<button onclick="viewTeam()" class="mt-4 px-6 py-3 bg-slate-700 hover:bg-slate-600 text-white font-bold text-xs md:text-sm rounded-full transition-colors border border-slate-500 uppercase tracking-wide w-full">View Team</button></div>`;
+         awards.innerHTML = `<div class="poke-box-dark p-5 md:p-6 text-center shadow-2xl relative overflow-hidden"><h2 class="pixel-font text-lg md:text-xl font-black text-white mb-2 uppercase tracking-wide" style="line-height:1.4;">Season ${currentSeason} Finished</h2><p class="${outcome.c} text-sm md:text-base font-black mb-1">${outcome.t}</p>${debutMsg ? `<p class="text-[11px] md:text-xs text-sky-200 font-bold mt-1">${debutMsg}</p>` : ''}${actionHtml}${boardVerdictHtml(boardResult)}${fold('&#127942; Players of the season', awardsInner, false)}${fold('&#128240; The season in headlines', seasonNewsList(), false)}<button onclick="viewTeam()" class="mt-4 px-6 py-3 bg-slate-700 hover:bg-slate-600 text-white font-bold text-xs md:text-sm rounded-full transition-colors border border-slate-500 uppercase tracking-wide w-full">View Team</button></div>`;
          
          // NIEUW: Trigger alle seizoens-achievements (Perfect Harmony, Bidoof, Goals, Iron Wall)
          AchievementManager.check('end_season');
@@ -6216,7 +6313,7 @@ await rollOptions(role, displayPos);
             document.getElementById('btn-back-to-stats').classList.add('hidden'); document.getElementById('btn-back-to-stats').classList.remove('flex');
             
             hasReroll = true; pendingRoll = null; pendingMatch = null;
-            clubVision = null; visionLog = []; bonusAP = 0; seasonNews = []; seasonLeagueResults = []; newsMemory = { last: '', used: {} };
+            clubVision = null; visionLog = []; visionChoices = null; bonusAP = 0; seasonNews = []; seasonLeagueResults = []; newsMemory = { last: '', used: {} };
             userTeam = {};
             playerStats = {};
             standings = [];
