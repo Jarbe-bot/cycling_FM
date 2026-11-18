@@ -159,7 +159,7 @@
                         <li><strong class="text-sky-400">The board's mood:</strong> From Ecstatic to Furious. The board evaluates whether you improve the squad (the wrong stats on the wrong players do not count) and how you finish compared to what it hoped for. A bad season hurts more than a good one helps, and repeated bad seasons hurt more each time. Tap the Board badge to see how it feels.</li>
                         <li><strong class="text-white">Furious means last chance.</strong> A board that has lost all faith sacks you, and so does relegation (finishing last, or losing the play-off in ninth), from your very first season.</li>
                         <li><strong class="text-green-400">Title odds:</strong> Tap ODDS to see the title race, with every club's chance of winning the league.</li>
-                        <li><strong class="text-yellow-300">Season length:</strong> You choose it when you start a career. A short season has 9 matchdays: every club plays each other once, and you get 3 actions in the off-season. A long season has 18 matchdays, home and away, with a small home advantage. After matchday 9 comes a winter break with 2 actions (transfers, training or a camp, no board review), and you get 4 actions in the off-season. Because you improve twice as fast per season, the other clubs and the cup opponents do too.</li>
+                        <li><strong class="text-yellow-300">Season length:</strong> You choose it when you start a career. A short season has 9 matchdays: every club plays each other once, and you get 3 actions in the off-season. A long season has 18 matchdays, home and away, with a small home advantage. After matchday 9 comes a winter break with 2 actions (transfers, training or a camp, no board review), on top of the 3 actions in the off-season. Because you get more actions per season, the other clubs and the cup opponents grow faster too.</li>
                         <li><strong class="text-yellow-300">Club vision:</strong> Before the draft the board offers three directions, each a country or a team it wants to see in your starting eleven, and you pick one. Field enough of those riders at the kick-off of any season within five seasons and you get a free training camp. Popular countries ask for more riders than small ones. There is no penalty for ignoring it. When a vision is over (all its rewards paid or missed, or its five seasons are up), the board offers three new ones in the next off-season and you pick one. Later visions build on riders you already have. Its reward is bigger but paid out season by season: the second vision gives a camp, then 1 extra action point, then another; from the third vision on a camp, 1 point, a camp, 1 point. Each part is only paid if your eleven still matches the vision at that kick-off, so selling the riders right after the first reward costs you the rest.</li>
                         <li><strong class="text-sky-300">Assists:</strong> Most goals have an assist. Creative riders (Hills) in attacking positions give the most, and Sprint helps too. Goals and assists both count for the Season MVP.</li>
                     </ul>
@@ -578,7 +578,8 @@
             SWAP_COST: 1,
             // Bestuur
             BASE_AP: 3,
-            LONG_BASE_AP: 4,               // lang seizoen: actiepunten in het tussenseizoen
+            LONG_BASE_AP: 3,               // lang seizoen: actiepunten in het tussenseizoen (plus WINTER_AP in de winterstop)
+            LONG_GROWTH_MULT: 5 / 3,       // lang seizoen: 5 punten per seizoen tegenover 3, dus de tegenstand groeit 5/3 zo snel
             WINTER_AP: 2,                  // lang seizoen: actiepunten tijdens de winterstop
             HOME_ADV: 0.04,                // lang seizoen: thuisploeg speelt met 4% grotere pools (ongeveer +1,5 S)
             // Competitieclubs: balbezit was structureel te laag (72% van hun andere fasen). Herverdeling, zelfde totale moeilijkheid:
@@ -1872,7 +1873,7 @@ const AudioManager = {
             });
             const d = document.getElementById('len-desc');
             if (d) d.textContent = seasonLength === 'long'
-                ? 'Home and away, with a small home advantage. 4 actions in the off-season and 2 in the winter break. Your rivals grow twice as fast per season.'
+                ? 'Home and away, with a small home advantage. 3 actions in the off-season and 2 in the winter break. Your rivals grow faster per season too.'
                 : 'Every club plays each other once. 3 actions in the off-season.';
         }
         document.addEventListener('DOMContentLoaded', () => setSeasonLength('short'));
@@ -3411,8 +3412,8 @@ function updateRivalBoost() {
 function difficultyOffset() { return (typeof gameOptions !== 'undefined' && gameOptions.difficulty === 'hard') ? BALANCE.DIFFICULTY_HARD_S : 0; }
 function updateRivalBoostOnce() { if (rivalSeason === currentSeason) return; rivalSeason = currentSeason; updateRivalBoost(); }
 function isLongSeason() { return seasonLength === 'long'; }
-// Lang seizoen: je krijgt per seizoen dubbel zoveel actiepunten, dus de tegenstand groeit ook dubbel zo snel
-function growthSeason(season) { const s = Math.max(1, season || 1); return isLongSeason() ? 1 + 2 * (s - 1) : s; }
+// Lang seizoen: je krijgt per seizoen meer actiepunten (3 + 2 winterstop), dus de tegenstand groeit evenredig sneller
+function growthSeason(season) { const s = Math.max(1, season || 1); return isLongSeason() ? 1 + BALANCE.LONG_GROWTH_MULT * (s - 1) : s; }
 function leagueHalf() { return isLongSeason() && seasonSchedule.length > LEAGUE_CPU ? seasonSchedule.length / 2 : seasonSchedule.length; }
 // Speel jij thuis op deze speeldag? (alleen in het lange seizoen; anders null)
 function userHomeAt(md) {
