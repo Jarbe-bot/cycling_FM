@@ -147,6 +147,7 @@
                         <li><strong class="text-sky-400">The board's mood:</strong> From Ecstatic to Furious. The board evaluates whether you improve the squad (the wrong stats on the wrong players do not count) and how you finish compared to what it hoped for. A bad season hurts more than a good one helps, and repeated bad seasons hurt more each time. Tap the Board badge to see how it feels.</li>
                         <li><strong class="text-white">Furious means last chance.</strong> A board that has lost all faith sacks you, and so does relegation (finishing last, or losing the play-off in ninth), from your very first season.</li>
                         <li><strong class="text-green-400">Title odds:</strong> Tap ODDS to see the title race, with every club's chance of winning the league.</li>
+                        <li><strong class="text-yellow-300">Season length:</strong> You choose it when you start a career. A short season has 9 matchdays: every club plays each other once, and you get 3 actions in the off-season. A long season has 18 matchdays, home and away, with a small home advantage. After matchday 9 comes a winter break with 2 actions (transfers, training or a camp, no board review), and you get 4 actions in the off-season. Because you improve twice as fast per season, the other clubs and the cup opponents do too.</li>
                         <li><strong class="text-yellow-300">Club vision:</strong> Before the draft the board names a country or a team it wants to see in your starting eleven. Field enough of those riders at the kick-off of any season within five seasons and you get a free training camp. Popular countries ask for more riders than small ones. There is no penalty for ignoring it. After five seasons a new vision follows that builds on riders you already have. Its reward is bigger but paid out season by season: the second vision gives a camp, then 1 extra action point, then another; from the third vision on a camp, 1 point, a camp, 1 point. Each part is only paid if your eleven still matches the vision at that kick-off, so selling the riders right after the first reward costs you the rest.</li>
                         <li><strong class="text-sky-300">Assists:</strong> Most goals have an assist. Creative riders (Hills) in attacking positions give the most, and Sprint helps too. Goals and assists both count for the Season MVP.</li>
                     </ul>
@@ -208,9 +209,18 @@
                     </button>
                 </div>
 
-                <div class="mb-10 poke-box-dark p-6 flex flex-col items-center shadow-lg max-w-sm mx-auto">
+                <div class="mb-4 poke-box-dark p-6 flex flex-col items-center shadow-lg max-w-sm mx-auto">
                     <label class="pixel-font text-[10px] text-yellow-400 uppercase tracking-widest mb-4">Club Name</label>
                     <input type="text" id="team-name-input" placeholder="e.g. My Team" maxlength="20" class="bg-slate-900/80 border-2 border-slate-700 rounded-none px-4 py-2 text-center text-white font-bold w-full focus:outline-none focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400 font-mono text-sm uppercase">
+                </div>
+
+                <div class="mb-10 poke-box-dark p-5 flex flex-col items-center shadow-lg max-w-sm mx-auto">
+                    <label class="pixel-font text-[10px] text-yellow-400 uppercase tracking-widest mb-3">Season Length</label>
+                    <div class="grid grid-cols-2 gap-2 w-full">
+                        <button id="len-short" onclick="setSeasonLength('short')" class="px-3 py-2 rounded-lg font-black uppercase tracking-wide text-sm border-2 transition-colors">Short<span class="block text-[10px] font-bold normal-case tracking-normal opacity-80">9 matchdays</span></button>
+                        <button id="len-long" onclick="setSeasonLength('long')" class="px-3 py-2 rounded-lg font-black uppercase tracking-wide text-sm border-2 transition-colors">Long<span class="block text-[10px] font-bold normal-case tracking-normal opacity-80">18 + winter break</span></button>
+                    </div>
+                    <p id="len-desc" class="text-[11px] text-slate-400 mt-3 text-center leading-snug"></p>
                 </div>
 
                 <div class="flex justify-center pb-8">
@@ -309,7 +319,7 @@
             
             <div id="transfer-banner" class="hidden w-full max-w-3xl mx-auto bg-gradient-to-r from-purple-700 to-purple-600 text-white font-black px-3.5 py-2.5 md:px-5 md:py-3 rounded-xl mb-2.5 shadow-xl border-2 border-purple-400 items-center justify-between gap-2 flex-wrap">
                 <div class="flex flex-col flex-1 min-w-0 order-1">
-                    <span class="uppercase tracking-widest text-xs md:text-base leading-tight">Off-Season Window</span>
+                    <span id="transfer-banner-title" class="uppercase tracking-widest text-xs md:text-base leading-tight">Off-Season Window</span>
                     <span id="board-objective-text" class="text-[10px] md:text-xs text-purple-200 font-medium">Swap players or train specific stats</span>
                 </div>
                 <div class="shrink-0 bg-slate-900 rounded-xl px-3 py-1 text-center leading-none shadow-inner border border-yellow-500/40 order-2 md:order-3">
@@ -322,7 +332,7 @@
             </div>
             
             <button id="btn-finish-transfers" onclick="finishTransfers()" class="hidden w-full max-w-3xl mx-auto mb-3 px-5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs md:text-sm rounded-xl transition-all uppercase tracking-wide border border-slate-600 text-center shadow">
-                Skip Remaining Actions &rarr;
+                Start Next Season &rarr;
             </button>
 
            <div id="pitch-view" class="w-full max-w-3xl mx-auto pitch-wrapper block pb-8 relative">
@@ -555,6 +565,9 @@
             SWAP_COST: 1,
             // Bestuur
             BASE_AP: 3,
+            LONG_BASE_AP: 4,               // lang seizoen: actiepunten in het tussenseizoen
+            WINTER_AP: 2,                  // lang seizoen: actiepunten tijdens de winterstop
+            HOME_ADV: 0.04,                // lang seizoen: thuisploeg speelt met 4% grotere pools (ongeveer +1,5 S)
             // Competitieclubs: balbezit was structureel te laag (72% van hun andere fasen). Herverdeling, zelfde totale moeilijkheid:
             LEAGUE_POSS_RATIO: 0.85,       // balbezit minstens 85% van het gemiddelde van hun andere fasen
             LEAGUE_OTHER_FACTOR: 0.90,     // andere fasen x0,90
@@ -932,6 +945,8 @@
         
         let currentSeason = 1;
         let isTransferWindow = false;
+        let seasonLength = 'short';   // 'short' = 9 speeldagen, 'long' = 18 speeldagen (heen en terug) met winterstop
+        let winterSeason = 0;          // seizoen waarin de winterstop al gespeeld is
         let actionPoints = 3;
         let boardTrust = 70;         // bestuursvertrouwen in % (intern)
         let boardObjective = null;   // (oud systeem, ongebruikt)
@@ -1193,7 +1208,7 @@
                     userTeam, userTeamName, activeFormation, globalIdPool,
                     myTeamEnginePools, teamChemScore, playerStats, standings,
                     seasonSchedule, continentalOpponents, currentCupRound, hasPlayedCup,
-                    currentSeason, isTransferWindow, actionPoints, domesticTitles,
+                    currentSeason, isTransferWindow, actionPoints, domesticTitles, seasonLength, winterSeason,
                     rivalBoost, rivalSeason, clubForm, clubFormSeason, freeCamps, cupMilestones,
                     trustPct: boardTrust, negStreak, finHist, kickNow, kickPrev, boardExpectNow, boardExpectCache, boardBriefSeason, lastVerdict,
                     leagueReady, trainCounts, careerLog, hasReroll, pendingRoll, pendingMatch,
@@ -1216,6 +1231,7 @@
                     hasPlayedCup = data.hasPlayedCup || false; currentSeason = data.currentSeason;
                     isTransferWindow = data.isTransferWindow; actionPoints = data.actionPoints; domesticTitles = data.domesticTitles || 0;
                     boardTrust = (typeof data.trustPct === 'number') ? data.trustPct : BALANCE.TRUST_START;   // oude saves (hartjes) starten op 70%
+                    seasonLength = data.seasonLength === 'long' ? 'long' : 'short'; winterSeason = data.winterSeason || 0;
                     rivalBoost = data.rivalBoost || 0; rivalSeason = data.rivalSeason || 0; clubForm = data.clubForm || {}; clubFormSeason = data.clubFormSeason || 0; freeCamps = data.freeCamps || 0; cupMilestones = data.cupMilestones || { qf: 0, sf: 0 };
                     boardObjective = null;
                     negStreak = data.negStreak || 0;
@@ -1269,7 +1285,8 @@
                             document.getElementById('btn-finish-transfers').classList.add('block');
                             document.getElementById('action-count').innerText = actionPoints;
                             checkOffSeasonActions();
-                            if (currentSeason > 1) {
+                            if (savePhase === 'winter') setWinterBannerText();   // midden in het seizoen: de competitie blijft zoals ze is
+                            else if (currentSeason > 1) {
                                 if (!leagueReady) { initStandings(); leagueReady = true; }
                                 if (boardBriefSeason !== currentSeason) setTimeout(() => openBoardBriefing(true), 100);
                             }
@@ -1448,6 +1465,16 @@ const AudioManager = {
             playSFX: (src, vol = 0.8, startFadeAfterMs = 0) => {
                 if (AudioManager.isSfxMuted) return;
                 if (AudioManager.playBuffer(src, vol, startFadeAfterMs)) return;   // snelle weg (Web Audio)
+                // Gsm: de context kan stilgelegd zijn (scherm uit, app gewisseld, iOS-onderbreking). Probeer te hervatten.
+                const ctx = AudioManager.ctx;
+                if (ctx && AudioManager.sfxBuffers[src] && ctx.state !== 'running' && ctx.resume) {
+                    ctx.resume().then(() => { if (!AudioManager.playBuffer(src, vol, startFadeAfterMs)) AudioManager.playHtmlSfx(src, vol, startFadeAfterMs); })
+                        .catch(() => AudioManager.playHtmlSfx(src, vol, startFadeAfterMs));
+                    return;
+                }
+                AudioManager.playHtmlSfx(src, vol, startFadeAfterMs);
+            },
+            playHtmlSfx: (src, vol, startFadeAfterMs) => {
                 
                 if (src.includes('pling.mp3')) { 
                     // ZERO-LATENCY FIX: Niet clonen, maar direct terugspoelen en afspelen
@@ -1540,10 +1567,10 @@ const AudioManager = {
                 }, 150);
             },
 
-            playStadiumLayers: () => {
-                if (AudioManager.bgm) AudioManager.bgm.pause();
-                
-                if (!AudioManager.stadiumBase) {
+            stadiumToken: 0,
+            stadiumUnlocked: false,
+            makeStadium: () => {
+                if (AudioManager.stadiumBase) return;
                     AudioManager.stadiumBase = new Audio('audio/stadium-base.mp3');
                     AudioManager.stadiumBase.loop = true;
                     AudioManager.stadiumBase.volume = 0.0; 
@@ -1555,7 +1582,23 @@ const AudioManager = {
                     AudioManager.stadiumChant2 = new Audio('audio/stadium-chant2.mp3');
                     AudioManager.stadiumChant2.loop = true;
                     AudioManager.stadiumChant2.volume = 0.0; 
-                }
+            },
+            // Bij de eerste tik: stil even afspelen en pauzeren, zodat de gsm het geluid later (zonder tik) toelaat
+            unlockStadium: () => {
+                if (AudioManager.stadiumUnlocked) return;
+                AudioManager.stadiumUnlocked = true;
+                AudioManager.makeStadium();
+                [AudioManager.stadiumBase, AudioManager.stadiumChant1, AudioManager.stadiumChant2].forEach(a => {
+                    if (!a || !a.paused) return;
+                    a.muted = true;
+                    a.play().then(() => { if (AudioManager.stadiumToken === 0) a.pause(); a.muted = false; }).catch(() => { a.muted = false; });
+                });
+            },
+
+            playStadiumLayers: () => {
+                if (AudioManager.bgm) AudioManager.bgm.pause();
+                AudioManager.stadiumToken++;
+                AudioManager.makeStadium();
 
                 if (!AudioManager.isSfxMuted) {
                     AudioManager.stadiumBase.play().catch(e => {});
@@ -1581,10 +1624,12 @@ const AudioManager = {
                     AudioManager.stadiumMixer = null;
                 }
 
+                const tok = AudioManager.stadiumToken;
                 const fadeAudio = (audioObj) => {
                     if (!audioObj) return;
                     let vol = audioObj.volume;
                     let fade = setInterval(() => {
+                        if (AudioManager.stadiumToken !== tok) { clearInterval(fade); return; }   // er begon intussen een nieuwe wedstrijd
                         if (vol > 0.05) {
                             vol -= 0.05;
                             audioObj.volume = vol;
@@ -1598,10 +1643,7 @@ const AudioManager = {
                 fadeAudio(AudioManager.stadiumBase);
                 fadeAudio(AudioManager.stadiumChant1);
                 fadeAudio(AudioManager.stadiumChant2);
-                
-                AudioManager.stadiumBase = null;
-                AudioManager.stadiumChant1 = null;
-                AudioManager.stadiumChant2 = null;
+                // De elementen blijven bestaan (ontgrendeld op de gsm) en worden bij de volgende wedstrijd hergebruikt
                 
                 AudioManager.playBGM(menuBgmSrc, BGM_VOL);
             }
@@ -1788,6 +1830,21 @@ const AudioManager = {
             document.getElementById('step-1').classList.remove('hidden');
         }
 
+        function setSeasonLength(v) {
+            seasonLength = v === 'long' ? 'long' : 'short';
+            [['short', 'len-short'], ['long', 'len-long']].forEach(([k, id]) => {
+                const b = document.getElementById(id); if (!b) return;
+                const on = seasonLength === k;
+                b.classList.toggle('bg-yellow-400', on); b.classList.toggle('text-slate-900', on); b.classList.toggle('border-yellow-300', on);
+                b.classList.toggle('bg-slate-900', !on); b.classList.toggle('text-slate-300', !on); b.classList.toggle('border-slate-700', !on);
+            });
+            const d = document.getElementById('len-desc');
+            if (d) d.textContent = seasonLength === 'long'
+                ? 'Home and away, with a small home advantage. 4 actions in the off-season and 2 in the winter break. Your rivals grow twice as fast per season.'
+                : 'Every club plays each other once. 3 actions in the off-season.';
+        }
+        document.addEventListener('DOMContentLoaded', () => setSeasonLength('short'));
+
         async function startGame() {
             if(!activeFormation) return;
             globalIdPool = [];
@@ -1796,6 +1853,7 @@ const AudioManager = {
             currentSeason = 1;
             hasPlayedCup = false;
             isTransferWindow = false;
+            winterSeason = 0;
             hasReroll = true; pendingRoll = null; pendingMatch = null;
             clubVision = null; visionLog = []; bonusAP = 0; seasonNews = []; seasonLeagueResults = []; newsMemory = { last: '', used: {} };
             userTeam = {};
@@ -1826,7 +1884,7 @@ const AudioManager = {
             : Math.round(Math.min(BALANCE.NORM_MAX, 99 + BALANCE.NORM_SOFTCAP_SLOPE * (val - 130)));
 
         // Rennerslijst (id, naam, ploeg, nationaliteit, types, stats in de volgorde hp, atk, def, spa, spd, spe)
-        const RIDERS = [{"id":1,"name":"Tadej Pogačar","team":"UAE Team Emirates XRG","nat":"Slovenia","types":["Klassementsrenner","Puncheur"],"s":[142,112,97,120,142,67]},{"id":2,"name":"Eddy Merckx","team":"Legends","nat":"Belgium","types":["Klassementsrenner","Klassiekerrenner"],"s":[126,126,112,112,112,91]},{"id":3,"name":"Bernard Hinault","team":"Legends","nat":"France","types":["Klassementsrenner","Tijdrijder"],"s":[146,81,137,93,121,62]},{"id":4,"name":"Fausto Coppi","team":"Legends","nat":"Italy","types":["Klassementsrenner","Klimmer"],"s":[151,71,96,102,158,52]},{"id":5,"name":"Remco Evenepoel","team":"Red Bull–Bora–Hansgrohe","nat":"Belgium","types":["Klassementsrenner","Tijdrijder"],"s":[125,93,147,100,100,75]},{"id":6,"name":"Roger De Vlaeminck","team":"Legends","nat":"Belgium","types":["Klassiekerrenner"],"s":[82,180,102,102,51,102]},{"id":7,"name":"Miguel Induráin","team":"Legends","nat":"Spain","types":["Tijdrijder","Klassementsrenner"],"s":[125,87,162,84,93,69]},{"id":8,"name":"Fabian Cancellara","team":"Legends","nat":"Switzerland","types":["Tijdrijder","Klassiekerrenner"],"s":[98,125,164,85,62,85]},{"id":9,"name":"Jacques Anquetil","team":"Legends","nat":"France","types":["Tijdrijder","Klassementsrenner"],"s":[124,87,161,83,93,68]},{"id":10,"name":"Tom Boonen","team":"Legends","nat":"Belgium","types":["Klassiekerrenner","Sprinter"],"s":[76,166,93,97,48,135]},{"id":11,"name":"Peter Sagan","team":"Legends","nat":"Slovakia","types":["Sprinter","Klassiekerrenner"],"s":[71,149,85,92,46,171]},{"id":12,"name":"Alberto Contador","team":"Legends","nat":"Spain","types":["Klassementsrenner","Klimmer"],"s":[147,69,93,99,152,51]},{"id":13,"name":"Mark Cavendish","team":"Legends","nat":"Great Britain","types":["Sprinter"],"s":[65,131,76,87,44,180]},{"id":14,"name":"Johan Museeuw","team":"Legends","nat":"Belgium","types":["Klassiekerrenner"],"s":[79,179,99,99,50,99]},{"id":15,"name":"Jonas Vingegaard","team":"Visma–Lease a Bike","nat":"Denmark","types":["Klassementsrenner","Klimmer"],"s":[154,65,105,81,154,41]},{"id":16,"name":"Mathieu van der Poel","team":"Alpecin–Premier Tech","nat":"Netherlands","types":["Klassiekerrenner","Puncheur"],"s":[60,171,77,128,51,111]},{"id":17,"name":"Wout van Aert","team":"Visma–Lease a Bike","nat":"Belgium","types":["Klassiekerrenner","Sprinter"],"s":[68,129,106,91,76,114]},{"id":18,"name":"Primož Roglič","team":"Red Bull–Bora–Hansgrohe","nat":"Slovenia","types":["Klassementsrenner"],"s":[147,65,98,90,131,49]},{"id":19,"name":"Mads Pedersen","team":"Lidl–Trek","nat":"Denmark","types":["Klassiekerrenner","Sprinter"],"s":[54,161,89,98,45,134]},{"id":20,"name":"Jasper Philipsen","team":"Alpecin–Premier Tech","nat":"Belgium","types":["Sprinter"],"s":[53,137,74,74,32,180]},{"id":21,"name":"Jonathan Milan","team":"Lidl–Trek","nat":"Italy","types":["Sprinter"],"s":[51,112,112,61,30,180]},{"id":22,"name":"Filippo Ganna","team":"Lidl–Trek","nat":"Italy","types":["Tijdrijder"],"s":[69,104,180,60,35,78]},{"id":23,"name":"João Almeida","team":"UAE Team Emirates XRG","nat":"Portugal","types":["Klassementsrenner"],"s":[137,61,92,84,122,46]},{"id":24,"name":"Tom Pidcock","team":"Pinarello Q36.5 Pro Cycling Team","nat":"Great Britain","types":["Puncheur","Klassiekerrenner"],"s":[69,126,69,131,66,80]},{"id":25,"name":"Tim Merlier","team":"Soudal Safety Jogger","nat":"Belgium","types":["Sprinter"],"s":[58,116,67,77,39,180]},{"id":26,"name":"Isaac del Toro","team":"UAE Team Emirates XRG","nat":"Mexico","types":["Klassementsrenner","Puncheur"],"s":[114,75,81,104,106,55]},{"id":27,"name":"Juan Ayuso","team":"Lidl–Trek","nat":"Spain","types":["Klassementsrenner"],"s":[135,60,90,83,120,45]},{"id":28,"name":"Florian Lipowitz","team":"Red Bull–Bora–Hansgrohe","nat":"Germany","types":["Klassementsrenner"],"s":[135,60,90,83,120,45]},{"id":29,"name":"Ben Healy","team":"EF Education–EasyPost","nat":"Ireland","types":["Puncheur","Klimmer"],"s":[81,92,59,131,103,64]},{"id":30,"name":"Arnaud De Lie","team":"Tudor Pro Cycling Team","nat":"Belgium","types":["Sprinter","Klassiekerrenner"],"s":[61,129,74,80,40,147]},{"id":31,"name":"Matteo Jorgenson","team":"Visma–Lease a Bike","nat":"United States","types":["Klassementsrenner","Klassiekerrenner"],"s":[114,88,88,83,96,57]},{"id":32,"name":"Olav Kooij","team":"Decathlon CMA CGM","nat":"Netherlands","types":["Sprinter"],"s":[56,113,66,75,38,178]},{"id":33,"name":"Ben O'Connor","team":"Decathlon CMA CGM","nat":"Australia","types":["Klassementsrenner"],"s":[133,59,89,81,118,44]},{"id":34,"name":"Felix Gall","team":"Lidl–Trek","nat":"Austria","types":["Klassementsrenner"],"s":[133,59,89,81,118,44]},{"id":35,"name":"Richard Carapaz","team":"NSN Cycling Team","nat":"Ecuador","types":["Klassementsrenner"],"s":[133,59,89,81,118,44]},{"id":36,"name":"Carlos Rodríguez","team":"Netcompany INEOS","nat":"Spain","types":["Klassementsrenner"],"s":[133,59,89,81,118,44]},{"id":37,"name":"Thymen Arensman","team":"Netcompany INEOS","nat":"Netherlands","types":["Klassementsrenner"],"s":[133,59,89,81,118,44]},{"id":38,"name":"Mattias Skjelmose","team":"Lidl–Trek","nat":"Denmark","types":["Puncheur","Klassementsrenner"],"s":[90,90,68,124,90,63]},{"id":39,"name":"Romain Grégoire","team":"Groupama–FDJ United","nat":"France","types":["Puncheur"],"s":[65,106,57,147,73,73]},{"id":40,"name":"Kevin Vauquelin","team":"Netcompany INEOS","nat":"France","types":["Puncheur","Klassementsrenner"],"s":[89,89,68,122,89,62]},{"id":41,"name":"Adam Yates","team":"UAE Team Emirates XRG","nat":"Great Britain","types":["Klassementsrenner","Klimmer"],"s":[124,58,78,83,129,43]},{"id":42,"name":"Kaden Groves","team":"Tudor Pro Cycling Team","nat":"Australia","types":["Sprinter"],"s":[55,110,64,74,37,175]},{"id":43,"name":"Antonio Tiberi","team":"Team Bahrain Victorious","nat":"Italy","types":["Klassementsrenner"],"s":[130,58,87,79,115,43]},{"id":44,"name":"Oscar Onley","team":"Netcompany INEOS","nat":"Great Britain","types":["Klassementsrenner"],"s":[129,57,86,79,115,43]},{"id":45,"name":"Sepp Kuss","team":"Visma–Lease a Bike","nat":"United States","types":["Klimmer"],"s":[106,57,57,90,155,41]},{"id":46,"name":"Biniam Girmay","team":"NSN Cycling Team","nat":"Eritrea","types":["Sprinter"],"s":[54,108,63,72,36,171]},{"id":47,"name":"Egan Bernal","team":"Netcompany INEOS","nat":"Colombia","types":["Klassementsrenner"],"s":[128,57,85,78,114,43]},{"id":48,"name":"Lenny Martinez","team":"Team Bahrain Victorious","nat":"France","types":["Klimmer"],"s":[106,57,57,90,155,41]},{"id":49,"name":"Giulio Ciccone","team":"Pinarello Q36.5 Pro Cycling Team","nat":"Italy","types":["Klimmer"],"s":[106,57,57,90,155,41]},{"id":50,"name":"Paul Magnier","team":"Soudal Safety Jogger","nat":"France","types":["Sprinter"],"s":[54,108,63,72,36,171]},{"id":51,"name":"Jhonatan Narváez","team":"UAE Team Emirates XRG","nat":"Ecuador","types":["Puncheur","Klassiekerrenner"],"s":[63,116,63,122,61,74]},{"id":52,"name":"Brandon McNulty","team":"UAE Team Emirates XRG","nat":"United States","types":["Tijdrijder","Klassementsrenner"],"s":[101,70,131,68,75,55]},{"id":53,"name":"Christophe Laporte","team":"Visma–Lease a Bike","nat":"France","types":["Klassiekerrenner"],"s":[66,148,82,82,41,82]},{"id":54,"name":"Giulio Pellizzari","team":"Red Bull–Bora–Hansgrohe","nat":"Italy","types":["Klimmer"],"s":[105,56,56,89,153,40]},{"id":55,"name":"Jai Hindley","team":"Red Bull–Bora–Hansgrohe","nat":"Australia","types":["Klassementsrenner"],"s":[127,56,85,77,113,42]},{"id":56,"name":"Daniel Martínez","team":"Red Bull–Bora–Hansgrohe","nat":"Colombia","types":["Klassementsrenner"],"s":[127,56,85,77,113,42]},{"id":57,"name":"Joshua Tarling","team":"Netcompany INEOS","nat":"Great Britain","types":["Tijdrijder"],"s":[86,78,156,62,55,62]},{"id":58,"name":"Enric Mas","team":"Movistar Team","nat":"Spain","types":["Klassementsrenner"],"s":[127,56,85,77,113,42]},{"id":59,"name":"Michael Matthews","team":"Team Jayco–AlUla","nat":"Australia","types":["Puncheur","Sprinter"],"s":[60,103,57,120,60,101]},{"id":60,"name":"Tobias Halland Johannessen","team":"Uno-X Mobility","nat":"Norway","types":["Klassementsrenner"],"s":[127,56,84,77,112,42]},{"id":61,"name":"Santiago Buitrago","team":"NSN Cycling Team","nat":"Colombia","types":["Klimmer"],"s":[104,56,56,88,152,40]},{"id":62,"name":"Maxim Van Gils","team":"Red Bull–Bora–Hansgrohe","nat":"Belgium","types":["Puncheur"],"s":[62,101,54,139,70,70]},{"id":63,"name":"Georg Zimmermann","team":"Lidl–Trek","nat":"Germany","types":["Puncheur","Klimmer"],"s":[55,75,55,105,100,60]},{"id":64,"name":"Neilson Powless","team":"EF Education–EasyPost","nat":"United States","types":["Puncheur"],"s":[62,101,54,139,70,70]},{"id":65,"name":"Lennert Van Eetvelt","team":"NSN Cycling Team","nat":"Belgium","types":["Klimmer"],"s":[104,56,56,88,152,40]},{"id":66,"name":"Matthew Brennan","team":"Visma–Lease a Bike","nat":"Great Britain","types":["Sprinter"],"s":[53,106,62,70,35,167]},{"id":67,"name":"Jay Vine","team":"UAE Team Emirates XRG","nat":"Australia","types":["Klimmer"],"s":[103,55,55,87,150,40]},{"id":68,"name":"Tim Wellens","team":"UAE Team Emirates XRG","nat":"Belgium","types":["Puncheur"],"s":[61,100,54,138,69,69]},{"id":69,"name":"Paul Seixas","team":"Decathlon CMA CGM","nat":"France","types":["Klimmer","Klassementsrenner"],"s":[111,55,65,83,136,40]},{"id":70,"name":"Victor Campenaerts","team":"Visma–Lease a Bike","nat":"Belgium","types":["Tijdrijder","Rouleur"],"s":[83,83,135,65,57,67]},{"id":71,"name":"Jasper Stuyven","team":"Soudal Safety Jogger","nat":"Belgium","types":["Klassiekerrenner"],"s":[64,145,80,80,40,80]},{"id":72,"name":"David Gaudu","team":"Groupama–FDJ United","nat":"France","types":["Klimmer"],"s":[103,55,55,87,150,40]},{"id":73,"name":"Cian Uijtdebroeks","team":"Movistar Team","nat":"Belgium","types":["Klassementsrenner"],"s":[124,55,83,76,110,41]},{"id":74,"name":"Søren Wærenskjold","team":"Uno-X Mobility","nat":"Norway","types":["Sprinter","Tijdrijder"],"s":[64,95,95,67,42,128]},{"id":75,"name":"Matej Mohorič","team":"Team Bahrain Victorious","nat":"Slovenia","types":["Klassiekerrenner","Puncheur"],"s":[63,129,71,100,50,76]},{"id":76,"name":"Luke Plapp","team":"Team Jayco–AlUla","nat":"Australia","types":["Tijdrijder"],"s":[84,77,153,61,54,61]},{"id":77,"name":"Marc Hirschi","team":"Tudor Pro Cycling Team","nat":"Switzerland","types":["Puncheur"],"s":[61,100,54,138,69,69]},{"id":78,"name":"Christian Scaroni","team":"XDS Astana Team","nat":"Italy","types":["Puncheur"],"s":[61,99,53,137,68,68]},{"id":79,"name":"Iván Romeo","team":"Movistar Team","nat":"Spain","types":["Tijdrijder"],"s":[83,76,152,61,53,61]},{"id":80,"name":"Alec Segaert","team":"Team Bahrain Victorious","nat":"Belgium","types":["Tijdrijder"],"s":[83,76,152,61,53,61]},{"id":81,"name":"Einer Rubio","team":"Movistar Team","nat":"Colombia","types":["Klimmer"],"s":[101,55,55,86,148,39]},{"id":82,"name":"Corbin Strong","team":"NSN Cycling Team","nat":"New Zealand","types":["Sprinter","Puncheur"],"s":[55,102,58,93,47,129]},{"id":83,"name":"Ilan Van Wilder","team":"Soudal Safety Jogger","nat":"Belgium","types":["Klassementsrenner"],"s":[122,54,82,75,109,41]},{"id":84,"name":"Mathias Vacek","team":"Lidl–Trek","nat":"Czech Republic","types":["Klassiekerrenner"],"s":[63,142,79,79,39,79]},{"id":85,"name":"Jordi Meeus","team":"Lidl–Trek","nat":"Belgium","types":["Sprinter"],"s":[51,102,60,68,34,162]},{"id":86,"name":"Aleksandr Vlasov","team":"Red Bull–Bora–Hansgrohe","nat":"Russia","types":["Klassementsrenner"],"s":[120,54,80,74,107,40]},{"id":87,"name":"Magnus Sheffield","team":"Uno-X Mobility","nat":"United States","types":["Klassiekerrenner"],"s":[62,140,78,78,39,78]},{"id":88,"name":"Pablo Castrillo","team":"Movistar Team","nat":"Spain","types":["Klimmer"],"s":[99,53,53,84,145,38]},{"id":89,"name":"Axel Laurance","team":"Netcompany INEOS","nat":"France","types":["Puncheur"],"s":[59,95,51,132,66,66]},{"id":90,"name":"Valentin Paret-Peintre","team":"Soudal Safety Jogger","nat":"France","types":["Klimmer"],"s":[98,53,53,83,143,38]},{"id":91,"name":"Jarno Widar","team":"Lotto–Intermarché","nat":"Belgium","types":["Klimmer"],"s":[97,52,52,82,142,37]},{"id":92,"name":"Matthew Riccitello","team":"Decathlon CMA CGM","nat":"United States","types":["Klimmer"],"s":[96,52,52,81,141,37]},{"id":93,"name":"Paul Lapeira","team":"Decathlon CMA CGM","nat":"France","types":["Puncheur"],"s":[57,93,50,128,64,64]},{"id":94,"name":"Marc Soler","team":"UAE Team Emirates XRG","nat":"Spain","types":["Klimmer"],"s":[95,51,51,81,139,37]},{"id":95,"name":"Nils Politt","team":"UAE Team Emirates XRG","nat":"Germany","types":["Klassiekerrenner","Rouleur"],"s":[65,119,80,72,45,75]},{"id":96,"name":"Tiesj Benoot","team":"Decathlon CMA CGM","nat":"Belgium","types":["Klassiekerrenner"],"s":[60,134,75,75,37,75]},{"id":97,"name":"Stefan Küng","team":"Tudor Pro Cycling Team","nat":"Switzerland","types":["Tijdrijder","Klassiekerrenner"],"s":[72,91,120,63,46,63]},{"id":98,"name":"Michael Storer","team":"Tudor Pro Cycling Team","nat":"Australia","types":["Klimmer"],"s":[95,51,51,81,139,37]},{"id":99,"name":"Mauro Schmid","team":"Pinarello Q36.5 Pro Cycling Team","nat":"Switzerland","types":["Puncheur"],"s":[57,92,50,128,64,64]},{"id":100,"name":"Julian Alaphilippe","team":"Tudor Pro Cycling Team","nat":"France","types":["Puncheur"],"s":[56,92,49,127,64,64]},{"id":101,"name":"Dylan van Baarle","team":"Soudal Safety Jogger","nat":"Netherlands","types":["Klassiekerrenner"],"s":[59,133,74,74,37,74]},{"id":102,"name":"Jonas Abrahamsen","team":"Uno-X Mobility","nat":"Norway","types":["Puncheur"],"s":[56,91,49,127,63,63]},{"id":103,"name":"Phil Bauhaus","team":"Team Bahrain Victorious","nat":"Germany","types":["Sprinter"],"s":[48,96,56,64,32,153]},{"id":104,"name":"Sam Welsford","team":"Team Jayco–AlUla","nat":"Australia","types":["Sprinter"],"s":[48,96,56,64,32,153]},{"id":105,"name":"Alberto Bettiol","team":"XDS Astana Team","nat":"Italy","types":["Klassiekerrenner"],"s":[59,133,74,74,37,74]},{"id":106,"name":"Marijn van den Berg","team":"EF Education–EasyPost","nat":"Netherlands","types":["Sprinter"],"s":[48,96,56,64,32,152]},{"id":107,"name":"Fabio Jakobsen","team":"Visma–Lease a Bike","nat":"Netherlands","types":["Sprinter"],"s":[48,96,56,64,32,151]},{"id":108,"name":"Guillaume Martin","team":"Lotto–Intermarché","nat":"France","types":["Klimmer"],"s":[93,50,50,78,135,36]},{"id":109,"name":"Pavel Sivakov","team":"Decathlon CMA CGM","nat":"France","types":["Klimmer"],"s":[92,50,50,78,135,35]},{"id":110,"name":"Tobias Lund Andresen","team":"Decathlon CMA CGM","nat":"Denmark","types":["Sprinter"],"s":[47,94,55,63,31,149]},{"id":111,"name":"Pavel Bittner","team":"Pinarello Q36.5 Pro Cycling Team","nat":"Czech Republic","types":["Sprinter"],"s":[47,94,55,63,31,149]},{"id":112,"name":"Max Poole","team":"Team Picnic–PostNL","nat":"Great Britain","types":["Klimmer"],"s":[91,49,49,77,134,35]},{"id":113,"name":"Orluis Aular","team":"Movistar Team","nat":"Venezuela","types":["Sprinter"],"s":[47,93,54,62,31,148]},{"id":114,"name":"Javier Romo","team":"Netcompany INEOS","nat":"Spain","types":["Klimmer"],"s":[91,49,49,77,133,35]},{"id":115,"name":"Pascal Ackermann","team":"Team Jayco–AlUla","nat":"Germany","types":["Sprinter"],"s":[46,91,53,61,30,145]},{"id":116,"name":"Maximilian Schachmann","team":"Soudal Safety Jogger","nat":"Germany","types":["Puncheur"],"s":[53,86,46,120,60,60]},{"id":117,"name":"Kasper Asgreen","team":"NSN Cycling Team","nat":"Denmark","types":["Klassiekerrenner"],"s":[56,125,70,70,35,70]},{"id":118,"name":"Quinn Simmons","team":"Lidl–Trek","nat":"United States","types":["Klassiekerrenner"],"s":[55,124,69,69,34,69]},{"id":119,"name":"Davide Piganzoli","team":"Visma–Lease a Bike","nat":"Italy","types":["Klassementsrenner"],"s":[105,47,70,64,94,35]},{"id":120,"name":"Jørgen Nordhagen","team":"Visma–Lease a Bike","nat":"Norway","types":["Klimmer"],"s":[86,47,47,73,126,33]},{"id":121,"name":"Edoardo Affini","team":"Visma–Lease a Bike","nat":"Italy","types":["Tijdrijder"],"s":[70,64,128,51,45,51]},{"id":122,"name":"Florian Vermeersch","team":"UAE Team Emirates XRG","nat":"Belgium","types":["Klassiekerrenner"],"s":[53,120,67,67,33,67]},{"id":123,"name":"Gerben Thijssen","team":"Alpecin–Premier Tech","nat":"Belgium","types":["Sprinter"],"s":[43,87,51,58,29,137]},{"id":124,"name":"Ben Turner","team":"Soudal Safety Jogger","nat":"Great Britain","types":["Klassiekerrenner"],"s":[53,120,66,66,33,66]},{"id":125,"name":"Joseph Blackmore","team":"Netcompany INEOS","nat":"Great Britain","types":["Puncheur"],"s":[51,82,44,114,57,57]},{"id":126,"name":"Rémi Cavagna","team":"Groupama–FDJ United","nat":"France","types":["Tijdrijder"],"s":[70,63,127,51,44,51]},{"id":127,"name":"Paul Penhoët","team":"Groupama–FDJ United","nat":"France","types":["Sprinter"],"s":[43,87,51,58,29,137]},{"id":128,"name":"Pelayo Sánchez","team":"Movistar Team","nat":"Spain","types":["Puncheur"],"s":[51,82,44,114,57,57]},{"id":129,"name":"Ethan Hayter","team":"Pinarello Q36.5 Pro Cycling Team","nat":"Great Britain","types":["Puncheur","Tijdrijder"],"s":[57,76,72,93,53,55]},{"id":130,"name":"Casper van Uden","team":"Alpecin–Premier Tech","nat":"Netherlands","types":["Sprinter"],"s":[43,87,50,58,29,137]},{"id":131,"name":"Tibor Del Grosso","team":"Alpecin–Premier Tech","nat":"Netherlands","types":["Klassiekerrenner"],"s":[53,118,66,66,33,66]},{"id":132,"name":"Tao Geoghegan Hart","team":"EF Education–EasyPost","nat":"Great Britain","types":["Klassementsrenner"],"s":[101,45,67,62,89,34]},{"id":133,"name":"Stefan Bissegger","team":"Decathlon CMA CGM","nat":"Switzerland","types":["Tijdrijder"],"s":[68,62,123,49,43,49]},{"id":134,"name":"Juan Sebastián Molano","team":"Lotto–Intermarché","nat":"Colombia","types":["Sprinter"],"s":[42,85,49,56,28,134]},{"id":135,"name":"Danny van Poppel","team":"Red Bull–Bora–Hansgrohe","nat":"Netherlands","types":["Sprinter"],"s":[42,85,49,56,28,134]},{"id":136,"name":"Laurence Pithie","team":"Red Bull–Bora–Hansgrohe","nat":"New Zealand","types":["Klassiekerrenner"],"s":[52,117,65,65,32,65]},{"id":137,"name":"Dorian Godon","team":"Netcompany INEOS","nat":"France","types":["Puncheur"],"s":[49,80,43,111,56,56]},{"id":138,"name":"Ethan Vernon","team":"NSN Cycling Team","nat":"Great Britain","types":["Sprinter"],"s":[42,84,49,56,28,133]},{"id":139,"name":"Toms Skujiņš","team":"Lidl–Trek","nat":"Latvia","types":["Puncheur"],"s":[49,79,43,110,55,55]},{"id":140,"name":"Chris Harper","team":"Pinarello Q36.5 Pro Cycling Team","nat":"Australia","types":["Klimmer"],"s":[82,44,44,69,120,31]},{"id":141,"name":"Fabio Christen","team":"Pinarello Q36.5 Pro Cycling Team","nat":"Switzerland","types":["Puncheur"],"s":[48,79,42,109,54,54]},{"id":142,"name":"Diego Ulissi","team":"XDS Astana Team","nat":"Italy","types":["Puncheur"],"s":[48,78,42,108,54,54]},{"id":143,"name":"Lorenzo Fortunato","team":"XDS Astana Team","nat":"Italy","types":["Klimmer"],"s":[81,43,43,68,118,31]},{"id":144,"name":"Andrea Bagioli","team":"XDS Astana Team","nat":"Italy","types":["Puncheur"],"s":[48,78,42,108,54,54]},{"id":145,"name":"Afonso Eulálio","team":"Team Bahrain Victorious","nat":"Portugal","types":["Klimmer"],"s":[80,43,43,68,117,31]},{"id":146,"name":"Andreas Leknessund","team":"Uno-X Mobility","nat":"Norway","types":["Puncheur"],"s":[47,76,41,106,53,53]},{"id":147,"name":"Michał Kwiatkowski","team":"Netcompany INEOS","nat":"Poland","types":["Puncheur"],"s":[46,75,40,103,52,52]},{"id":148,"name":"Yves Lampaert","team":"Soudal Safety Jogger","nat":"Belgium","types":["Tijdrijder","Klassiekerrenner"],"s":[58,73,97,50,37,50]},{"id":149,"name":"Lewis Askey","team":"NSN Cycling Team","nat":"Great Britain","types":["Klassiekerrenner"],"s":[48,107,60,60,30,60]},{"id":150,"name":"Madis Mihkels","team":"Alpecin–Premier Tech","nat":"Estonia","types":["Sprinter"],"s":[38,76,45,51,26,121]},{"id":151,"name":"Archie Ryan","team":"EF Education–EasyPost","nat":"Ireland","types":["Klimmer"],"s":[74,40,40,63,109,29]},{"id":152,"name":"Gianni Vermeersch","team":"Red Bull–Bora–Hansgrohe","nat":"Belgium","types":["Klassiekerrenner"],"s":[46,104,58,58,29,58]},{"id":153,"name":"Aurélien Paret-Peintre","team":"Decathlon CMA CGM","nat":"France","types":["Klimmer"],"s":[74,40,40,62,108,28]},{"id":154,"name":"Warren Barguil","team":"Team Picnic–PostNL","nat":"France","types":["Klimmer"],"s":[73,39,39,62,107,28]},{"id":155,"name":"Andrea Vendrame","team":"Team Jayco–AlUla","nat":"Italy","types":["Puncheur"],"s":[44,71,38,98,49,49]},{"id":156,"name":"Andreas Kron","team":"Uno-X Mobility","nat":"Denmark","types":["Puncheur"],"s":[43,70,38,97,49,49]},{"id":157,"name":"Filippo Zana","team":"Soudal Safety Jogger","nat":"Italy","types":["Klimmer"],"s":[72,39,39,61,105,28]},{"id":158,"name":"Matteo Trentin","team":"Tudor Pro Cycling Team","nat":"Italy","types":["Klassiekerrenner"],"s":[45,100,56,56,28,56]},{"id":159,"name":"Davide Ballerini","team":"Pinarello Q36.5 Pro Cycling Team","nat":"Italy","types":["Sprinter"],"s":[36,73,42,49,24,115]},{"id":160,"name":"Mike Teunissen","team":"XDS Astana Team","nat":"Netherlands","types":["Klassiekerrenner"],"s":[44,99,55,55,28,55]},{"id":161,"name":"Frank van den Broek","team":"Team Picnic–PostNL","nat":"Netherlands","types":["Puncheur"],"s":[42,68,36,94,47,47]},{"id":162,"name":"Felix Engelhardt","team":"Team Jayco–AlUla","nat":"Germany","types":["Puncheur"],"s":[41,67,36,93,46,46]},{"id":163,"name":"Johannes Kulset","team":"Uno-X Mobility","nat":"Norway","types":["Klimmer"],"s":[69,37,37,58,101,27]},{"id":164,"name":"Rasmus Tiller","team":"Uno-X Mobility","nat":"Norway","types":["Klassiekerrenner"],"s":[43,96,54,54,27,54]},{"id":165,"name":"Darren Rafferty","team":"EF Education–EasyPost","nat":"Ireland","types":["Klimmer"],"s":[68,37,37,58,100,26]},{"id":166,"name":"Vincenzo Albanese","team":"EF Education–EasyPost","nat":"Italy","types":["Puncheur"],"s":[41,66,36,91,46,46]},{"id":167,"name":"Iván García Cortina","team":"Alpecin–Premier Tech","nat":"Spain","types":["Klassiekerrenner"],"s":[43,96,53,53,27,53]},{"id":168,"name":"Jake Stewart","team":"NSN Cycling Team","nat":"Great Britain","types":["Sprinter"],"s":[35,70,41,46,23,110]},{"id":169,"name":"Alessandro Pinarello","team":"NSN Cycling Team","nat":"Italy","types":["Klimmer"],"s":[68,37,37,58,100,26]},{"id":170,"name":"Alberto Dainese","team":"Soudal Safety Jogger","nat":"Italy","types":["Sprinter"],"s":[35,70,41,46,23,110]},{"id":171,"name":"Brieuc Rolland","team":"Groupama–FDJ United","nat":"France","types":["Klimmer"],"s":[68,37,37,58,100,26]},{"id":172,"name":"Raúl García Pierna","team":"Movistar Team","nat":"Spain","types":["Puncheur"],"s":[41,66,36,91,46,46]},{"id":173,"name":"Oliver Naesen","team":"Decathlon CMA CGM","nat":"Belgium","types":["Klassiekerrenner"],"s":[42,96,53,53,27,53]},{"id":174,"name":"John Degenkolb","team":"Team Picnic–PostNL","nat":"Germany","types":["Klassiekerrenner"],"s":[42,95,53,53,26,53]},{"id":175,"name":"Luke Lamperti","team":"EF Education–EasyPost","nat":"United States","types":["Sprinter"],"s":[34,69,40,46,23,109]},{"id":176,"name":"Krists Neilands","team":"NSN Cycling Team","nat":"Latvia","types":["Puncheur"],"s":[40,65,35,90,45,45]},{"id":177,"name":"Quentin Pacher","team":"Groupama–FDJ United","nat":"France","types":["Puncheur"],"s":[40,65,35,90,45,45]},{"id":178,"name":"Davide Formolo","team":"Movistar Team","nat":"Italy","types":["Klimmer"],"s":[67,36,36,57,98,26]},{"id":179,"name":"Torstein Træen","team":"Uno-X Mobility","nat":"Norway","types":["Klimmer"],"s":[67,36,36,57,98,26]},{"id":180,"name":"Davide De Pretto","team":"Team Jayco–AlUla","nat":"Italy","types":["Puncheur"],"s":[40,65,35,90,45,45]},{"id":181,"name":"Mikkel Frølich Honoré","team":"Team Jayco–AlUla","nat":"Denmark","types":["Puncheur"],"s":[40,65,35,90,45,45]},{"id":182,"name":"Robert Stannard","team":"Team Bahrain Victorious","nat":"Australia","types":["Puncheur"],"s":[40,65,35,89,45,45]},{"id":183,"name":"Kevin Geniets","team":"Groupama–FDJ United","nat":"Luxembourg","types":["Puncheur"],"s":[40,64,35,89,45,45]},{"id":184,"name":"Jensen Plowright","team":"Alpecin–Premier Tech","nat":"Australia","types":["Sprinter"],"s":[34,68,39,45,22,107]},{"id":185,"name":"Francesco Busatto","team":"Alpecin–Premier Tech","nat":"Italy","types":["Puncheur"],"s":[39,64,34,88,44,44]},{"id":186,"name":"Mauri Vansevenant","team":"Lotto–Intermarché","nat":"Belgium","types":["Klimmer"],"s":[65,35,35,55,96,25]},{"id":187,"name":"Emiel Verstrynge","team":"Alpecin–Premier Tech","nat":"Belgium","types":["Klassiekerrenner"],"s":[41,91,51,51,25,51]},{"id":188,"name":"Juan Pedro López","team":"Movistar Team","nat":"Spain","types":["Klimmer"],"s":[65,35,35,55,95,25]},{"id":189,"name":"Edoardo Zambanini","team":"Team Bahrain Victorious","nat":"Italy","types":["Klimmer"],"s":[65,35,35,55,95,25]},{"id":190,"name":"Anthony Turgis","team":"XDS Astana Team","nat":"France","types":["Klassiekerrenner"],"s":[41,91,51,51,25,51]},{"id":191,"name":"Alex Baudin","team":"EF Education–EasyPost","nat":"France","types":["Puncheur"],"s":[39,63,34,87,43,43]},{"id":192,"name":"Huub Artz","team":"Lotto–Intermarché","nat":"Netherlands","types":["Klimmer"],"s":[64,35,35,54,94,25]},{"id":193,"name":"Max Kanter","team":"XDS Astana Team","nat":"Germany","types":["Sprinter"],"s":[33,65,38,44,22,103]},{"id":194,"name":"Rick Pluimers","team":"Tudor Pro Cycling Team","nat":"Netherlands","types":["Klassiekerrenner"],"s":[40,90,50,50,25,50]},{"id":195,"name":"Marco Brenner","team":"Tudor Pro Cycling Team","nat":"Germany","types":["Puncheur"],"s":[38,62,33,86,43,43]},{"id":196,"name":"Arvid de Kleijn","team":"Tudor Pro Cycling Team","nat":"Netherlands","types":["Sprinter"],"s":[33,65,38,44,22,103]},{"id":197,"name":"Matteo Moschetti","team":"Pinarello Q36.5 Pro Cycling Team","nat":"Italy","types":["Sprinter"],"s":[33,65,38,44,22,103]},{"id":198,"name":"Nils Eekhoff","team":"Team Picnic–PostNL","nat":"Netherlands","types":["Klassiekerrenner"],"s":[39,89,49,49,25,49]},{"id":199,"name":"Nelson Oliveira","team":"Movistar Team","nat":"Portugal","types":["Tijdrijder"],"s":[52,47,94,38,33,38]},{"id":200,"name":"Anders Halland Johannessen","team":"Uno-X Mobility","nat":"Norway","types":["Klimmer"],"s":[63,34,34,53,92,24]},{"id":201,"name":"Attila Valter","team":"Team Bahrain Victorious","nat":"Hungary","types":["Klimmer"],"s":[63,34,34,53,92,24]},{"id":202,"name":"Cristián Rodríguez","team":"Team Bahrain Victorious","nat":"Spain","types":["Klimmer"],"s":[63,34,34,53,92,24]},{"id":203,"name":"Koen Bouwman","team":"Team Jayco–AlUla","nat":"Netherlands","types":["Klimmer"],"s":[63,34,34,53,92,24]},{"id":204,"name":"Paul Double","team":"Team Jayco–AlUla","nat":"Great Britain","types":["Klimmer"],"s":[63,34,34,53,92,24]},{"id":205,"name":"Lorenzo Germani","team":"Groupama–FDJ United","nat":"Italy","types":["Klimmer"],"s":[63,34,34,53,92,24]},{"id":206,"name":"Stan Dewulf","team":"Lotto–Intermarché","nat":"Belgium","types":["Klassiekerrenner"],"s":[39,88,49,49,24,49]},{"id":207,"name":"Walter Calzoni","team":"Pinarello Q36.5 Pro Cycling Team","nat":"Italy","types":["Puncheur"],"s":[37,60,32,83,41,41]},{"id":208,"name":"Matteo Malucelli","team":"XDS Astana Team","nat":"Italy","types":["Sprinter"],"s":[31,63,36,42,21,99]},{"id":209,"name":"Henok Mulubrhan","team":"XDS Astana Team","nat":"Eritrea","types":["Puncheur"],"s":[36,59,32,82,41,41]},{"id":210,"name":"Fran Miholjević","team":"Team Bahrain Victorious","nat":"Croatia","types":["Klimmer"],"s":[60,33,33,51,88,23]},{"id":211,"name":"Alessandro Covi","team":"Team Jayco–AlUla","nat":"Italy","types":["Puncheur"],"s":[36,58,31,81,40,40]},{"id":212,"name":"Clément Braz Afonso","team":"Groupama–FDJ United","nat":"France","types":["Puncheur"],"s":[36,58,31,81,40,40]},{"id":213,"name":"Johan Jacobs","team":"Groupama–FDJ United","nat":"Switzerland","types":["Klassiekerrenner"],"s":[37,84,47,47,23,47]},{"id":214,"name":"Silvan Dillier","team":"Alpecin–Premier Tech","nat":"Switzerland","types":["Rouleur"],"s":[46,55,55,41,36,46]},{"id":215,"name":"Sean Quinn","team":"EF Education–EasyPost","nat":"United States","types":["Klassiekerrenner"],"s":[36,81,45,45,22,45]},{"id":216,"name":"Xabier Mikel Azparren","team":"Pinarello Q36.5 Pro Cycling Team","nat":"Spain","types":["Klimmer"],"s":[57,31,31,48,84,22]},{"id":217,"name":"Nico Denz","team":"Tudor Pro Cycling Team","nat":"Germany","types":["Rouleur"],"s":[44,53,53,40,36,44]},{"id":218,"name":"Alexy Faure Prost","team":"Team Picnic–PostNL","nat":"France","types":["Klimmer"],"s":[56,30,30,48,82,22]},{"id":219,"name":"Chris Hamilton","team":"Team Picnic–PostNL","nat":"Australia","types":["Klimmer"],"s":[56,30,30,47,81,21]},{"id":220,"name":"Sean Flynn","team":"Team Picnic–PostNL","nat":"Great Britain","types":["Klimmer"],"s":[55,30,30,47,81,21]},{"id":221,"name":"Rémy Rochas","team":"Groupama–FDJ United","nat":"France","types":["Klimmer"],"s":[54,29,29,46,79,21]},{"id":222,"name":"Lukas Nerurkar","team":"EF Education–EasyPost","nat":"Great Britain","types":["Klimmer"],"s":[53,29,29,45,78,20]},{"id":223,"name":"Toon Aerts","team":"Lotto–Intermarché","nat":"Belgium","types":["Klassiekerrenner"],"s":[33,74,41,41,21,41]},{"id":224,"name":"Reuben Thompson","team":"Lotto–Intermarché","nat":"New Zealand","types":["Klimmer"],"s":[52,28,28,44,76,20]},{"id":225,"name":"Taco van der Hoorn","team":"Lotto–Intermarché","nat":"Netherlands","types":["Rouleur"],"s":[39,47,47,35,31,39]},{"id":226,"name":"Nicolas Vinokurov","team":"XDS Astana Team","nat":"Kazakhstan","types":["Puncheur"],"s":[26,42,23,59,29,29]},{"id":227,"name":"Gijs Leemreize","team":"Team Picnic–PostNL","nat":"Netherlands","types":["Klimmer"],"s":[43,23,23,36,63,17]},{"id":228,"name":"James Knox","team":"Team Picnic–PostNL","nat":"Great Britain","types":["Klimmer"],"s":[43,23,23,36,63,16]},{"id":229,"name":"Casper Pedersen","team":"Uno-X Mobility","nat":"Denmark","types":["Rouleur"],"s":[33,39,39,30,26,33]},{"id":230,"name":"Milan Menten","team":"Lotto–Intermarché","nat":"Belgium","types":["Sprinter"],"s":[21,42,25,28,14,67]},{"id":231,"name":"Simone Gualdi","team":"Lotto–Intermarché","nat":"Italy","types":["Klimmer"],"s":[41,22,22,35,60,16]},{"id":232,"name":"Bram Welten","team":"Team Picnic–PostNL","nat":"Netherlands","types":["Sprinter"],"s":[21,42,24,28,14,66]}];
+        const RIDERS = [{"id":1,"name":"Tadej Pogačar","team":"UAE Team Emirates XRG","nat":"Slovenia","types":["Klassementsrenner","Puncheur"],"s":[142,112,97,120,142,67]},{"id":2,"name":"Eddy Merckx","team":"Legends","nat":"Belgium","types":["Klassementsrenner","Klassiekerrenner"],"s":[126,126,112,112,112,91]},{"id":3,"name":"Bernard Hinault","team":"Legends","nat":"France","types":["Klassementsrenner","Tijdrijder"],"s":[146,81,137,93,121,62]},{"id":4,"name":"Fausto Coppi","team":"Legends","nat":"Italy","types":["Klassementsrenner","Klimmer"],"s":[151,71,96,102,158,52]},{"id":5,"name":"Remco Evenepoel","team":"Red Bull–Bora–Hansgrohe","nat":"Belgium","types":["Klassementsrenner","Tijdrijder"],"s":[125,93,147,100,100,75]},{"id":6,"name":"Roger De Vlaeminck","team":"Legends","nat":"Belgium","types":["Klassiekerrenner"],"s":[82,180,102,102,51,102]},{"id":7,"name":"Miguel Induráin","team":"Legends","nat":"Spain","types":["Tijdrijder","Klassementsrenner"],"s":[125,87,162,84,93,69]},{"id":8,"name":"Fabian Cancellara","team":"Legends","nat":"Switzerland","types":["Tijdrijder","Klassiekerrenner"],"s":[98,125,164,85,62,85]},{"id":9,"name":"Jacques Anquetil","team":"Legends","nat":"France","types":["Tijdrijder","Klassementsrenner"],"s":[124,87,161,83,93,68]},{"id":10,"name":"Tom Boonen","team":"Legends","nat":"Belgium","types":["Klassiekerrenner","Sprinter"],"s":[76,166,93,97,48,135]},{"id":11,"name":"Peter Sagan","team":"Legends","nat":"Slovakia","types":["Sprinter","Klassiekerrenner"],"s":[71,149,85,92,46,171]},{"id":12,"name":"Alberto Contador","team":"Legends","nat":"Spain","types":["Klassementsrenner","Klimmer"],"s":[147,69,93,99,152,51]},{"id":13,"name":"Mark Cavendish","team":"Legends","nat":"Great Britain","types":["Sprinter"],"s":[65,131,76,87,44,180]},{"id":14,"name":"Johan Museeuw","team":"Legends","nat":"Belgium","types":["Klassiekerrenner"],"s":[79,179,99,99,50,99]},{"id":15,"name":"Jonas Vingegaard","team":"Visma–Lease a Bike","nat":"Denmark","types":["Klassementsrenner","Klimmer"],"s":[154,65,105,81,154,41]},{"id":16,"name":"Mathieu van der Poel","team":"Alpecin–Premier Tech","nat":"Netherlands","types":["Klassiekerrenner","Puncheur"],"s":[60,171,77,128,51,111]},{"id":17,"name":"Wout van Aert","team":"Visma–Lease a Bike","nat":"Belgium","types":["Klassiekerrenner","Sprinter"],"s":[68,129,106,91,76,114]},{"id":18,"name":"Primož Roglič","team":"Red Bull–Bora–Hansgrohe","nat":"Slovenia","types":["Klassementsrenner"],"s":[147,65,98,90,131,49]},{"id":19,"name":"Mads Pedersen","team":"Lidl–Trek","nat":"Denmark","types":["Klassiekerrenner","Sprinter"],"s":[54,161,89,98,45,134]},{"id":20,"name":"Jasper Philipsen","team":"Alpecin–Premier Tech","nat":"Belgium","types":["Sprinter"],"s":[53,137,74,74,32,180]},{"id":21,"name":"Jonathan Milan","team":"Lidl–Trek","nat":"Italy","types":["Sprinter"],"s":[51,112,112,61,30,180]},{"id":22,"name":"Filippo Ganna","team":"Lidl–Trek","nat":"Italy","types":["Tijdrijder"],"s":[69,104,180,60,35,78]},{"id":23,"name":"João Almeida","team":"UAE Team Emirates XRG","nat":"Portugal","types":["Klassementsrenner"],"s":[137,61,92,84,122,46]},{"id":24,"name":"Tom Pidcock","team":"Pinarello Q36.5 Pro Cycling Team","nat":"Great Britain","types":["Puncheur","Klassiekerrenner"],"s":[69,126,69,131,66,80]},{"id":25,"name":"Tim Merlier","team":"Soudal Safety Jogger","nat":"Belgium","types":["Sprinter"],"s":[58,116,67,77,39,180]},{"id":26,"name":"Isaac del Toro","team":"UAE Team Emirates XRG","nat":"Mexico","types":["Klassementsrenner","Puncheur"],"s":[114,75,81,104,106,55]},{"id":27,"name":"Juan Ayuso","team":"Lidl–Trek","nat":"Spain","types":["Klassementsrenner"],"s":[135,60,86,86,120,46]},{"id":28,"name":"Florian Lipowitz","team":"Red Bull–Bora–Hansgrohe","nat":"Germany","types":["Klassementsrenner"],"s":[135,57,94,80,122,45]},{"id":29,"name":"Ben Healy","team":"EF Education–EasyPost","nat":"Ireland","types":["Puncheur","Klimmer"],"s":[81,92,59,131,103,64]},{"id":30,"name":"Arnaud De Lie","team":"Tudor Pro Cycling Team","nat":"Belgium","types":["Sprinter","Klassiekerrenner"],"s":[61,129,74,80,40,147]},{"id":31,"name":"Matteo Jorgenson","team":"Visma–Lease a Bike","nat":"United States","types":["Klassementsrenner","Klassiekerrenner"],"s":[114,88,88,83,96,57]},{"id":32,"name":"Olav Kooij","team":"Decathlon CMA CGM","nat":"Netherlands","types":["Sprinter"],"s":[56,113,66,75,38,178]},{"id":33,"name":"Ben O'Connor","team":"Decathlon CMA CGM","nat":"Australia","types":["Klassementsrenner"],"s":[133,61,92,81,115,42]},{"id":34,"name":"Felix Gall","team":"Lidl–Trek","nat":"Austria","types":["Klassementsrenner"],"s":[133,56,85,81,125,44]},{"id":35,"name":"Richard Carapaz","team":"NSN Cycling Team","nat":"Ecuador","types":["Klassementsrenner"],"s":[133,59,84,83,122,43]},{"id":36,"name":"Carlos Rodríguez","team":"Netcompany INEOS","nat":"Spain","types":["Klassementsrenner"],"s":[135,59,89,83,114,44]},{"id":37,"name":"Thymen Arensman","team":"Netcompany INEOS","nat":"Netherlands","types":["Klassementsrenner"],"s":[133,59,95,79,115,43]},{"id":38,"name":"Mattias Skjelmose","team":"Lidl–Trek","nat":"Denmark","types":["Puncheur","Klassementsrenner"],"s":[90,90,68,124,90,63]},{"id":39,"name":"Romain Grégoire","team":"Groupama–FDJ United","nat":"France","types":["Puncheur"],"s":[65,106,57,147,73,73]},{"id":40,"name":"Kevin Vauquelin","team":"Netcompany INEOS","nat":"France","types":["Puncheur","Klassementsrenner"],"s":[89,89,68,122,89,62]},{"id":41,"name":"Adam Yates","team":"UAE Team Emirates XRG","nat":"Great Britain","types":["Klassementsrenner","Klimmer"],"s":[124,58,78,83,129,43]},{"id":42,"name":"Kaden Groves","team":"Tudor Pro Cycling Team","nat":"Australia","types":["Sprinter"],"s":[55,110,64,74,37,175]},{"id":43,"name":"Antonio Tiberi","team":"Team Bahrain Victorious","nat":"Italy","types":["Klassementsrenner"],"s":[130,58,87,79,115,43]},{"id":44,"name":"Oscar Onley","team":"Netcompany INEOS","nat":"Great Britain","types":["Klassementsrenner"],"s":[129,57,86,79,115,43]},{"id":45,"name":"Sepp Kuss","team":"Visma–Lease a Bike","nat":"United States","types":["Klimmer"],"s":[109,57,59,87,155,39]},{"id":46,"name":"Biniam Girmay","team":"NSN Cycling Team","nat":"Eritrea","types":["Sprinter"],"s":[54,108,65,72,34,171]},{"id":47,"name":"Egan Bernal","team":"Netcompany INEOS","nat":"Colombia","types":["Klassementsrenner"],"s":[128,57,85,78,114,43]},{"id":48,"name":"Lenny Martinez","team":"Team Bahrain Victorious","nat":"France","types":["Klimmer"],"s":[104,57,54,93,155,43]},{"id":49,"name":"Giulio Ciccone","team":"Pinarello Q36.5 Pro Cycling Team","nat":"Italy","types":["Klimmer"],"s":[103,59,55,94,154,41]},{"id":50,"name":"Paul Magnier","team":"Soudal Safety Jogger","nat":"France","types":["Sprinter"],"s":[54,111,60,75,33,171]},{"id":51,"name":"Jhonatan Narváez","team":"UAE Team Emirates XRG","nat":"Ecuador","types":["Puncheur","Klassiekerrenner"],"s":[63,116,63,122,61,74]},{"id":52,"name":"Brandon McNulty","team":"UAE Team Emirates XRG","nat":"United States","types":["Tijdrijder","Klassementsrenner"],"s":[101,70,131,68,75,55]},{"id":53,"name":"Christophe Laporte","team":"Visma–Lease a Bike","nat":"France","types":["Klassiekerrenner"],"s":[66,148,82,82,41,82]},{"id":54,"name":"Giulio Pellizzari","team":"Red Bull–Bora–Hansgrohe","nat":"Italy","types":["Klimmer"],"s":[105,56,56,89,153,40]},{"id":55,"name":"Jai Hindley","team":"Red Bull–Bora–Hansgrohe","nat":"Australia","types":["Klassementsrenner"],"s":[127,56,81,77,117,42]},{"id":56,"name":"Daniel Martínez","team":"Red Bull–Bora–Hansgrohe","nat":"Colombia","types":["Klassementsrenner"],"s":[127,57,85,80,110,41]},{"id":57,"name":"Joshua Tarling","team":"Netcompany INEOS","nat":"Great Britain","types":["Tijdrijder"],"s":[86,78,156,62,55,62]},{"id":58,"name":"Enric Mas","team":"Movistar Team","nat":"Spain","types":["Klassementsrenner"],"s":[130,54,84,77,114,41]},{"id":59,"name":"Michael Matthews","team":"Team Jayco–AlUla","nat":"Australia","types":["Puncheur","Sprinter"],"s":[60,103,57,120,60,101]},{"id":60,"name":"Tobias Halland Johannessen","team":"Uno-X Mobility","nat":"Norway","types":["Klassementsrenner"],"s":[127,56,84,77,112,42]},{"id":61,"name":"Santiago Buitrago","team":"NSN Cycling Team","nat":"Colombia","types":["Klimmer"],"s":[104,56,54,86,156,40]},{"id":62,"name":"Maxim Van Gils","team":"Red Bull–Bora–Hansgrohe","nat":"Belgium","types":["Puncheur"],"s":[62,99,52,142,70,71]},{"id":63,"name":"Georg Zimmermann","team":"Lidl–Trek","nat":"Germany","types":["Puncheur","Klimmer"],"s":[55,75,55,105,100,60]},{"id":64,"name":"Neilson Powless","team":"EF Education–EasyPost","nat":"United States","types":["Puncheur"],"s":[62,105,56,135,70,68]},{"id":65,"name":"Lennert Van Eetvelt","team":"NSN Cycling Team","nat":"Belgium","types":["Klimmer"],"s":[104,56,56,92,146,42]},{"id":66,"name":"Matthew Brennan","team":"Visma–Lease a Bike","nat":"Great Britain","types":["Sprinter"],"s":[53,106,62,70,35,167]},{"id":67,"name":"Jay Vine","team":"UAE Team Emirates XRG","nat":"Australia","types":["Klimmer"],"s":[103,55,61,84,150,37]},{"id":68,"name":"Tim Wellens","team":"UAE Team Emirates XRG","nat":"Belgium","types":["Puncheur"],"s":[61,103,56,135,69,67]},{"id":69,"name":"Paul Seixas","team":"Decathlon CMA CGM","nat":"France","types":["Klimmer","Klassementsrenner"],"s":[111,55,65,83,136,40]},{"id":70,"name":"Victor Campenaerts","team":"Visma–Lease a Bike","nat":"Belgium","types":["Tijdrijder","Rouleur"],"s":[83,83,135,65,57,67]},{"id":71,"name":"Jasper Stuyven","team":"Soudal Safety Jogger","nat":"Belgium","types":["Klassiekerrenner"],"s":[64,145,80,80,40,80]},{"id":72,"name":"David Gaudu","team":"Groupama–FDJ United","nat":"France","types":["Klimmer"],"s":[103,55,52,90,150,40]},{"id":73,"name":"Cian Uijtdebroeks","team":"Movistar Team","nat":"Belgium","types":["Klassementsrenner"],"s":[124,55,83,76,110,41]},{"id":74,"name":"Søren Wærenskjold","team":"Uno-X Mobility","nat":"Norway","types":["Sprinter","Tijdrijder"],"s":[64,95,95,67,42,128]},{"id":75,"name":"Matej Mohorič","team":"Team Bahrain Victorious","nat":"Slovenia","types":["Klassiekerrenner","Puncheur"],"s":[63,129,71,100,50,76]},{"id":76,"name":"Luke Plapp","team":"Team Jayco–AlUla","nat":"Australia","types":["Tijdrijder"],"s":[84,77,153,61,54,61]},{"id":77,"name":"Marc Hirschi","team":"Tudor Pro Cycling Team","nat":"Switzerland","types":["Puncheur"],"s":[61,98,52,140,69,71]},{"id":78,"name":"Christian Scaroni","team":"XDS Astana Team","nat":"Italy","types":["Puncheur"],"s":[61,99,53,137,68,68]},{"id":79,"name":"Iván Romeo","team":"Movistar Team","nat":"Spain","types":["Tijdrijder"],"s":[87,74,152,61,55,57]},{"id":80,"name":"Alec Segaert","team":"Team Bahrain Victorious","nat":"Belgium","types":["Tijdrijder"],"s":[80,79,152,61,51,63]},{"id":81,"name":"Einer Rubio","team":"Movistar Team","nat":"Colombia","types":["Klimmer"],"s":[101,55,55,86,148,39]},{"id":82,"name":"Corbin Strong","team":"NSN Cycling Team","nat":"New Zealand","types":["Sprinter","Puncheur"],"s":[55,102,58,93,47,129]},{"id":83,"name":"Ilan Van Wilder","team":"Soudal Safety Jogger","nat":"Belgium","types":["Klassementsrenner"],"s":[122,54,82,75,109,41]},{"id":84,"name":"Mathias Vacek","team":"Lidl–Trek","nat":"Czech Republic","types":["Klassiekerrenner"],"s":[63,142,79,79,39,79]},{"id":85,"name":"Jordi Meeus","team":"Lidl–Trek","nat":"Belgium","types":["Sprinter"],"s":[51,102,60,68,34,162]},{"id":86,"name":"Aleksandr Vlasov","team":"Red Bull–Bora–Hansgrohe","nat":"Russia","types":["Klassementsrenner"],"s":[120,54,80,74,107,40]},{"id":87,"name":"Magnus Sheffield","team":"Uno-X Mobility","nat":"United States","types":["Klassiekerrenner"],"s":[62,140,78,78,39,78]},{"id":88,"name":"Pablo Castrillo","team":"Movistar Team","nat":"Spain","types":["Klimmer"],"s":[99,53,53,84,145,38]},{"id":89,"name":"Axel Laurance","team":"Netcompany INEOS","nat":"France","types":["Puncheur"],"s":[59,95,51,132,66,66]},{"id":90,"name":"Valentin Paret-Peintre","team":"Soudal Safety Jogger","nat":"France","types":["Klimmer"],"s":[98,53,53,83,143,38]},{"id":91,"name":"Jarno Widar","team":"Lotto–Intermarché","nat":"Belgium","types":["Klimmer"],"s":[97,52,52,82,142,37]},{"id":92,"name":"Matthew Riccitello","team":"Decathlon CMA CGM","nat":"United States","types":["Klimmer"],"s":[96,52,52,81,141,37]},{"id":93,"name":"Paul Lapeira","team":"Decathlon CMA CGM","nat":"France","types":["Puncheur"],"s":[57,93,50,128,64,64]},{"id":94,"name":"Marc Soler","team":"UAE Team Emirates XRG","nat":"Spain","types":["Klimmer"],"s":[95,53,54,81,136,35]},{"id":95,"name":"Nils Politt","team":"UAE Team Emirates XRG","nat":"Germany","types":["Klassiekerrenner","Rouleur"],"s":[65,119,80,72,45,75]},{"id":96,"name":"Tiesj Benoot","team":"Decathlon CMA CGM","nat":"Belgium","types":["Klassiekerrenner"],"s":[60,134,75,75,37,75]},{"id":97,"name":"Stefan Küng","team":"Tudor Pro Cycling Team","nat":"Switzerland","types":["Tijdrijder","Klassiekerrenner"],"s":[72,91,120,63,46,63]},{"id":98,"name":"Michael Storer","team":"Tudor Pro Cycling Team","nat":"Australia","types":["Klimmer"],"s":[98,51,49,81,140,35]},{"id":99,"name":"Mauro Schmid","team":"Pinarello Q36.5 Pro Cycling Team","nat":"Switzerland","types":["Puncheur"],"s":[57,92,50,128,64,64]},{"id":100,"name":"Julian Alaphilippe","team":"Tudor Pro Cycling Team","nat":"France","types":["Puncheur"],"s":[56,92,49,127,64,64]},{"id":101,"name":"Dylan van Baarle","team":"Soudal Safety Jogger","nat":"Netherlands","types":["Klassiekerrenner"],"s":[59,135,77,71,37,72]},{"id":102,"name":"Jonas Abrahamsen","team":"Uno-X Mobility","nat":"Norway","types":["Puncheur"],"s":[56,91,49,127,63,63]},{"id":103,"name":"Phil Bauhaus","team":"Team Bahrain Victorious","nat":"Germany","types":["Sprinter"],"s":[48,99,57,64,31,150]},{"id":104,"name":"Sam Welsford","team":"Team Jayco–AlUla","nat":"Australia","types":["Sprinter"],"s":[48,93,56,62,32,158]},{"id":105,"name":"Alberto Bettiol","team":"XDS Astana Team","nat":"Italy","types":["Klassiekerrenner"],"s":[59,131,74,77,35,75]},{"id":106,"name":"Marijn van den Berg","team":"EF Education–EasyPost","nat":"Netherlands","types":["Sprinter"],"s":[48,96,56,64,32,152]},{"id":107,"name":"Fabio Jakobsen","team":"Visma–Lease a Bike","nat":"Netherlands","types":["Sprinter"],"s":[48,96,56,64,32,151]},{"id":108,"name":"Guillaume Martin","team":"Lotto–Intermarché","nat":"France","types":["Klimmer"],"s":[93,50,50,78,135,36]},{"id":109,"name":"Pavel Sivakov","team":"Decathlon CMA CGM","nat":"France","types":["Klimmer"],"s":[92,50,50,78,135,35]},{"id":110,"name":"Tobias Lund Andresen","team":"Decathlon CMA CGM","nat":"Denmark","types":["Sprinter"],"s":[47,94,53,67,31,147]},{"id":111,"name":"Pavel Bittner","team":"Pinarello Q36.5 Pro Cycling Team","nat":"Czech Republic","types":["Sprinter"],"s":[47,94,55,60,30,153]},{"id":112,"name":"Max Poole","team":"Team Picnic–PostNL","nat":"Great Britain","types":["Klimmer"],"s":[91,49,49,77,134,35]},{"id":113,"name":"Orluis Aular","team":"Movistar Team","nat":"Venezuela","types":["Sprinter"],"s":[47,93,54,62,31,148]},{"id":114,"name":"Javier Romo","team":"Netcompany INEOS","nat":"Spain","types":["Klimmer"],"s":[91,49,49,77,133,35]},{"id":115,"name":"Pascal Ackermann","team":"Team Jayco–AlUla","nat":"Germany","types":["Sprinter"],"s":[46,91,53,61,30,145]},{"id":116,"name":"Maximilian Schachmann","team":"Soudal Safety Jogger","nat":"Germany","types":["Puncheur"],"s":[53,86,46,120,60,60]},{"id":117,"name":"Kasper Asgreen","team":"NSN Cycling Team","nat":"Denmark","types":["Klassiekerrenner"],"s":[56,125,70,70,35,70]},{"id":118,"name":"Quinn Simmons","team":"Lidl–Trek","nat":"United States","types":["Klassiekerrenner"],"s":[55,124,69,69,34,69]},{"id":119,"name":"Davide Piganzoli","team":"Visma–Lease a Bike","nat":"Italy","types":["Klassementsrenner"],"s":[105,47,70,64,94,35]},{"id":120,"name":"Jørgen Nordhagen","team":"Visma–Lease a Bike","nat":"Norway","types":["Klimmer"],"s":[86,47,47,73,126,33]},{"id":121,"name":"Edoardo Affini","team":"Visma–Lease a Bike","nat":"Italy","types":["Tijdrijder"],"s":[70,64,128,51,45,51]},{"id":122,"name":"Florian Vermeersch","team":"UAE Team Emirates XRG","nat":"Belgium","types":["Klassiekerrenner"],"s":[53,120,67,67,33,67]},{"id":123,"name":"Gerben Thijssen","team":"Alpecin–Premier Tech","nat":"Belgium","types":["Sprinter"],"s":[43,90,51,56,29,136]},{"id":124,"name":"Ben Turner","team":"Soudal Safety Jogger","nat":"Great Britain","types":["Klassiekerrenner"],"s":[53,120,66,66,33,66]},{"id":125,"name":"Joseph Blackmore","team":"Netcompany INEOS","nat":"Great Britain","types":["Puncheur"],"s":[54,79,44,114,60,54]},{"id":126,"name":"Rémi Cavagna","team":"Groupama–FDJ United","nat":"France","types":["Tijdrijder"],"s":[70,63,127,51,44,51]},{"id":127,"name":"Paul Penhoët","team":"Groupama–FDJ United","nat":"France","types":["Sprinter"],"s":[43,85,51,60,27,139]},{"id":128,"name":"Pelayo Sánchez","team":"Movistar Team","nat":"Spain","types":["Puncheur"],"s":[51,84,42,117,56,55]},{"id":129,"name":"Ethan Hayter","team":"Pinarello Q36.5 Pro Cycling Team","nat":"Great Britain","types":["Puncheur","Tijdrijder"],"s":[57,76,72,93,53,55]},{"id":130,"name":"Casper van Uden","team":"Alpecin–Premier Tech","nat":"Netherlands","types":["Sprinter"],"s":[43,87,50,58,29,137]},{"id":131,"name":"Tibor Del Grosso","team":"Alpecin–Premier Tech","nat":"Netherlands","types":["Klassiekerrenner"],"s":[53,118,66,66,33,66]},{"id":132,"name":"Tao Geoghegan Hart","team":"EF Education–EasyPost","nat":"Great Britain","types":["Klassementsrenner"],"s":[101,45,67,62,89,34]},{"id":133,"name":"Stefan Bissegger","team":"Decathlon CMA CGM","nat":"Switzerland","types":["Tijdrijder"],"s":[68,62,123,49,43,49]},{"id":134,"name":"Juan Sebastián Molano","team":"Lotto–Intermarché","nat":"Colombia","types":["Sprinter"],"s":[42,83,49,54,28,138]},{"id":135,"name":"Danny van Poppel","team":"Red Bull–Bora–Hansgrohe","nat":"Netherlands","types":["Sprinter"],"s":[42,88,50,56,28,130]},{"id":136,"name":"Laurence Pithie","team":"Red Bull–Bora–Hansgrohe","nat":"New Zealand","types":["Klassiekerrenner"],"s":[52,117,65,65,32,65]},{"id":137,"name":"Dorian Godon","team":"Netcompany INEOS","nat":"France","types":["Puncheur"],"s":[49,80,43,111,56,56]},{"id":138,"name":"Ethan Vernon","team":"NSN Cycling Team","nat":"Great Britain","types":["Sprinter"],"s":[42,84,49,56,28,133]},{"id":139,"name":"Toms Skujiņš","team":"Lidl–Trek","nat":"Latvia","types":["Puncheur"],"s":[49,79,43,110,55,55]},{"id":140,"name":"Chris Harper","team":"Pinarello Q36.5 Pro Cycling Team","nat":"Australia","types":["Klimmer"],"s":[82,44,44,69,120,31]},{"id":141,"name":"Fabio Christen","team":"Pinarello Q36.5 Pro Cycling Team","nat":"Switzerland","types":["Puncheur"],"s":[48,79,42,109,54,54]},{"id":142,"name":"Diego Ulissi","team":"XDS Astana Team","nat":"Italy","types":["Puncheur"],"s":[50,76,42,111,54,51]},{"id":143,"name":"Lorenzo Fortunato","team":"XDS Astana Team","nat":"Italy","types":["Klimmer"],"s":[81,43,43,68,118,31]},{"id":144,"name":"Andrea Bagioli","team":"XDS Astana Team","nat":"Italy","types":["Puncheur"],"s":[48,80,42,106,52,56]},{"id":145,"name":"Afonso Eulálio","team":"Team Bahrain Victorious","nat":"Portugal","types":["Klimmer"],"s":[80,43,43,68,117,31]},{"id":146,"name":"Andreas Leknessund","team":"Uno-X Mobility","nat":"Norway","types":["Puncheur"],"s":[47,76,41,106,53,53]},{"id":147,"name":"Michał Kwiatkowski","team":"Netcompany INEOS","nat":"Poland","types":["Puncheur"],"s":[46,75,40,103,52,52]},{"id":148,"name":"Yves Lampaert","team":"Soudal Safety Jogger","nat":"Belgium","types":["Tijdrijder","Klassiekerrenner"],"s":[58,73,97,50,37,50]},{"id":149,"name":"Lewis Askey","team":"NSN Cycling Team","nat":"Great Britain","types":["Klassiekerrenner"],"s":[48,107,60,60,30,60]},{"id":150,"name":"Madis Mihkels","team":"Alpecin–Premier Tech","nat":"Estonia","types":["Sprinter"],"s":[38,76,45,51,26,121]},{"id":151,"name":"Archie Ryan","team":"EF Education–EasyPost","nat":"Ireland","types":["Klimmer"],"s":[74,40,40,63,109,29]},{"id":152,"name":"Gianni Vermeersch","team":"Red Bull–Bora–Hansgrohe","nat":"Belgium","types":["Klassiekerrenner"],"s":[46,104,58,58,29,58]},{"id":153,"name":"Aurélien Paret-Peintre","team":"Decathlon CMA CGM","nat":"France","types":["Klimmer"],"s":[74,40,40,62,108,28]},{"id":154,"name":"Warren Barguil","team":"Team Picnic–PostNL","nat":"France","types":["Klimmer"],"s":[73,39,39,62,107,28]},{"id":155,"name":"Andrea Vendrame","team":"Team Jayco–AlUla","nat":"Italy","types":["Puncheur"],"s":[44,71,38,98,49,49]},{"id":156,"name":"Andreas Kron","team":"Uno-X Mobility","nat":"Denmark","types":["Puncheur"],"s":[43,70,38,97,49,49]},{"id":157,"name":"Filippo Zana","team":"Soudal Safety Jogger","nat":"Italy","types":["Klimmer"],"s":[72,39,39,61,105,28]},{"id":158,"name":"Matteo Trentin","team":"Tudor Pro Cycling Team","nat":"Italy","types":["Klassiekerrenner"],"s":[45,100,56,56,28,56]},{"id":159,"name":"Davide Ballerini","team":"Pinarello Q36.5 Pro Cycling Team","nat":"Italy","types":["Sprinter"],"s":[36,73,42,49,24,115]},{"id":160,"name":"Mike Teunissen","team":"XDS Astana Team","nat":"Netherlands","types":["Klassiekerrenner"],"s":[44,99,55,55,28,55]},{"id":161,"name":"Frank van den Broek","team":"Team Picnic–PostNL","nat":"Netherlands","types":["Puncheur"],"s":[42,68,36,94,47,47]},{"id":162,"name":"Felix Engelhardt","team":"Team Jayco–AlUla","nat":"Germany","types":["Puncheur"],"s":[41,67,36,93,46,46]},{"id":163,"name":"Johannes Kulset","team":"Uno-X Mobility","nat":"Norway","types":["Klimmer"],"s":[69,37,37,58,101,27]},{"id":164,"name":"Rasmus Tiller","team":"Uno-X Mobility","nat":"Norway","types":["Klassiekerrenner"],"s":[43,96,54,54,27,54]},{"id":165,"name":"Darren Rafferty","team":"EF Education–EasyPost","nat":"Ireland","types":["Klimmer"],"s":[70,37,40,58,96,25]},{"id":166,"name":"Vincenzo Albanese","team":"EF Education–EasyPost","nat":"Italy","types":["Puncheur"],"s":[41,68,36,89,43,49]},{"id":167,"name":"Iván García Cortina","team":"Alpecin–Premier Tech","nat":"Spain","types":["Klassiekerrenner"],"s":[43,96,53,53,27,53]},{"id":168,"name":"Jake Stewart","team":"NSN Cycling Team","nat":"Great Britain","types":["Sprinter"],"s":[35,74,41,47,23,105]},{"id":169,"name":"Alessandro Pinarello","team":"NSN Cycling Team","nat":"Italy","types":["Klimmer"],"s":[68,35,35,58,104,26]},{"id":170,"name":"Alberto Dainese","team":"Soudal Safety Jogger","nat":"Italy","types":["Sprinter"],"s":[35,68,41,45,23,113]},{"id":171,"name":"Brieuc Rolland","team":"Groupama–FDJ United","nat":"France","types":["Klimmer"],"s":[66,39,37,61,97,26]},{"id":172,"name":"Raúl García Pierna","team":"Movistar Team","nat":"Spain","types":["Puncheur"],"s":[43,64,36,91,49,43]},{"id":173,"name":"Oliver Naesen","team":"Decathlon CMA CGM","nat":"Belgium","types":["Klassiekerrenner"],"s":[42,96,53,53,27,53]},{"id":174,"name":"John Degenkolb","team":"Team Picnic–PostNL","nat":"Germany","types":["Klassiekerrenner"],"s":[42,95,53,53,26,53]},{"id":175,"name":"Luke Lamperti","team":"EF Education–EasyPost","nat":"United States","types":["Sprinter"],"s":[34,69,40,46,23,109]},{"id":176,"name":"Krists Neilands","team":"NSN Cycling Team","nat":"Latvia","types":["Puncheur"],"s":[40,68,35,88,46,43]},{"id":177,"name":"Quentin Pacher","team":"Groupama–FDJ United","nat":"France","types":["Puncheur"],"s":[42,63,35,90,48,42]},{"id":178,"name":"Davide Formolo","team":"Movistar Team","nat":"Italy","types":["Klimmer"],"s":[65,38,36,60,95,26]},{"id":179,"name":"Torstein Træen","team":"Uno-X Mobility","nat":"Norway","types":["Klimmer"],"s":[70,36,37,55,98,24]},{"id":180,"name":"Davide De Pretto","team":"Team Jayco–AlUla","nat":"Italy","types":["Puncheur"],"s":[40,65,33,92,42,48]},{"id":181,"name":"Mikkel Frølich Honoré","team":"Team Jayco–AlUla","nat":"Denmark","types":["Puncheur"],"s":[40,67,38,87,45,43]},{"id":182,"name":"Robert Stannard","team":"Team Bahrain Victorious","nat":"Australia","types":["Puncheur"],"s":[40,65,35,89,45,45]},{"id":183,"name":"Kevin Geniets","team":"Groupama–FDJ United","nat":"Luxembourg","types":["Puncheur"],"s":[40,64,35,89,45,45]},{"id":184,"name":"Jensen Plowright","team":"Alpecin–Premier Tech","nat":"Australia","types":["Sprinter"],"s":[34,68,39,45,22,107]},{"id":185,"name":"Francesco Busatto","team":"Alpecin–Premier Tech","nat":"Italy","types":["Puncheur"],"s":[39,64,34,88,44,44]},{"id":186,"name":"Mauri Vansevenant","team":"Lotto–Intermarché","nat":"Belgium","types":["Klimmer"],"s":[65,35,35,55,96,25]},{"id":187,"name":"Emiel Verstrynge","team":"Alpecin–Premier Tech","nat":"Belgium","types":["Klassiekerrenner"],"s":[41,89,51,55,25,49]},{"id":188,"name":"Juan Pedro López","team":"Movistar Team","nat":"Spain","types":["Klimmer"],"s":[67,35,33,55,97,23]},{"id":189,"name":"Edoardo Zambanini","team":"Team Bahrain Victorious","nat":"Italy","types":["Klimmer"],"s":[63,37,35,58,92,25]},{"id":190,"name":"Anthony Turgis","team":"XDS Astana Team","nat":"France","types":["Klassiekerrenner"],"s":[41,93,51,49,23,53]},{"id":191,"name":"Alex Baudin","team":"EF Education–EasyPost","nat":"France","types":["Puncheur"],"s":[39,63,34,87,43,43]},{"id":192,"name":"Huub Artz","team":"Lotto–Intermarché","nat":"Netherlands","types":["Klimmer"],"s":[64,35,35,54,94,25]},{"id":193,"name":"Max Kanter","team":"XDS Astana Team","nat":"Germany","types":["Sprinter"],"s":[33,68,39,44,22,99]},{"id":194,"name":"Rick Pluimers","team":"Tudor Pro Cycling Team","nat":"Netherlands","types":["Klassiekerrenner"],"s":[40,90,50,50,25,50]},{"id":195,"name":"Marco Brenner","team":"Tudor Pro Cycling Team","nat":"Germany","types":["Puncheur"],"s":[38,62,33,86,43,43]},{"id":196,"name":"Arvid de Kleijn","team":"Tudor Pro Cycling Team","nat":"Netherlands","types":["Sprinter"],"s":[33,63,38,42,22,107]},{"id":197,"name":"Matteo Moschetti","team":"Pinarello Q36.5 Pro Cycling Team","nat":"Italy","types":["Sprinter"],"s":[33,65,38,46,21,102]},{"id":198,"name":"Nils Eekhoff","team":"Team Picnic–PostNL","nat":"Netherlands","types":["Klassiekerrenner"],"s":[39,89,49,49,25,49]},{"id":199,"name":"Nelson Oliveira","team":"Movistar Team","nat":"Portugal","types":["Tijdrijder"],"s":[52,47,94,38,33,38]},{"id":200,"name":"Anders Halland Johannessen","team":"Uno-X Mobility","nat":"Norway","types":["Klimmer"],"s":[61,34,32,57,92,24]},{"id":201,"name":"Attila Valter","team":"Team Bahrain Victorious","nat":"Hungary","types":["Klimmer"],"s":[66,34,35,53,90,22]},{"id":202,"name":"Cristián Rodríguez","team":"Team Bahrain Victorious","nat":"Spain","types":["Klimmer"],"s":[63,32,32,53,96,24]},{"id":203,"name":"Koen Bouwman","team":"Team Jayco–AlUla","nat":"Netherlands","types":["Klimmer"],"s":[61,36,34,53,90,26]},{"id":204,"name":"Paul Double","team":"Team Jayco–AlUla","nat":"Great Britain","types":["Klimmer"],"s":[63,34,31,53,95,24]},{"id":205,"name":"Lorenzo Germani","team":"Groupama–FDJ United","nat":"Italy","types":["Klimmer"],"s":[63,37,36,51,89,24]},{"id":206,"name":"Stan Dewulf","team":"Lotto–Intermarché","nat":"Belgium","types":["Klassiekerrenner"],"s":[39,88,49,49,24,49]},{"id":207,"name":"Walter Calzoni","team":"Pinarello Q36.5 Pro Cycling Team","nat":"Italy","types":["Puncheur"],"s":[37,60,32,83,41,41]},{"id":208,"name":"Matteo Malucelli","team":"XDS Astana Team","nat":"Italy","types":["Sprinter"],"s":[31,63,36,42,21,99]},{"id":209,"name":"Henok Mulubrhan","team":"XDS Astana Team","nat":"Eritrea","types":["Puncheur"],"s":[36,59,32,82,41,41]},{"id":210,"name":"Fran Miholjević","team":"Team Bahrain Victorious","nat":"Croatia","types":["Klimmer"],"s":[60,33,33,51,88,23]},{"id":211,"name":"Alessandro Covi","team":"Team Jayco–AlUla","nat":"Italy","types":["Puncheur"],"s":[36,56,31,81,43,39]},{"id":212,"name":"Clément Braz Afonso","team":"Groupama–FDJ United","nat":"France","types":["Puncheur"],"s":[36,60,31,79,38,42]},{"id":213,"name":"Johan Jacobs","team":"Groupama–FDJ United","nat":"Switzerland","types":["Klassiekerrenner"],"s":[37,84,47,47,23,47]},{"id":214,"name":"Silvan Dillier","team":"Alpecin–Premier Tech","nat":"Switzerland","types":["Rouleur"],"s":[46,55,55,41,36,46]},{"id":215,"name":"Sean Quinn","team":"EF Education–EasyPost","nat":"United States","types":["Klassiekerrenner"],"s":[36,81,45,45,22,45]},{"id":216,"name":"Xabier Mikel Azparren","team":"Pinarello Q36.5 Pro Cycling Team","nat":"Spain","types":["Klimmer"],"s":[57,31,31,48,84,22]},{"id":217,"name":"Nico Denz","team":"Tudor Pro Cycling Team","nat":"Germany","types":["Rouleur"],"s":[44,53,53,40,36,44]},{"id":218,"name":"Alexy Faure Prost","team":"Team Picnic–PostNL","nat":"France","types":["Klimmer"],"s":[56,30,30,48,82,22]},{"id":219,"name":"Chris Hamilton","team":"Team Picnic–PostNL","nat":"Australia","types":["Klimmer"],"s":[56,30,30,47,81,21]},{"id":220,"name":"Sean Flynn","team":"Team Picnic–PostNL","nat":"Great Britain","types":["Klimmer"],"s":[55,30,30,47,81,21]},{"id":221,"name":"Rémy Rochas","team":"Groupama–FDJ United","nat":"France","types":["Klimmer"],"s":[54,29,29,46,79,21]},{"id":222,"name":"Lukas Nerurkar","team":"EF Education–EasyPost","nat":"Great Britain","types":["Klimmer"],"s":[53,29,29,45,78,20]},{"id":223,"name":"Toon Aerts","team":"Lotto–Intermarché","nat":"Belgium","types":["Klassiekerrenner"],"s":[33,74,41,41,21,41]},{"id":224,"name":"Reuben Thompson","team":"Lotto–Intermarché","nat":"New Zealand","types":["Klimmer"],"s":[52,28,28,44,76,20]},{"id":225,"name":"Taco van der Hoorn","team":"Lotto–Intermarché","nat":"Netherlands","types":["Rouleur"],"s":[39,47,47,35,31,39]},{"id":226,"name":"Nicolas Vinokurov","team":"XDS Astana Team","nat":"Kazakhstan","types":["Puncheur"],"s":[26,42,23,59,29,29]},{"id":227,"name":"Gijs Leemreize","team":"Team Picnic–PostNL","nat":"Netherlands","types":["Klimmer"],"s":[43,23,23,36,63,17]},{"id":228,"name":"James Knox","team":"Team Picnic–PostNL","nat":"Great Britain","types":["Klimmer"],"s":[43,23,23,36,63,16]},{"id":229,"name":"Casper Pedersen","team":"Uno-X Mobility","nat":"Denmark","types":["Rouleur"],"s":[33,39,39,30,26,33]},{"id":230,"name":"Milan Menten","team":"Lotto–Intermarché","nat":"Belgium","types":["Sprinter"],"s":[21,42,25,28,14,67]},{"id":231,"name":"Simone Gualdi","team":"Lotto–Intermarché","nat":"Italy","types":["Klimmer"],"s":[41,22,22,35,60,16]},{"id":232,"name":"Bram Welten","team":"Team Picnic–PostNL","nat":"Netherlands","types":["Sprinter"],"s":[21,42,24,28,14,66]}];
         const RIDER_BY_ID = Object.fromEntries(RIDERS.map(r => [r.id, r]));
         const LEGEND_DRAFT_WEIGHT = 0.4;
         // Voorlopige afbeelding: een neutraal truitje (wordt later vervangen door ploegkleuren en vlag)
@@ -2607,10 +2665,15 @@ function visionPlan(v) {
     if (n === 2) return ['camp', 'ap', 'ap'];
     return ['camp', 'ap', 'camp', 'ap'];
 }
+// Het deel van het plan dat nog binnen de visieperiode valt: beloningen lopen nooit door na seizoen v.until
+function visionPlanNow(v) {
+    const start = (v && v.done) || currentSeason;
+    return visionPlan(v).slice(0, Math.max(1, v.until - start + 1));
+}
 const PLAN_LABEL = { camp: 'a free training camp', ap: '1 extra action point' };
 const PLAN_SHORT = { camp: '&#127957; Camp', ap: '+1 AP' };
 function visionRewardText(v) {
-    const plan = visionPlan(v);
+    const plan = visionPlanNow(v);
     if (plan.length === 1) return PLAN_LABEL[plan[0]];
     return plan.map(x => PLAN_LABEL[x]).join(', then ') + ', one part per season, as long as your eleven still matches the vision at kick-off';
 }
@@ -2653,9 +2716,9 @@ function visionStatusHtml() {
     const have = visionCount(v);
     const isNew = !v.seen;
     const state = v.done
-        ? `<span class="text-green-400 font-black">Achieved in season ${v.done}.</span> ${visionPlan(v).length > 1 ? 'Keep it at every kick-off to collect the rest of your reward.' : `The board keeps this vision until season ${v.until}.`} You have ${have} of ${v.need} now.`
+        ? `<span class="text-green-400 font-black">Achieved in season ${v.done}.</span> ${visionPlanNow(v).length > 1 ? 'Keep it at every kick-off to collect the rest of your reward.' : `The board keeps this vision until season ${v.until}.`} You have ${have} of ${v.need} now.`
         : `You have <span class="text-white font-black">${have} of ${v.need}</span>. Deadline: the kick-off of season ${v.until}. Reward: ${visionRewardText(v)}.`;
-    const plan = visionPlan(v);
+    const plan = visionPlanNow(v);
     const paid = v.paid || [], missed = v.missed || [];
     const steps = plan.length > 1 ? `<div class="flex flex-wrap justify-center gap-1.5 mt-2">${plan.map((r, i) => {
         const st = paid.includes(i) ? 'bg-green-500/20 border-green-500 text-green-300' : (missed.includes(i) ? 'bg-red-500/10 border-red-500/60 text-red-300 line-through' : 'bg-slate-800 border-slate-600 text-slate-300');
@@ -2697,7 +2760,7 @@ function checkClubVision() {
     const v = clubVision;
     if (!v) return;
     if (v.checked === currentSeason) { updateVisionUI(); return; }   // één controle per seizoen, ook na herladen
-    const plan = visionPlan(v);
+    const plan = visionPlanNow(v);
     const meets = visionCount(v) >= v.need;
     v.paid = v.paid || []; v.missed = v.missed || [];
     const pay = i => {
@@ -3192,13 +3255,13 @@ function activeEarlyShift() {
     return (BALANCE.GEN_EARLY_SHIFT && BALANCE.GEN_EARLY_SHIFT[1]) || 0;   // één rennerspool: de vaste vroege verschuiving
 }
 // Cuptegenstanders: groei, rondeverschuiving en de vroege verschuiving van zwakke generaties
-function cupLateEase(season) { return (BALANCE.CUP_LATE_EASE || 0) * (1 - Math.exp(-(Math.max(1, season) - 1) / BALANCE.CUP_LATE_EASE_TAU)); }
-function cupGrowth(season) { return BALANCE.CUP_GROWTH_MAX * (1 - Math.exp(-(Math.max(1, season) - 1) / BALANCE.CUP_GROWTH_TAU)); }
+function cupLateEase(season) { return (BALANCE.CUP_LATE_EASE || 0) * (1 - Math.exp(-(growthSeason(season) - 1) / BALANCE.CUP_LATE_EASE_TAU)); }
+function cupGrowth(season) { return BALANCE.CUP_GROWTH_MAX * (1 - Math.exp(-(growthSeason(season) - 1) / BALANCE.CUP_GROWTH_TAU)); }
 function cupEarlyFactor(pools, season) {
     const e = activeEarlyShift() * BALANCE.CUP_EARLY_MULT;
-    const hard = BALANCE.CUP_EARLY_HARDEN ? BALANCE.CUP_EARLY_HARDEN * Math.exp(-(Math.max(1, season) - 1) / BALANCE.EARLY_HARDEN_TAU) : 0;
+    const hard = BALANCE.CUP_EARLY_HARDEN ? BALANCE.CUP_EARLY_HARDEN * Math.exp(-(growthSeason(season) - 1) / BALANCE.EARLY_HARDEN_TAU) : 0;
     if (!e && !hard) return 1;
-    const sh = e * Math.exp(-(Math.max(1, season) - 1) / BALANCE.GEN_EARLY_TAU) + hard;
+    const sh = e * Math.exp(-(growthSeason(season) - 1) / BALANCE.GEN_EARLY_TAU) + hard;
     const S = Math.sqrt(7.5 * _tot(pools) / 5);
     return Math.pow(Math.max(1, S + sh) / S, 2);
 }
@@ -3230,8 +3293,19 @@ function updateRivalBoost() {
 }
 function difficultyOffset() { return (typeof gameOptions !== 'undefined' && gameOptions.difficulty === 'hard') ? BALANCE.DIFFICULTY_HARD_S : 0; }
 function updateRivalBoostOnce() { if (rivalSeason === currentSeason) return; rivalSeason = currentSeason; updateRivalBoost(); }
+function isLongSeason() { return seasonLength === 'long'; }
+// Lang seizoen: je krijgt per seizoen dubbel zoveel actiepunten, dus de tegenstand groeit ook dubbel zo snel
+function growthSeason(season) { const s = Math.max(1, season || 1); return isLongSeason() ? 1 + 2 * (s - 1) : s; }
+function leagueHalf() { return isLongSeason() && seasonSchedule.length > LEAGUE_CPU ? seasonSchedule.length / 2 : seasonSchedule.length; }
+// Speel jij thuis op deze speeldag? (alleen in het lange seizoen; anders null)
+function userHomeAt(md) {
+    if (!isLongSeason()) return null;
+    const half = leagueHalf(), i = md - 1;
+    return ((i % half) % 2 === 0) !== (i >= half);
+}
+function scalePools(p, f) { const o = {}; Object.keys(p).forEach(k => { o[k] = p[k] * f; }); return o; }
 function leagueGrowthFactor(season) {
-    return 1 + BALANCE.LEAGUE_GROWTH_TOTAL * (1 - Math.exp(-(Math.max(1, season) - 1) / BALANCE.LEAGUE_GROWTH_TAU));
+    return 1 + BALANCE.LEAGUE_GROWTH_TOTAL * (1 - Math.exp(-(growthSeason(season) - 1) / BALANCE.LEAGUE_GROWTH_TAU));
 }
 
 function squadComplete() {
@@ -3304,7 +3378,8 @@ function titleOdds(rows, runs) {
     for (let r = 0; r < runs; r++) {
         const pts = new Array(n).fill(0), gd = new Array(n).fill(0), gf = new Array(n).fill(0);
         let order = rows.map((_, i) => i);
-        for (let round = 0; round < n - 1; round++) {
+        const rounds = (isLongSeason() ? 2 : 1) * (n - 1);
+        for (let round = 0; round < rounds; round++) {
             for (let k = 0; k < n / 2; k++) {
                 const a = order[k], b = order[n - 1 - k]; let ga, gb;
                 if (rows[a].isUser) { const x = mcUserMatch(rows[a].pools, rows[b].pools, rnd); ga = x[0]; gb = x[1]; }
@@ -4014,7 +4089,7 @@ function buildExportData() {
     return {
         format: 'peloton-manager-export', version: 1, exportedAt: new Date().toISOString(),
         game: {
-            team: userTeamName, formation: activeFormation, season: currentSeason, phase: savePhase || null,
+            team: userTeamName, formation: activeFormation, season: currentSeason, phase: savePhase || null, seasonLength,
             generations: genData.filter(g => g.active).map(g => g.id)
         },
         rules: { balance: JSON.parse(JSON.stringify(BALANCE)) },
@@ -4438,15 +4513,14 @@ function checkOffSeasonActions() {
     if (campBtn) { campBtn.disabled = !(isTransferWindow && actionPoints >= campCost()); campBtn.innerHTML = freeCamps > 0 ? '&#127873; Free camp' : '&#9978; Camp'; }
     updateSwapButton();
     
-    if (actionPoints <= 0) {
-        btn.innerHTML = "Start Next Season &rarr;";
-        btn.classList.remove('bg-slate-800', 'text-slate-200');
-        btn.classList.add('bg-green-600', 'text-white', 'border-green-500', 'shadow-[0_0_15px_rgba(22,163,74,0.5)]');
-    } else {
-        btn.innerHTML = "Skip Remaining Actions &rarr;";
-        btn.classList.add('bg-slate-800', 'text-slate-200');
-        btn.classList.remove('bg-green-600', 'text-white', 'border-green-500', 'shadow-[0_0_15px_rgba(22,163,74,0.5)]');
-    }
+    // Geen 'overslaan' meer: de startknop verschijnt pas als alle actiepunten gebruikt zijn
+    if (!isTransferWindow) return;
+    const done = actionPoints <= 0;
+    btn.classList.toggle('hidden', !done);
+    btn.classList.toggle('block', done);
+    btn.innerHTML = savePhase === 'winter' ? 'Resume Season &rarr;' : 'Start Next Season &rarr;';
+    btn.classList.remove('bg-slate-800', 'text-slate-200');
+    btn.classList.add('bg-green-600', 'text-white', 'border-green-500', 'shadow-[0_0_15px_rgba(22,163,74,0.5)]');
 }
 
 // OVERSCHRIJVEN
@@ -4902,7 +4976,7 @@ await rollOptions(role, displayPos);
             const leagueFactor = leagueGrowthFactor(currentSeason);
 
             const earlyNow = activeEarlyShift();
-            const hardNow = BALANCE.EARLY_HARDEN ? BALANCE.EARLY_HARDEN * Math.exp(-(currentSeason - 1) / BALANCE.EARLY_HARDEN_TAU) : 0;
+            const hardNow = BALANCE.EARLY_HARDEN ? BALANCE.EARLY_HARDEN * Math.exp(-(growthSeason(currentSeason) - 1) / BALANCE.EARLY_HARDEN_TAU) : 0;
             const baseS = o => Math.sqrt(7.5 * (o.poss + o.create + o.prevent + o.finish + o.block) / 5);
             const refS = pool.reduce((a, o) => a + baseS(o.pools), 0) / Math.max(1, pool.length);
             const diffNow = difficultyOffset();
@@ -4915,7 +4989,7 @@ await rollOptions(role, displayPos);
                 const early = earlyNow;
                 if (early || hardW || rivW || diffNow || form) {
                     // Vroege verschuiving van deze generatie (vervalt over de seizoenen) plus de vroege verzwaring voor iedereen
-                    const sh = early * Math.exp(-(currentSeason - 1) / BALANCE.GEN_EARLY_TAU) + hardNow * hardW + rivalBoost * rivW + diffNow + form;
+                    const sh = early * Math.exp(-(growthSeason(currentSeason) - 1) / BALANCE.GEN_EARLY_TAU) + hardNow * hardW + rivalBoost * rivW + diffNow + form;
                     const S = Math.sqrt(7.5 * (p.poss + p.create + p.prevent + p.finish + p.block) / 5);
                     const f = Math.pow(Math.max(1, S + sh) / S, 2);
                     p = { poss: p.poss * f, create: p.create * f, prevent: p.prevent * f, finish: p.finish * f, block: p.block * f };
@@ -5024,6 +5098,8 @@ await rollOptions(role, displayPos);
                 // Jij speelt tegen dezelfde sterkte als in de stand (inclusief een eventuele vroege verschuiving van de gekozen generaties)
                 seasonSchedule = selectedOpponents.map(o => ({ ...o, pools: standings.find(t => t.id === o.id).pools })).sort(() => 0.5 - Math.random());
             }
+            // Lang seizoen: de terugronde volgt dezelfde volgorde (met omgekeerde thuisploeg)
+            if (isLongSeason() && seasonSchedule.length === LEAGUE_CPU) seasonSchedule = seasonSchedule.concat(seasonSchedule.map(o => ({ ...o })));
         }
         async function startSeasonSimulation() {
             hasPlayedCup = false;
@@ -5064,12 +5140,15 @@ await rollOptions(role, displayPos);
 
         // Speelt de competitie vanaf een bepaalde speeldag (ook gebruikt bij het hervatten van een save)
         async function runLeagueFrom(startIndex) {
-            keepAwake(true);
             const md = seasonSchedule.length;
+            const winterDue = () => isLongSeason() && seasonMatchday === leagueHalf() && leagueHalf() < md && winterSeason !== currentSeason;
+            if (startIndex === seasonMatchday && winterDue()) { startWinterBreak(); return; }
+            keepAwake(true);
             for (let i = startIndex; i < md; i++) {
                 await simulateMatchday(i + 1, seasonSchedule[i]);
                 seasonMatchday = i + 1;
                 SaveManager.save();
+                if (winterDue()) { await new Promise(res => setTimeout(res, 800)); startWinterBreak(); return; }
                 // NIEUW: Een kleine adempauze tussen matchen zodat fluitjes niet overlappen
                 if (i < md - 1) await new Promise(res => setTimeout(res, 800));
             }
@@ -5077,7 +5156,8 @@ await rollOptions(role, displayPos);
         }
 
         async function simulateMatchday(matchday, cpuOp) {
-            document.getElementById('tv-matchday-text').innerText = `Matchday ${matchday}`;
+            const atHome = userHomeAt(matchday);
+            document.getElementById('tv-matchday-text').innerText = atHome === null ? `Matchday ${matchday}` : `Matchday ${matchday} \u00B7 ${atHome ? 'Home' : 'Away'}`;
             document.getElementById('tv-status-text').innerText = 'LIVE';
             document.getElementById('tv-status-dot').classList.add('animate-pulse');
             document.getElementById('tv-home-team').innerText = userTeamName;
@@ -5093,8 +5173,11 @@ await rollOptions(role, displayPos);
             // Een wedstrijd die al begonnen was (pagina herladen) krijgt dezelfde uitslag
             const pm = pendingMatch && pendingMatch.type === 'league' && pendingMatch.season === currentSeason && pendingMatch.matchday === matchday ? pendingMatch : null;
             
-            const uPoss = myTeamEnginePools.poss || 0;
-            const cPoss = cpuOp.pools.poss || 0;
+            // Lang seizoen: de thuisploeg krijgt een klein voordeel
+            const uPools = atHome === true ? scalePools(myTeamEnginePools, 1 + BALANCE.HOME_ADV) : myTeamEnginePools;
+            const cPools = atHome === false ? scalePools(cpuOp.pools, 1 + BALANCE.HOME_ADV) : cpuOp.pools;
+            const uPoss = uPools.poss || 0;
+            const cPoss = cPools.poss || 0;
             const possRatio = (Math.pow(uPoss, BALANCE.MATCH_POSS_EXP)) / (Math.pow(uPoss, BALANCE.MATCH_POSS_EXP) + Math.pow(cPoss, BALANCE.MATCH_POSS_EXP));
             
             const userChances = pm ? pm.userChances : splitChances(possRatio, totalChances);
@@ -5112,10 +5195,10 @@ await rollOptions(role, displayPos);
 
             let userGoals = [], cpuGoals = [];
             
-            const uCreate = myTeamEnginePools.create || 0; const cPrevent = cpuOp.pools.prevent || 0;
-            const cCreate = cpuOp.pools.create || 0; const uPrevent = myTeamEnginePools.prevent || 0;
-            const uFinish = myTeamEnginePools.finish || 0; const cBlock = cpuOp.pools.block || 0;
-            const cFinish = cpuOp.pools.finish || 0; const uBlock = myTeamEnginePools.block || 0;
+            const uCreate = uPools.create || 0; const cPrevent = cPools.prevent || 0;
+            const cCreate = cPools.create || 0; const uPrevent = uPools.prevent || 0;
+            const uFinish = uPools.finish || 0; const cBlock = cPools.block || 0;
+            const cFinish = cPools.finish || 0; const uBlock = uPools.block || 0;
 
       
             const userCreateProb = convProb(uCreate, cPrevent);
@@ -5159,7 +5242,7 @@ await rollOptions(role, displayPos);
             const feed = document.getElementById('results-feed-list');
             const newResult = document.createElement('div');
             newResult.className = `bg-slate-900/80 px-2 py-1.5 rounded text-xs flex justify-between border-l-2 border-${userGoals.length > cpuGoals.length ? 'green' : (userGoals.length < cpuGoals.length ? 'red' : 'slate')}-500 shrink-0 min-w-0`;
-            newResult.innerHTML = `<span class="text-slate-400 shrink-0 mr-2">MD${matchday}</span><span class="font-bold text-white truncate text-right">${userGoals.length} - ${cpuGoals.length} ${cpuOp.name}</span>`;
+            newResult.innerHTML = `<span class="text-slate-400 shrink-0 mr-2">MD${matchday}</span><span class="font-bold text-white truncate text-right">${userGoals.length} - ${cpuGoals.length} ${cpuOp.name}${atHome === false ? ' <span class="text-slate-500 font-normal">(a)</span>' : ''}</span>`;
             feed.insertBefore(newResult, feed.firstChild);
         }
 
@@ -5243,14 +5326,20 @@ await rollOptions(role, displayPos);
         // elke club speelt elke andere club precies één keer (cirkelmethode, jij staat vast).
         function cpuFixtures(round, homeId, awayId) {
             const byId = id => standings.find(t => t.id === id);
-            const ids = (seasonSchedule || []).map(o => o.id);
+            const half = leagueHalf();
+            const ids = (seasonSchedule || []).slice(0, half).map(o => o.id);
+            const leg2 = round >= half, rr = round % half;
             const cpuIds = standings.filter(t => !t.isUser).map(t => t.id);
             const N = ids.length + 1;   // aantal clubs (even)
-            if (N % 2 === 0 && cpuIds.length === ids.length && cpuIds.every(id => ids.includes(id)) && ids[round] === awayId) {
+            if (N % 2 === 0 && cpuIds.length === ids.length && cpuIds.every(id => ids.includes(id)) && ids[rr] === awayId) {
                 let order = [homeId, ...ids.slice().reverse()];
-                for (let r = 0; r < round; r++) order = [order[0], order[N - 1], ...order.slice(1, N - 1)];
+                for (let r = 0; r < rr; r++) order = [order[0], order[N - 1], ...order.slice(1, N - 1)];
                 const out = [];
-                for (let k = 1; k < N / 2; k++) out.push([byId(order[k]), byId(order[N - 1 - k])]);
+                for (let k = 1; k < N / 2; k++) {
+                    const a = byId(order[k]), b = byId(order[N - 1 - k]);
+                    // lang seizoen: de eerste ploeg van elk duo speelt thuis (wisselt per speeldag en in de terugronde)
+                    out.push(!isLongSeason() || ((rr + k) % 2 === 0) !== leg2 ? [a, b] : [b, a]);
+                }
                 return out;
             }
             // Vangnet (onverwachte kalender): loten zoals vroeger
@@ -5275,6 +5364,7 @@ await rollOptions(role, displayPos);
                     
                     let s1 = (t1.pools.poss + t1.pools.create + t1.pools.prevent + t1.pools.finish + t1.pools.block) || 3500;
                     let s2 = (t2.pools.poss + t2.pools.create + t2.pools.prevent + t2.pools.finish + t2.pools.block) || 3500;
+                    if (isLongSeason()) s1 *= 1 + BALANCE.HOME_ADV;   // t1 speelt thuis
                     let prob = cpuEdgeProb(s1, s2);
                     
                     let cpuGoalsA = 0; let cpuGoalsB = 0;
@@ -5842,10 +5932,11 @@ await rollOptions(role, displayPos);
     currentSeason++;
     document.getElementById('ui-season-counter').innerText = `Season ${currentSeason}`;
     isTransferWindow = true;
-    actionPoints = BALANCE.BASE_AP + bonusAP;
+    actionPoints = (isLongSeason() ? BALANCE.LONG_BASE_AP : BALANCE.BASE_AP) + bonusAP;
     bonusAP = 0;
+    setTransferBannerTitle('Off-Season Window');
     hasReroll = false; pendingRoll = null;
-    if (!clubVision || (currentSeason > clubVision.until && !(clubVision.done && currentSeason - clubVision.done < visionPlan(clubVision).length))) newClubVision(currentSeason);
+    if (!clubVision || (currentSeason > clubVision.until && !(clubVision.done && currentSeason - clubVision.done < visionPlanNow(clubVision).length))) newClubVision(currentSeason);
     updateVisionUI();
     trainCounts = {};
 
@@ -5886,7 +5977,76 @@ await rollOptions(role, displayPos);
     openBoardBriefing(true);
 }
 
+       function setTransferBannerTitle(t) { const el = document.getElementById('transfer-banner-title'); if (el) el.textContent = t; }
+       function setWinterBannerText() {
+            setTransferBannerTitle('\u2744\uFE0F Winter Break');
+            const el = document.getElementById('board-objective-text');
+            if (el) el.textContent = 'Halfway point \u00B7 transfers, training or a camp \u00B7 no board review';
+       }
+       // Lang seizoen: na de heenronde een korte transferperiode met 2 actiepunten
+       function startWinterBreak() {
+            keepAwake(false);
+            AudioManager.fadeOutStadium(BGM_TRACK);
+            window._resumeFeedHtml = (document.getElementById('results-feed-list') || {}).innerHTML || window._resumeFeedHtml || '';
+            isTransferWindow = true;
+            actionPoints = BALANCE.WINTER_AP;
+            hasReroll = false; pendingRoll = null;
+            trainCounts = {};
+            const pos = [...standings].sort(tableOrder).findIndex(t => t.isUser) + 1;
+            const leader = [...standings].sort(tableOrder)[0];
+            try { pushNews('WB', pos === 1 ? `${userTeamName} top of the table at the winter break` : `Winter break: ${leader.name} lead, ${userTeamName} ${ordinalText(pos)}`); } catch (e) {}
+
+            document.body.className = 'min-h-screen flex flex-col relative bg-office';
+            document.getElementById('match-center').classList.add('hidden');
+            document.getElementById('match-center').classList.remove('flex');
+            document.getElementById('btn-back-to-stats').classList.add('hidden');
+            document.getElementById('btn-back-to-stats').classList.remove('flex');
+            document.querySelector('header').classList.remove('hidden');
+            document.getElementById('btn-simulate').classList.add('hidden');
+            document.getElementById('btn-play-cup-pitch').classList.add('hidden');
+            document.getElementById('btn-play-cup-pitch').classList.remove('block');
+            document.getElementById('btn-next-season-pitch').classList.add('hidden');
+            document.getElementById('btn-next-season-pitch').classList.remove('block');
+            document.getElementById('btn-download').classList.add('hidden');
+            document.getElementById('btn-share').classList.add('hidden');
+            document.getElementById('action-count').innerText = actionPoints;
+            document.getElementById('transfer-banner').classList.remove('hidden');
+            document.getElementById('transfer-banner').classList.add('flex');
+            document.getElementById('btn-finish-transfers').classList.remove('hidden');
+            document.getElementById('btn-finish-transfers').classList.add('block');
+            setWinterBannerText();
+            checkOffSeasonActions();
+            document.getElementById('pitch-view').classList.remove('hidden');
+            renderPitch();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            savePhase = 'winter';
+            SaveManager.save();
+            infoToast('&#10052;&#65039;', 'Winter break', `Halfway! You are ${ordinalText(pos)}. Use ${BALANCE.WINTER_AP} actions, then the second half begins.`);
+       }
+       function resumeAfterWinter() {
+            winterSeason = currentSeason;
+            updateScores();
+            document.body.className = 'min-h-screen flex flex-col relative bg-stadium';
+            document.getElementById('pitch-view').classList.add('hidden');
+            document.getElementById('match-center').classList.remove('hidden');
+            document.getElementById('match-center').classList.add('flex');
+            document.querySelector('header').classList.add('hidden');
+            document.getElementById('post-season-awards').classList.add('hidden');
+            document.getElementById('post-season-awards').classList.remove('flex', 'order-first');
+            document.getElementById('tv-scoreboard').classList.remove('hidden', 'cup-theme');
+            document.getElementById('results-feed').classList.remove('hidden');
+            const feed = document.getElementById('results-feed-list');
+            if (!feed.innerHTML.trim()) feed.innerHTML = window._resumeFeedHtml || '';
+            updateObjectiveLine();
+            updateTableUI();
+            renderNewsTicker();
+            savePhase = 'season';
+            SaveManager.save();
+            runLeagueFrom(seasonMatchday);
+       }
+
        function finishTransfers() {
+            const wasWinter = savePhase === 'winter';
             isTransferWindow = false; pendingRoll = null;
             document.getElementById('transfer-banner').classList.add('hidden');
             document.getElementById('transfer-banner').classList.remove('flex');
@@ -5894,6 +6054,7 @@ await rollOptions(role, displayPos);
             document.getElementById('btn-finish-transfers').classList.remove('block');
             
             renderPitch();
+            if (wasWinter) { resumeAfterWinter(); return; }
             // Start het seizoen direct zonder te wachten op de gele knop!
             startSeasonSimulation();
         }
@@ -6182,6 +6343,7 @@ await rollOptions(role, displayPos);
         // Global UI Click Sound (veranderd naar pointerdown voor zero-latency)
         document.addEventListener('pointerdown', (e) => {
             AudioManager.initWebAudio();
+            AudioManager.unlockStadium();
             const isButton = e.target.closest('button');
             const isInput = e.target.closest('input');
             const isLabel = e.target.closest('label');
@@ -6194,8 +6356,10 @@ await rollOptions(role, displayPos);
 
 
         // iOS ontgrendelt audio soms pas bij touchend/click: daar ook proberen
-        document.addEventListener('touchend', () => AudioManager.initWebAudio(), { passive: true });
-        document.addEventListener('click', () => AudioManager.initWebAudio());
+        document.addEventListener('touchend', () => { AudioManager.initWebAudio(); AudioManager.unlockStadium(); }, { passive: true });
+        document.addEventListener('click', () => { AudioManager.initWebAudio(); AudioManager.unlockStadium(); });
+        // iPhone: effecten (Web Audio) volgen anders de stille-modus-schakelaar, terwijl de muziek wel speelt
+        try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch (e) {}
 
         // Meedogenloze audio-pauze voor Homescreen Web-Apps
         function suspendAudio() {
