@@ -160,7 +160,7 @@
                         <li><strong class="text-white">Furious means last chance.</strong> A board that has lost all faith sacks you, and so does relegation (finishing last, or losing the play-off in ninth), from your very first season.</li>
                         <li><strong class="text-green-400">Title odds:</strong> Tap ODDS to see the title race, with every club's chance of winning the league.</li>
                         <li><strong class="text-yellow-300">Season length:</strong> You choose it when you start a career. A short season has 9 matchdays: every club plays each other once, and you get 3 actions in the off-season. A long season has 18 matchdays, home and away, with a small home advantage. After matchday 9 comes a winter break with 2 actions (transfers, training or a camp, no board review), on top of the 3 actions in the off-season. Because you get more actions per season, the other clubs and the cup opponents grow faster too.</li>
-                        <li><strong class="text-yellow-300">Club vision:</strong> Before the draft the board offers three directions, each a country or a team it wants to see in your starting eleven, and you pick one. Field enough of those riders at the kick-off of any season within five seasons and you get 1 extra action point for the next off-season. In a long season you only collect if they are still in your eleven after the winter break. Popular countries ask for more riders than small ones. There is no penalty for ignoring it. When a vision is over (all its rewards paid or missed, or its five seasons are up), the board offers three new ones in the next off-season and you pick one. Later visions build on riders you already have. Its reward is paid out season by season: the second vision gives 1 extra action point for two seasons, from the third vision on for three seasons. Each part is only paid if your eleven still matches the vision at that kick-off, so selling the riders right after the first reward costs you the rest.</li>
+                        <li><strong class="text-yellow-300">Club vision:</strong> Before the draft the board offers three directions, each a country or a team it wants to see in your starting eleven, and you pick one. Field enough of those riders at the kick-off of any season within five seasons and you get 1 extra action point for the next off-season. In a long season you only collect if they are still in your eleven after the winter break; reaching the vision during the winter break counts too. Popular countries ask for more riders than small ones. There is no penalty for ignoring it. When a vision is over (all its rewards paid or missed, or its five seasons are up), the board offers three new ones in the next off-season and you pick one. Later visions build on riders you already have. Its reward is paid out season by season: the second vision gives 1 extra action point for two seasons, from the third vision on for three seasons. Each part is only paid if your eleven still matches the vision at that kick-off, so selling the riders right after the first reward costs you the rest.</li>
                         <li><strong class="text-sky-300">Assists:</strong> Most goals have an assist. Creative riders (Hills) in attacking positions give the most, and Sprint helps too. Goals and assists both count for the Season MVP.</li>
                     </ul>
                 </div>
@@ -2886,7 +2886,12 @@ function checkClubVision() {
 // Na de winterstop (lang seizoen): de voorlopige visie bevestigen of laten vallen
 function confirmVisionAfterWinter() {
     const v = clubVision;
-    if (!v || v.pendingWinter !== currentSeason) return;
+    if (!v) return;
+    // Visie pas in de winterstop gehaald: telt meteen voor dit seizoen (je houdt de renners de hele terugronde)
+    if (v.pendingWinter !== currentSeason) {
+        if (!v.done && v.checked === currentSeason && currentSeason <= v.until && visionCount(v) >= v.need) settleClubVision(true);
+        return;
+    }
     v.pendingWinter = 0;
     const meets = visionCount(v) >= v.need;
     if (!meets && !v.done) infoToast('&#127919;', 'Vision slipped away', `You no longer have ${visionTarget(v)}. No reward this season.`);
