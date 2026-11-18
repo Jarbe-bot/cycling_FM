@@ -18,6 +18,17 @@
     <style>
         /* 10 clubs: de stand groeit mee met zijn inhoud, zodat ook de laatste plaats en de legende zichtbaar zijn */
         #standings-panel.standings { height: auto !important; }
+        /* Uitwedstrijd (lang seizoen): het scorebord gespiegeld, de thuisploeg links en jouw ploeg rechts */
+        #tv-scoreboard.away-view .tv-mirror { flex-direction: row-reverse; }
+        #tv-scoreboard.away-view .goal-item { flex-direction: row-reverse; }
+        #tv-scoreboard.away-view #tv-home-scorers { text-align: right; border-right: 0; border-left: 1px solid rgba(51,65,85,.5); padding-right: 0; padding-left: .625rem; }
+        #tv-scoreboard.away-view #tv-away-scorers { text-align: left; padding-left: 0; padding-right: .625rem; }
+        #tv-scoreboard.away-view #tv-home-scorers .ml-auto { margin-left: 0; margin-right: auto; }
+        #tv-scoreboard.away-view #tv-away-scorers .mr-auto { margin-right: 0; margin-left: auto; }
+        #tv-scoreboard.away-view #bar-home-shots { left: auto; right: 0; transform-origin: right; border-radius: 0 9999px 9999px 0; }
+        #tv-scoreboard.away-view #bar-away-shots { right: auto; left: 0; transform-origin: left; border-radius: 9999px 0 0 9999px; }
+        #tv-scoreboard.away-view #bar-home-poss { background-image: linear-gradient(to left, #2563eb, #60a5fa); }
+        #tv-scoreboard.away-view #bar-away-poss { background-image: linear-gradient(to left, #dc2626, #f87171); }
     </style>
     <link rel="preload" as="image" href="cycling-fm-bg2.webp">
 </head>
@@ -432,9 +443,9 @@
                             <button id="btn-skip-match" onclick="skipMatch = true; this.classList.add('hidden');" class="hidden ml-1 px-2.5 py-0.5 rounded bg-slate-700 hover:bg-slate-600 border border-slate-500 text-[10px] md:text-xs text-slate-100 font-black uppercase tracking-widest">Skip &#9197;</button>
                         </div>
                         
-                        <div class="tv-body-bg flex justify-between items-center gap-2 md:gap-4 p-4 md:p-6 bg-gradient-to-b from-slate-800 to-slate-900 relative z-10 transition-colors">
+                        <div class="tv-mirror tv-body-bg flex justify-between items-center gap-2 md:gap-4 p-4 md:p-6 bg-gradient-to-b from-slate-800 to-slate-900 relative z-10 transition-colors">
                             <div class="flex-1 min-w-0 text-center"><h3 id="tv-home-team" class="text-[13px] sm:text-lg md:text-xl xl:text-2xl font-black text-white leading-tight line-clamp-2">My Team</h3></div>
-                            <div class="text-center flex justify-center items-center gap-1.5 md:gap-4 shrink-0 whitespace-nowrap">
+                            <div class="tv-mirror text-center flex justify-center items-center gap-1.5 md:gap-4 shrink-0 whitespace-nowrap">
                                 <span id="tv-home-score" class="inline-block text-2xl sm:text-4xl md:text-5xl font-black text-white drop-shadow-md">0</span>
                                 <span class="text-xl md:text-3xl text-slate-500 font-bold">:</span>
                                 <span id="tv-away-score" class="inline-block text-2xl sm:text-4xl md:text-5xl font-black text-white drop-shadow-md">0</span>
@@ -442,7 +453,7 @@
                             <div class="flex-1 min-w-0 text-center"><h3 id="tv-away-team" class="text-[13px] sm:text-lg md:text-xl xl:text-2xl font-black text-white leading-tight line-clamp-2">Opponent</h3></div>
                         </div>
                         
-                        <div class="flex justify-between px-4 md:px-6 pb-5 text-xs md:text-sm text-slate-300 min-h-[90px] tv-header-bg bg-slate-900 relative z-10 transition-colors">
+                        <div class="tv-mirror flex justify-between px-4 md:px-6 pb-5 text-xs md:text-sm text-slate-300 min-h-[90px] tv-header-bg bg-slate-900 relative z-10 transition-colors">
                             <div class="w-1/2 min-w-0 text-left pr-2.5 border-r border-slate-700/50 flex flex-col gap-1 pt-2.5" id="tv-home-scorers"></div>
                             <div class="w-1/2 min-w-0 text-right pl-2.5 flex flex-col gap-1 pt-2.5" id="tv-away-scorers"></div>
                         </div>
@@ -455,16 +466,16 @@
 
                         <div id="tv-stats-panel" class="tv-stats-bg bg-slate-950 p-4 md:p-5 border-t border-slate-800 space-y-4 relative z-10 transition-colors">
                             <div>
-                                <div class="flex justify-between text-[10px] md:text-xs font-bold mb-1.5">
+                                <div class="tv-mirror flex justify-between text-[10px] md:text-xs font-bold mb-1.5">
                                     <span id="tv-home-poss" class="text-blue-400">50%</span><span class="text-slate-500 tracking-[0.1em] uppercase">Possession</span><span id="tv-away-poss" class="text-red-400">50%</span>
                                 </div>
-                                <div class="flex h-2.5 rounded-full overflow-hidden bg-slate-800 shadow-inner">
+                                <div class="tv-mirror flex h-2.5 rounded-full overflow-hidden bg-slate-800 shadow-inner">
                                     <div id="bar-home-poss" class="bg-gradient-to-r from-blue-600 to-blue-400 w-[50%] progress-bar"></div>
                                     <div id="bar-away-poss" class="bg-gradient-to-r from-red-600 to-red-400 w-[50%] progress-bar"></div>
                                 </div>
                             </div>
                             <div>
-                                <div class="flex justify-between text-[10px] md:text-xs font-bold mb-1.5">
+                                <div class="tv-mirror flex justify-between text-[10px] md:text-xs font-bold mb-1.5">
                                     <span id="tv-home-shots" class="text-white">0</span><span class="text-slate-500 tracking-[0.1em] uppercase">Chances</span><span id="tv-away-shots" class="text-white">0</span>
                                 </div>
                                 <div class="flex h-2.5 rounded-full overflow-hidden bg-slate-800 shadow-inner relative">
@@ -4518,7 +4529,7 @@ function checkOffSeasonActions() {
     const done = actionPoints <= 0;
     btn.classList.toggle('hidden', !done);
     btn.classList.toggle('block', done);
-    btn.innerHTML = savePhase === 'winter' ? 'Resume Season &rarr;' : 'Start Next Season &rarr;';
+    btn.innerHTML = savePhase === 'winter' ? 'Play the Remainder of the Season &rarr;' : 'Start Next Season &rarr;';
     btn.classList.remove('bg-slate-800', 'text-slate-200');
     btn.classList.add('bg-green-600', 'text-white', 'border-green-500', 'shadow-[0_0_15px_rgba(22,163,74,0.5)]');
 }
@@ -5158,6 +5169,7 @@ await rollOptions(role, displayPos);
         async function simulateMatchday(matchday, cpuOp) {
             const atHome = userHomeAt(matchday);
             document.getElementById('tv-matchday-text').innerText = atHome === null ? `Matchday ${matchday}` : `Matchday ${matchday} \u00B7 ${atHome ? 'Home' : 'Away'}`;
+            document.getElementById('tv-scoreboard').classList.toggle('away-view', atHome === false);
             document.getElementById('tv-status-text').innerText = 'LIVE';
             document.getElementById('tv-status-dot').classList.add('animate-pulse');
             document.getElementById('tv-home-team').innerText = userTeamName;
@@ -5609,6 +5621,7 @@ await rollOptions(role, displayPos);
             const roundLabel = isExtra ? extraLabel(extraMatch.type) : roundNames[currentCupRound];
             
             document.getElementById('tv-scoreboard').classList.toggle('cup-theme', !isExtra || extraMatch.type === 'qual');
+            document.getElementById('tv-scoreboard').classList.remove('away-view');
             
             document.getElementById('tv-matchday-text').innerText = roundLabel;
             document.getElementById('tv-matchday-text').classList.remove('hidden');
@@ -6021,7 +6034,7 @@ await rollOptions(role, displayPos);
             window.scrollTo({ top: 0, behavior: 'smooth' });
             savePhase = 'winter';
             SaveManager.save();
-            infoToast('&#10052;&#65039;', 'Winter break', `Halfway! You are ${ordinalText(pos)}. Use ${BALANCE.WINTER_AP} actions, then the second half begins.`);
+            infoToast('&#10052;&#65039;', 'Winter break!', `You are ${ordinalText(pos)} at the halfway mark. Use your ${BALANCE.WINTER_AP} actions to strengthen the squad.`);
        }
        function resumeAfterWinter() {
             winterSeason = currentSeason;
