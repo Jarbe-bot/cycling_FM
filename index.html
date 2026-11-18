@@ -160,7 +160,7 @@
                         <li><strong class="text-white">Furious means last chance.</strong> A board that has lost all faith sacks you, and so does relegation (finishing last, or losing the play-off in ninth), from your very first season.</li>
                         <li><strong class="text-green-400">Title odds:</strong> Tap ODDS to see the title race, with every club's chance of winning the league.</li>
                         <li><strong class="text-yellow-300">Season length:</strong> You choose it when you start a career. A short season has 9 matchdays: every club plays each other once, and you get 3 actions in the off-season. A long season has 18 matchdays, home and away, with a small home advantage. After matchday 9 comes a winter break with 2 actions (transfers, training or a camp, no board review), and you get 4 actions in the off-season. Because you improve twice as fast per season, the other clubs and the cup opponents do too.</li>
-                        <li><strong class="text-yellow-300">Club vision:</strong> Before the draft the board names a country or a team it wants to see in your starting eleven. Field enough of those riders at the kick-off of any season within five seasons and you get a free training camp. Popular countries ask for more riders than small ones. There is no penalty for ignoring it. After five seasons a new vision follows that builds on riders you already have. Its reward is bigger but paid out season by season: the second vision gives a camp, then 1 extra action point, then another; from the third vision on a camp, 1 point, a camp, 1 point. Each part is only paid if your eleven still matches the vision at that kick-off, so selling the riders right after the first reward costs you the rest.</li>
+                        <li><strong class="text-yellow-300">Club vision:</strong> Before the draft the board offers three directions, each a country or a team it wants to see in your starting eleven, and you pick one. Field enough of those riders at the kick-off of any season within five seasons and you get a free training camp. Popular countries ask for more riders than small ones. There is no penalty for ignoring it. When a vision is over (all its rewards paid or missed, or its five seasons are up), the board offers three new ones in the next off-season and you pick one. Later visions build on riders you already have. Its reward is bigger but paid out season by season: the second vision gives a camp, then 1 extra action point, then another; from the third vision on a camp, 1 point, a camp, 1 point. Each part is only paid if your eleven still matches the vision at that kick-off, so selling the riders right after the first reward costs you the rest.</li>
                         <li><strong class="text-sky-300">Assists:</strong> Most goals have an assist. Creative riders (Hills) in attacking positions give the most, and Sprint helps too. Goals and assists both count for the Season MVP.</li>
                     </ul>
                 </div>
@@ -2722,6 +2722,12 @@ function visionPlanNow(v) {
     const start = (v && v.done) || currentSeason;
     return visionPlan(v).slice(0, Math.max(1, v.until - start + 1));
 }
+// Is de visie afgerond? Gehaald en alle delen uitbetaald of vervallen (na de aftrap van dit seizoen), of de periode is voorbij.
+function visionFinished(v) {
+    if (!v) return true;
+    if (v.checked === v.until && currentSeason >= v.until) return true;
+    return !!(v.done && v.checked >= v.done && (v.checked - v.done) >= visionPlanNow(v).length - 1);
+}
 const PLAN_LABEL = { camp: 'a free training camp', ap: '1 extra action point' };
 const PLAN_SHORT = { camp: '&#127957; Camp', ap: '+1 AP' };
 function visionRewardText(v) {
@@ -2803,10 +2809,11 @@ function visionStatusHtml() {
     const v = clubVision;
     if (!v) return '';
     // Na de laatste aftrap van de periode valt er niets meer te verdienen; de nieuwe visie volgt in het volgende tussenseizoen
-    if (currentSeason >= v.until && v.checked === v.until) {
+    if (visionFinished(v)) {
+        const got = (v.paid || []).length;
         return `<div class="mt-3 bg-slate-900 border border-slate-700 rounded-xl p-3 text-center">
             <p class="text-[10px] text-slate-400 font-black uppercase tracking-widest mb-1">&#127919; Club vision &middot; seasons ${v.from}-${v.until}</p>
-            <p class="text-sm text-slate-300 font-bold">${visionTarget(v)}: ${v.done ? 'achieved' : 'not achieved'}. This vision has ended.</p>
+            <p class="text-sm text-slate-300 font-bold">${visionTarget(v)}: ${v.done ? `achieved, ${got} of ${visionPlanNow(v).length} rewards collected` : 'not achieved'}. This vision is over.</p>
             <p class="text-xs text-slate-400 mt-1">The board presents a new vision in the next off-season.</p></div>`;
     }
     const have = visionCount(v);
@@ -2837,7 +2844,7 @@ function updateVisionUI() {
     if (!el) return;
     const v = clubVision;
     if (visionChoices) { el.classList.remove('hidden'); el.innerHTML = '<span class="bg-yellow-400 text-slate-900 rounded px-1 mr-1 font-black">NEW</span>&#127919; Choose'; el.classList.add('animate-pulse'); el.title = 'The board offers three visions: tap to choose'; return; }
-    if (!v || (currentSeason >= v.until && v.checked === v.until)) { el.classList.add('hidden'); return; }
+    if (!v || visionFinished(v)) { el.classList.add('hidden'); return; }
     el.classList.remove('hidden');
     el.innerHTML = (v.seen ? '' : '<span class="bg-yellow-400 text-slate-900 rounded px-1 mr-1 font-black">NEW</span>') + (v.done && visionCount(v) >= v.need ? '&#127919; &#10003;' : `&#127919; ${Math.min(visionCount(v), v.need)}/${v.need}`);
     el.classList.toggle('animate-pulse', !v.seen);
@@ -6059,7 +6066,8 @@ await rollOptions(role, displayPos);
     bonusAP = 0;
     setTransferBannerTitle('Off-Season Window');
     hasReroll = false; pendingRoll = null;
-    if (!clubVision || (currentSeason > clubVision.until && !(clubVision.done && currentSeason - clubVision.done < visionPlanNow(clubVision).length))) newClubVision(currentSeason);
+    // Nieuwe visie zodra de vorige afgerond is: periode voorbij, of gehaald en alle beloningen uitbetaald of vervallen
+    if (!visionChoices && (!clubVision || currentSeason > clubVision.until || visionFinished(clubVision))) newClubVision(currentSeason);
     updateVisionUI();
     trainCounts = {};
 
