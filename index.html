@@ -160,7 +160,7 @@
                         <li><strong class="text-white">Furious means last chance.</strong> A board that has lost all faith sacks you, and so does relegation (finishing last, or losing the play-off in ninth), from your very first season.</li>
                         <li><strong class="text-green-400">Title odds:</strong> Tap ODDS to see the title race, with every club's chance of winning the league.</li>
                         <li><strong class="text-yellow-300">Season length:</strong> You choose it when you start a career. A short season has 9 matchdays: every club plays each other once, and you get 3 actions in the off-season. A long season has 18 matchdays, home and away, with a small home advantage. After matchday 9 comes a winter break with 2 actions (transfers, training or a camp, no board review), on top of the 3 actions in the off-season. Because you get more actions per season, the other clubs and the cup opponents grow faster too.</li>
-                        <li><strong class="text-yellow-300">Club vision:</strong> Before the draft the board offers three directions, each a country or a team it wants to see in your starting eleven, and you pick one. Field enough of those riders at the kick-off of any season within five seasons and you get 1 extra action point for the next off-season. In a long season you only collect if they are still in your eleven after the winter break; reaching the vision during the winter break counts too. Popular countries ask for more riders than small ones. There is no penalty for ignoring it. When a vision is over (all its rewards paid or missed, or its five seasons are up), the board offers three new ones in the next off-season and you pick one. Later visions build on riders you already have. Its reward is paid out season by season: the second vision gives 1 extra action point for two seasons, from the third vision on for three seasons. Each part is only paid if your eleven still matches the vision at that kick-off, so selling the riders right after the first reward costs you the rest.</li>
+                        <li><strong class="text-yellow-300">Club vision:</strong> Before the draft the board offers three directions, each a country or a team it wants to see in your starting eleven, and you pick one. Field enough of those riders at the kick-off of any season within five seasons and you get 2 extra action points for the next off-season. In a long season you only collect if they are still in your eleven after the winter break; reaching the vision during the winter break counts too. Popular countries ask for more riders than small ones. There is no penalty for ignoring it. When a vision is over (all its rewards paid or missed, or its five seasons are up), the board offers three new ones in the next off-season and you pick one. Later visions build on riders you already have. Its reward is paid out season by season: the second vision gives 2 extra action points, then 1 more the next season; from the third vision on 2, then 1, then 1. Each part is only paid if your eleven still matches the vision at that kick-off, so selling the riders right after the first reward costs you the rest.</li>
                         <li><strong class="text-sky-300">Assists:</strong> Most goals have an assist. Creative riders (Hills) in attacking positions give the most, and Sprint helps too. Goals and assists both count for the Season MVP.</li>
                     </ul>
                 </div>
@@ -649,7 +649,7 @@
             // (jouw zes gewone drafts in Gen 1+2+3: gemiddeld 75,3; de bot: 74,9). Ter documentatie en voor de tests; bijstellen kan met de echte start-S uit de export.
             GEN_TYPICAL_S1: { 1: 71.2 },
             GEN_CLUB_TARGETS: {
-                1: [81.5, 80.0, 78.5, 76.0, 75.0, 73.5, 72.0, 69.0, 66.5],   // 10 clubs: drie kanshebbers, een brede middenmoot en twee zwakkere clubs onderaan
+                1: [81.5, 80.0, 78.5, 76.0, 75.0, 73.5, 72.0, 71.5, 70.5],   // 10 clubs: drie kanshebbers, een brede middenmoot en twee zwakkere clubs onderaan
             },
             // Hoe zwaar sterkte telt in een uitslag: met hogere waarden wint de sterkere ploeg vaker (een echte Bayern).
             // Twee gelijke ploegen blijven gelijk en maken evenveel doelpunten als vroeger; alleen het verschil telt zwaarder.
@@ -659,7 +659,7 @@
             LEAGUE_BASE_FACTOR: 1.07,      // alle competitieclubs starten 7% sterker: een zwaardere start
             // De CPU groeit net als jij steeds minder: snel in het begin, daarna vlakt het af naar een plafond.
             // Groei(seizoen) = LEAGUE_GROWTH_TOTAL x (1 - e^(-(seizoen-1)/LEAGUE_GROWTH_TAU)); het eerste decennium blijft gelijk aan +0,8% per seizoen.
-            LEAGUE_GROWTH_TOTAL: 0.15,     // plafond: de pools van de CPU-clubs groeien maximaal +15%
+            LEAGUE_GROWTH_TOTAL: 0.27,     // plafond: de pools van de CPU-clubs groeien maximaal +27% (top rond 88 na 10 lange seizoenen)
             LEAGUE_GROWTH_TAU: 14,         // hoe snel het plafond benaderd wordt (kleiner = sneller)
             // Continental Cup
             CUP_POSS_EXP: 1.8,             // balbezit weegt even zwaar als in de competitie
@@ -674,7 +674,7 @@
             // Groei(seizoen) = CUP_GROWTH_MAX x (1 - e^(-(seizoen-1)/CUP_GROWTH_TAU)); de eerste seizoenen blijven gelijk aan +15 per seizoen.
             CUP_GROWTH_TAU: 12.8,
             CUP_EARLY_MULT: 1.4,           // de vroege verschuiving van zwakke generaties geldt ook voor de cup, x dit getal
-            CUP_GROWTH_MAX: 250
+            CUP_GROWTH_MAX: 370   // cuptegenstanders groeien mee (finale rond 89-90 na 10 lange seizoenen)
         };
         const genData = [
             { id: 1, name: "Gen 1", range: [1, 232], active: true }   // de wielerversie heeft één rennerspool
@@ -987,14 +987,21 @@
         let windowBonusNote = null; // overzicht dat het bestuur toont bij het begin van het tussenseizoen
         let campSeason = 0;         // seizoen waarin je al een trainingskamp deed (maximaal één per seizoen)
         function addBonusAP(n, label) { bonusAP += n; bonusLog.push(`${label} +${n}`); }
+        // Opvallend beloningsblok, zodat je ziet dat je iets gekregen hebt
+        function rewardBoxHtml(big, reason) {
+            return `<div class="mt-4 mb-1 bg-gradient-to-r from-yellow-500/25 via-yellow-400/10 to-yellow-500/25 border-2 border-yellow-400 rounded-xl px-3 py-3 text-center shadow-[0_0_22px_rgba(234,179,8,0.4)]">
+                <p class="text-[10px] font-black uppercase tracking-widest text-yellow-300 mb-1">&#127873; Reward</p>
+                <p class="text-2xl md:text-3xl font-black text-yellow-300 leading-none uppercase">${big}</p>
+                <p class="text-xs text-yellow-100 font-bold mt-1.5 leading-snug">${reason}</p></div>`;
+        }
         function grantCupMilestone(roundWon) {
             if (roundWon === 0 && !cupMilestones.qf) {
                 cupMilestones.qf = currentSeason; addBonusAP(1, 'first Cup quarter-final');
-                return 'First Continental quarter-final! The board grants you <span class="text-yellow-300">+1 action</span> next off-season. Reach the semi-finals in a future season for another.';
+                return rewardBoxHtml('+1 action', 'First Continental quarter-final! Use it in the next off-season. Reach the semi-finals in a future season for another.');
             }
             if (roundWon === 1 && !cupMilestones.sf && cupMilestones.qf && cupMilestones.qf < currentSeason) {
                 cupMilestones.sf = currentSeason; addBonusAP(1, 'first Cup semi-final');
-                return 'First Continental semi-final! The board grants you another <span class="text-yellow-300">+1 action</span> next off-season.';
+                return rewardBoxHtml('+1 action', 'First Continental semi-final! Use it in the next off-season.');
             }
             return '';
         }
@@ -1006,7 +1013,7 @@
             cupMilestones.debut = currentSeason;
             addBonusAP(1, 'first Cup qualification');
             try { pushNews('CUP', `European debut for ${userTeamName}!`); } catch (e) {}
-            return 'First Continental Cup qualification! The board grants you <span class="text-yellow-300">+1 action</span> next off-season.';
+            return rewardBoxHtml('+1 action', 'First Continental Cup qualification! Use it in the next off-season.');
         }
         const campCost = () => freeCamps > 0 ? 0 : BALANCE.CAMP_COST;
         const campUsedThisSeason = () => campSeason === currentSeason;
@@ -2720,9 +2727,9 @@ function visionCount(v) {
 // Visie 1 (bij de draft): één gratis kamp. Visie 2: kamp, +1 AP, +1 AP. Visie 3 en later: kamp, +1 AP, kamp, +1 AP.
 function visionPlan(v) {
     const n = (v && v.n) || 1;
-    if (n === 1) return ['ap'];
-    if (n === 2) return ['ap', 'ap'];
-    return ['ap', 'ap', 'ap'];
+    if (n === 1) return ['ap2'];
+    if (n === 2) return ['ap2', 'ap'];
+    return ['ap2', 'ap', 'ap'];
 }
 // Het deel van het plan dat nog binnen de visieperiode valt: beloningen lopen nooit door na seizoen v.until
 function visionPlanNow(v) {
@@ -2736,8 +2743,8 @@ function visionFinished(v) {
     if (v.checked === v.until && currentSeason >= v.until) return true;
     return !!(v.done && v.checked >= v.done && (v.checked - v.done) >= visionPlanNow(v).length - 1);
 }
-const PLAN_LABEL = { camp: 'a free training camp', ap: '1 extra action point' };
-const PLAN_SHORT = { camp: '&#127957; Camp', ap: '+1 AP' };
+const PLAN_LABEL = { camp: 'a free training camp', ap: '1 extra action point', ap2: '2 extra action points' };
+const PLAN_SHORT = { camp: '&#127957; Camp', ap: '+1 AP', ap2: '+2 AP' };
 function visionRewardText(v) {
     const plan = visionPlanNow(v);
     if (plan.length === 1) return PLAN_LABEL[plan[0]];
@@ -2902,7 +2909,7 @@ function settleClubVision(meets) {
     const plan = visionPlanNow(v);
     v.paid = v.paid || []; v.missed = v.missed || [];
     const pay = i => {
-        addBonusAP(1, 'club vision');
+        addBonusAP(plan[i] === 'ap2' ? 2 : 1, 'club vision');
         v.paid.push(i);
     };
     if (!v.done) {
@@ -2915,7 +2922,7 @@ function settleClubVision(meets) {
     } else {
         const i = currentSeason - v.done;
         if (i > 0 && i < plan.length && !v.paid.includes(i) && !v.missed.includes(i)) {
-            if (meets) { pay(i); infoToast('&#127919;', 'Club vision reward', `The board is pleased you kept its vision: ${PLAN_LABEL[plan[i]]}${plan[i] === 'ap' ? ' next off-season' : ''}.`); }
+            if (meets) { pay(i); infoToast('&#127919;', 'Club vision reward', `The board is pleased you kept its vision: ${PLAN_LABEL[plan[i]]} next off-season.`); }
             else { v.missed.push(i); infoToast('&#127919;', 'Vision abandoned', `You no longer have ${visionTarget(v)}. The board withholds this season's reward.`); }
         }
     }
@@ -2941,7 +2948,7 @@ function openVisionIntro() {
         <h2 class="text-2xl md:text-3xl font-black text-yellow-400 mb-1 uppercase tracking-wider text-center">The Board</h2>
         <p class="text-center text-slate-400 text-xs md:text-sm font-bold uppercase tracking-widest mb-3">Club vision &middot; seasons ${v.from} to ${v.until}</p>
         <p class="text-center text-white font-bold text-base md:text-lg mb-2">"Good choice, coach. We want at least ${visionTarget(v)} in your starting eleven."</p>
-        <p class="text-xs md:text-sm text-slate-300 text-center leading-relaxed">You have until the kick-off of season ${v.until}. Field them at the start of any season before that and the board rewards you with <span class="text-yellow-300 font-bold">1 extra action point</span> for the next off-season. Every new vision after this one pays out over more seasons. There is no penalty if you choose another path. Keep it in mind during the draft: tap the &#127919; in the top bar to see your progress.</p>
+        <p class="text-xs md:text-sm text-slate-300 text-center leading-relaxed">You have until the kick-off of season ${v.until}. Field them at the start of any season before that and the board rewards you with <span class="text-yellow-300 font-bold">2 extra action points</span> for the next off-season. Every new vision after this one pays out over more seasons. There is no penalty if you choose another path. Keep it in mind during the draft: tap the &#127919; in the top bar to see your progress.</p>
         <button onclick="closeBoardBriefing(false, false)" class="mt-4 w-full px-6 py-3.5 bg-gradient-to-r from-purple-600 to-purple-500 hover:from-purple-400 text-white font-black rounded-full uppercase tracking-widest text-sm">Start the draft</button>`;
     const modal = document.getElementById('board-modal');
     modal.classList.remove('hidden');
@@ -4521,7 +4528,7 @@ function finishExtraMatch(score, cupOp, note) {
         const debutMsg = (em.type === 'qual' && won) ? grantCupDebut() : '';
         if (debutMsg) SaveManager.save();
         if (em.type === 'qual') box.innerHTML = won
-            ? card('border-sky-400', 'Qualified!', 'text-sky-300', `You beat ${cupOp.name} ${sc}. The Continental Cup awaits.${debutMsg ? `<br><span class="text-sky-200 text-xs">${debutMsg}</span>` : ''}`, postSeasonButtonHtml('cup'))
+            ? card('border-sky-400', 'Qualified!', 'text-sky-300', `You beat ${cupOp.name} ${sc}. The Continental Cup awaits.`, (debutMsg ? `<div class="-mt-2 mb-5">${debutMsg}</div>` : '') + postSeasonButtonHtml('cup'))
             : card('border-red-500', 'No Cup This Season', 'text-red-400', `${cupOp.name} won the qualifier ${sc}.`, postSeasonButtonHtml('transfers'));
         else box.innerHTML = card('border-green-500', 'Safe!', 'text-green-400', `You beat ${cupOp.name} ${sc} and stay in the league.`, postSeasonButtonHtml('transfers'));
     }
@@ -5668,7 +5675,7 @@ await rollOptions(role, displayPos);
          const debutMsg = (qualified && !isSacked) ? grantCupDebut() : '';
          const fold = (title, inner, open) => inner ? `<details class="mt-3 bg-slate-900/50 rounded-xl border border-slate-700/50 text-left group"${open ? ' open' : ''}><summary class="cursor-pointer select-none list-none px-3 py-2.5 flex justify-between items-center text-[11px] md:text-xs text-slate-300 font-black uppercase tracking-widest">${title}<span class="text-slate-500 group-open:rotate-180 transition-transform">&#9662;</span></summary><div class="px-3 pb-3">${inner}</div></details>` : '';
          const awardsInner = `<div class="flex flex-col sm:flex-row gap-3 justify-center"><div class="bg-slate-900/50 p-3 rounded-xl border border-slate-700/50 w-full sm:w-1/2 flex items-center gap-3">${mvpContent}</div><div class="bg-slate-900/50 p-3 rounded-xl border border-slate-700/50 w-full sm:w-1/2 flex items-center gap-3">${topScorerContent}</div></div>${allScorersHtml}`;
-         awards.innerHTML = `<div class="poke-box-dark p-5 md:p-6 text-center shadow-2xl relative overflow-hidden"><h2 class="pixel-font text-lg md:text-xl font-black text-white mb-2 uppercase tracking-wide" style="line-height:1.4;">Season ${currentSeason} Finished</h2><p class="${outcome.c} text-sm md:text-base font-black mb-1">${outcome.t}</p>${debutMsg ? `<p class="text-[11px] md:text-xs text-sky-200 font-bold mt-1">${debutMsg}</p>` : ''}${actionHtml}${boardVerdictHtml(boardResult)}${fold('&#127942; Players of the season', awardsInner, false)}${fold('&#128240; The season in headlines', seasonNewsList(), false)}<button onclick="viewTeam()" class="mt-4 px-6 py-3 bg-slate-700 hover:bg-slate-600 text-white font-bold text-xs md:text-sm rounded-full transition-colors border border-slate-500 uppercase tracking-wide w-full">View Team</button></div>`;
+         awards.innerHTML = `<div class="poke-box-dark p-5 md:p-6 text-center shadow-2xl relative overflow-hidden"><h2 class="pixel-font text-lg md:text-xl font-black text-white mb-2 uppercase tracking-wide" style="line-height:1.4;">Season ${currentSeason} Finished</h2><p class="${outcome.c} text-sm md:text-base font-black mb-1">${outcome.t}</p>${debutMsg}${actionHtml}${boardVerdictHtml(boardResult)}${fold('&#127942; Players of the season', awardsInner, false)}${fold('&#128240; The season in headlines', seasonNewsList(), false)}<button onclick="viewTeam()" class="mt-4 px-6 py-3 bg-slate-700 hover:bg-slate-600 text-white font-bold text-xs md:text-sm rounded-full transition-colors border border-slate-500 uppercase tracking-wide w-full">View Team</button></div>`;
          
          // NIEUW: Trigger alle seizoens-achievements (Perfect Harmony, Bidoof, Goals, Iron Wall)
          AchievementManager.check('end_season');
@@ -5970,7 +5977,7 @@ await rollOptions(role, displayPos);
             if (cupWon) awardCupTrust(currentCupRound);
             const milestoneMsg = cupWon ? grantCupMilestone(currentCupRound) : '';
             const cupBoardHtml = (cupWon && currentCupRound < 3 ? '<p class="mt-3 text-xs font-bold text-green-400">&#9650; The board is pleased with your Continental Cup run.</p>' : '')
-                + (milestoneMsg ? `<div class="mt-3 bg-yellow-500/10 border border-yellow-500/60 rounded-xl p-3 text-sm font-bold text-yellow-100">&#127873; ${milestoneMsg}</div>` : '');
+                + milestoneMsg;
             if (finalScore.h > finalScore.a) {
                 currentCupRound++;
                 savePhase = currentCupRound > 3 ? 'cupwon' : 'cup';
