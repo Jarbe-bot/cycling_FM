@@ -4983,11 +4983,12 @@ await rollOptions(role, displayPos);
             if (ovr) ovr.textContent = a.ovrFrom;
             if (bar) { bar.style.transition = 'none'; bar.style.width = pct(a.from) + '%'; }
             if (cell) { cell.style.boxShadow = '0 0 0 2px #22c55e, 0 0 14px rgba(34,197,94,.45)'; cell.style.outlineOffset = '2px'; }
-            const badge = (el, txt) => { if (!el) return; const b = document.createElement('span'); b.className = 'absolute -top-3.5 right-0 text-[10px] font-black text-green-400 whitespace-nowrap transition-opacity duration-700'; b.textContent = txt; el.appendChild(b); setTimeout(() => { b.style.opacity = '0'; }, 2600); };
+            // +X als effen groen labeltje bovenop de rand van het vakje, zodat het altijd leesbaar is
+            const badge = (el, txt) => { if (!el) return; el.style.position = 'relative'; const b = document.createElement('span'); b.className = 'absolute -top-2.5 -right-1.5 z-10 bg-green-500 text-slate-950 text-[10px] leading-none font-black px-1.5 py-0.5 rounded-full shadow-md whitespace-nowrap transition-opacity duration-700'; b.textContent = txt; el.appendChild(b); setTimeout(() => { b.style.opacity = '0'; }, 2800); };
             setTimeout(() => {
                 if (bar) { bar.style.transition = 'width .9s cubic-bezier(.3,.7,.3,1)'; bar.style.width = pct(a.to) + '%'; }
                 countUp(val, a.from, a.to, 900, () => {
-                    if (val) badge(val, `+${a.to - a.from}`);
+                    badge(cell || val, `+${a.to - a.from}`);
                     setTimeout(() => countUp(ovr, a.ovrFrom, a.ovrTo, 600, () => {
                         if (ovr && a.ovrTo > a.ovrFrom) { ovr.parentElement.classList.add('text-green-400'); setTimeout(() => ovr.parentElement.classList.remove('text-green-400'), 1500); }
                     }), 150);
