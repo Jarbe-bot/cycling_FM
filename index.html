@@ -2059,11 +2059,11 @@ const AudioManager = {
                 const v = p.stats[k];
                 const w = Math.max(4, Math.min(100, Math.round(v / 160 * 100)));
                 const label = compact && short !== full ? '<span class="sm:hidden">' + short + '</span><span class="hidden sm:inline">' + full + '</span>' : full;
-                return '<div class="min-w-0">'
+                return '<div class="min-w-0 rounded-md transition-shadow" data-cell="' + k + '">'
                     + '<div class="flex justify-between items-baseline gap-1">'
                     + '<span class="uppercase tracking-wide font-bold text-slate-300 ' + (compact ? 'text-[10px] sm:text-[11px]' : 'text-[11px] sm:text-xs') + '">' + label + '</span>'
-                    + '<span class="font-black text-white tabular-nums ' + (compact ? 'text-sm sm:text-base' : 'text-base sm:text-lg') + '">' + v + '</span></div>'
-                    + '<div class="h-1 rounded-full bg-slate-800 mt-1 overflow-hidden"><div class="h-full rounded-full" style="width:' + w + '%;background:' + col + '"></div></div>'
+                    + '<span class="relative font-black text-white tabular-nums ' + (compact ? 'text-sm sm:text-base' : 'text-base sm:text-lg') + '" data-stat="' + k + '">' + v + '</span></div>'
+                    + '<div class="h-1 rounded-full bg-slate-800 mt-1 overflow-hidden"><div class="h-full rounded-full" data-bar="' + k + '" style="width:' + w + '%;background:' + col + '"></div></div>'
                     + '</div>';
             }).join('');
             return '<div class="grid grid-cols-2 ' + (compact ? 'gap-x-3 sm:gap-x-4 gap-y-2 p-2.5 mt-1' : 'gap-x-5 gap-y-3 p-4') + ' w-full bg-slate-950 rounded-lg shrink-0">' + cells + '</div>';
@@ -4843,13 +4843,14 @@ function handleModalClick(event) {
                                 <h3 class="font-black text-lg sm:text-2xl text-white text-center uppercase tracking-wide w-full shrink-0 mb-3 leading-tight truncate" title="${p.name}">${cardName(p.name)}</h3>
                                 ${statGridHtml(p, false)}
                                 <div class="flex justify-between items-center w-full text-sm sm:text-base font-bold text-slate-400 mt-3 border-t border-slate-700/50 pt-3 shrink-0">
-                                    <span>${natLabel(p)}</span>${gameOptions.showOvr ? `<span class="text-yellow-400 font-black text-base sm:text-lg">${playerOVR} Base OVR</span>` : ''}
+                                    <span>${natLabel(p)}</span><span class="text-yellow-400 font-black text-base sm:text-lg"><span id="profile-ovr" class="tabular-nums">${playerOVR}</span> Base OVR</span>
                                 </div>
                             </div>
                         </div>
                         ${actionButtons}
                     </div>
                 `;
+                playTrainAnim(posId);
             } else {
                 modalTitle.innerText = "Scout Player";
                 rerollWrapper.classList.remove('hidden');
@@ -4937,6 +4938,7 @@ await rollOptions(role, displayPos);
             trainCounts[p.id] = (trainCounts[p.id] || 0) + 1;
             if (careerLog) careerLog.counts.trainings++;
 
+            const ovrBefore = calculatePlayerOVR(p, role);
             p.stats[statKey] = Math.min(255, currentRawVal + gain);
             p.normStats[statKey] = scaleStat(p.stats[statKey]);
             p.bst = Object.values(p.stats).reduce((sum, val) => sum + val, 0);
@@ -4945,14 +4947,54 @@ await rollOptions(role, displayPos);
             
             document.getElementById('action-count').innerText = actionPoints;
             checkOffSeasonActions();
-            confetti({ particleCount: 50, spread: 60, origin: { y: 0.6 }, colors: ['#4ade80', '#facc15'] });
-            
             renderPitch();
             updateScores();
-            
-            openTrainingMenu(posId, role, displayPos, statKey);
-
             SaveManager.save();
+
+            // Terug naar de kaart van de renner en daar de winst laten optellen
+            trainAnim = { posId, stat: statKey, from: currentRawVal, to: p.stats[statKey], ovrFrom: ovrBefore, ovrTo: calculatePlayerOVR(p, role) };
+            openDraft(posId, displayPos, role);
+        }
+
+        // ---------- animatie na een training ----------
+        let trainAnim = null;
+        const reduceMotion = () => { try { return window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) { return false; } };
+        // Telt een getal op van 'from' naar 'to' (snel tikkend, vertraagt op het einde)
+        function countUp(el, from, to, ms, onDone) {
+            if (!el) { if (onDone) onDone(); return; }
+            if (reduceMotion() || from === to) { el.textContent = to; if (onDone) onDone(); return; }
+            const t0 = performance.now();
+            const step = now => {
+                const k = Math.min(1, (now - t0) / ms), e = 1 - Math.pow(1 - k, 3);
+                el.textContent = Math.round(from + (to - from) * e);
+                if (k < 1) requestAnimationFrame(step); else { el.textContent = to; if (onDone) onDone(); }
+            };
+            requestAnimationFrame(step);
+        }
+        function playTrainAnim(posId) {
+            const a = trainAnim;
+            if (!a || a.posId !== posId) return;
+            trainAnim = null;
+            const g = document.getElementById('gacha-container');
+            const cell = g.querySelector(`[data-cell="${a.stat}"]`), val = g.querySelector(`[data-stat="${a.stat}"]`), bar = g.querySelector(`[data-bar="${a.stat}"]`);
+            const ovr = document.getElementById('profile-ovr');
+            const pct = v => Math.max(4, Math.min(100, Math.round(v / 160 * 100)));
+            if (val) val.textContent = a.from;
+            if (ovr) ovr.textContent = a.ovrFrom;
+            if (bar) { bar.style.transition = 'none'; bar.style.width = pct(a.from) + '%'; }
+            if (cell) { cell.style.boxShadow = '0 0 0 2px #22c55e, 0 0 14px rgba(34,197,94,.45)'; cell.style.outlineOffset = '2px'; }
+            const badge = (el, txt) => { if (!el) return; const b = document.createElement('span'); b.className = 'absolute -top-3.5 right-0 text-[10px] font-black text-green-400 whitespace-nowrap transition-opacity duration-700'; b.textContent = txt; el.appendChild(b); setTimeout(() => { b.style.opacity = '0'; }, 2600); };
+            setTimeout(() => {
+                if (bar) { bar.style.transition = 'width .9s cubic-bezier(.3,.7,.3,1)'; bar.style.width = pct(a.to) + '%'; }
+                countUp(val, a.from, a.to, 900, () => {
+                    if (val) badge(val, `+${a.to - a.from}`);
+                    setTimeout(() => countUp(ovr, a.ovrFrom, a.ovrTo, 600, () => {
+                        if (ovr && a.ovrTo > a.ovrFrom) { ovr.parentElement.classList.add('text-green-400'); setTimeout(() => ovr.parentElement.classList.remove('text-green-400'), 1500); }
+                    }), 150);
+                });
+            }, 250);
+            setTimeout(() => { if (cell) cell.style.boxShadow = ''; }, 3200);
+            try { confetti({ particleCount: 40, spread: 55, origin: { y: 0.55 }, colors: ['#4ade80', '#facc15'] }); } catch (e) {}
         }
 
      window.confirmTransferOut = async function(role, displayPos) {
