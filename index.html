@@ -23,6 +23,7 @@
         @keyframes tm-glow { 0% { opacity: .35; filter: brightness(1); } 60% { opacity: 1; filter: brightness(1.6); } 100% { opacity: 1; filter: brightness(1); } }
         .tm-mark { animation: tm-slide 1.3s cubic-bezier(.3,.7,.3,1) .35s both; }
         .tm-lit { animation: tm-glow 1.1s ease-out 1.5s both; }
+        .tm-still .tm-mark { animation: none; } .tm-still .tm-lit { animation: none; opacity: 1 !important; }
         @media (prefers-reduced-motion: reduce) { .tm-mark, .tm-lit { animation: none; opacity: 1; } }
         /* Uitwedstrijd (lang seizoen): het scorebord gespiegeld, de thuisploeg links en jouw ploeg rechts */
         #tv-scoreboard.away-view .tv-mirror { flex-direction: row-reverse; }
@@ -2910,7 +2911,10 @@ window.chooseVision = function(i) {
     SaveManager.save();
     setBoardPeekButton();
     if (_visionScreen && _visionScreen.intro) openVisionIntro();
-    else if (_visionScreen) openBoardBriefing(_visionScreen.auto, _visionScreen.opts);
+    else if (_visionScreen) {
+        openBoardBriefing(_visionScreen.auto, _visionScreen.opts);
+        document.getElementById('board-modal-content').classList.add('tm-still');   // de meter heeft al bewogen: niet opnieuw animeren
+    }
 };
 function visionChoicesHtml() {
     const v0 = visionChoices[0];
@@ -3816,6 +3820,7 @@ function boardVerdictHtml(v) {
 window.openBoardBriefing = function(auto, opts) {
     opts = opts || {};
     _visionScreen = { intro: false, auto, opts };
+    document.getElementById('board-modal-content').classList.remove('tm-still');
     if (lastVerdict && lastVerdict.season === currentSeason - 1) showTip('verdict', 1600);
     const info = boardExpectationInfo();
     const E = info.E;
