@@ -4076,6 +4076,7 @@ window.swapFromOverview = function(a, b) {
 };
 
 window.openSwapMenu = function(posId) {
+    profileOpen = false;
     const f = formations[activeFormation];
     const me = f.positions.find(p => p.id === posId);
     const partners = getSwapPartners(posId);
@@ -4751,8 +4752,12 @@ function handleModalClick(event) {
 
     const wrapper = document.getElementById('draft-content-wrapper');
     const modal = document.getElementById('draft-modal');
+    // Een knop die zijn eigen scherm al vervangen heeft (bv. Train Stat) telt niet als klik ernaast
+    if (!document.contains(event.target)) return;
+    // Rennerskaart van je eigen ploeg: tikken naast de kaart of de knoppen sluit ze
+    const outsideProfile = profileOpen && !event.target.closest('.fut-card, button');
     
-    if (event.target === modal || (wrapper && !wrapper.contains(event.target))) {
+    if (event.target === modal || outsideProfile || (wrapper && !wrapper.contains(event.target))) {
         if (isPeeking) {
             togglePeek();
             return;
@@ -4765,8 +4770,10 @@ function handleModalClick(event) {
     }
 }
 
+       let profileOpen = false;   // staat de kaart van een eigen renner open (dan sluit tikken ernaast)
        async function openDraft(posId, displayPos, role) {
             currentDraftPos = posId; 
+            profileOpen = false;
             document.getElementById('draft-position-label').innerText = displayPos;
             
             const btnReroll = document.getElementById('btn-reroll');
@@ -4829,8 +4836,9 @@ function handleModalClick(event) {
                     ${swapBtnHtml}
                 ` : '';
                 
+                profileOpen = true;
                 gacha.innerHTML = `
-                    <div class="flex flex-col items-center justify-center w-full col-span-full" onclick="event.stopPropagation()">
+                    <div class="flex flex-col items-center justify-center w-full col-span-full">
                         <div class="w-full max-w-[240px] sm:max-w-[280px]" onclick="event.stopPropagation()">
                             <div class="fut-card flex-col items-center p-4 rounded-xl w-full justify-between bg-slate-900 border-2 border-slate-600 !opacity-100 !transform-none !scale-100 flex shadow-2xl">
                                 <div class="flex justify-between items-center w-full border-b border-slate-700 pb-1.5 shrink-0">
@@ -4847,7 +4855,7 @@ function handleModalClick(event) {
                                 </div>
                             </div>
                         </div>
-                        ${actionButtons}
+                        <div class="contents" onclick="event.stopPropagation()">${actionButtons}</div>
                     </div>
                 `;
                 playTrainAnim(posId);
@@ -4869,12 +4877,14 @@ await rollOptions(role, displayPos);
         }
 
         function closeModal() { 
+            profileOpen = false;
             document.getElementById('draft-modal').classList.add('hidden'); 
             document.getElementById('draft-modal').classList.remove('flex');
             if (isPeeking) togglePeek();
         }
 
         window.openTrainingMenu = function(posId, role, displayPos, lastTrainedStat = null) {
+            profileOpen = false;
             const p = userTeam[posId];
             document.getElementById('draft-modal-title').innerText = `Select Stat to Train (${actionPoints} AP left)`;
             
@@ -4999,6 +5009,7 @@ await rollOptions(role, displayPos);
         }
 
      window.confirmTransferOut = async function(role, displayPos) {
+    profileOpen = false;
     if (actionPoints <= 0) return;
     actionPoints--;
     if (careerLog) careerLog.counts.transfers++;
