@@ -659,7 +659,7 @@
             LEAGUE_BASE_FACTOR: 1.07,      // alle competitieclubs starten 7% sterker: een zwaardere start
             // De CPU groeit net als jij steeds minder: snel in het begin, daarna vlakt het af naar een plafond.
             // Groei(seizoen) = LEAGUE_GROWTH_TOTAL x (1 - e^(-(seizoen-1)/LEAGUE_GROWTH_TAU)); het eerste decennium blijft gelijk aan +0,8% per seizoen.
-            LEAGUE_GROWTH_TOTAL: 0.27,     // plafond: de pools van de CPU-clubs groeien maximaal +27% (top rond 88 na 10 lange seizoenen)
+            LEAGUE_GROWTH_TOTAL: 0.22,     // plafond: de pools van de CPU-clubs groeien maximaal +22% (top rond 87 na 10 lange seizoenen, 88-89 na 13)
             LEAGUE_GROWTH_TAU: 14,         // hoe snel het plafond benaderd wordt (kleiner = sneller)
             // Continental Cup
             CUP_POSS_EXP: 1.8,             // balbezit weegt even zwaar als in de competitie
@@ -674,7 +674,7 @@
             // Groei(seizoen) = CUP_GROWTH_MAX x (1 - e^(-(seizoen-1)/CUP_GROWTH_TAU)); de eerste seizoenen blijven gelijk aan +15 per seizoen.
             CUP_GROWTH_TAU: 12.8,
             CUP_EARLY_MULT: 1.4,           // de vroege verschuiving van zwakke generaties geldt ook voor de cup, x dit getal
-            CUP_GROWTH_MAX: 370   // cuptegenstanders groeien mee (finale rond 89-90 na 10 lange seizoenen)
+            CUP_GROWTH_MAX: 320   // cuptegenstanders groeien mee (finale rond 88-89 na 10-13 lange seizoenen)
         };
         const genData = [
             { id: 1, name: "Gen 1", range: [1, 232], active: true }   // de wielerversie heeft één rennerspool
