@@ -144,7 +144,7 @@
             </details>
             <details id="htp-vision" class="htp-sec bg-slate-900/60 border border-slate-700 rounded-xl">
                 <summary class="cursor-pointer select-none px-4 py-3 font-black text-white uppercase tracking-wider text-sm md:text-base flex items-center justify-between">Club vision<span class="htp-chev text-slate-400 text-xs">&#9660;</span></summary>
-                <div class="px-4 pb-4 text-xs md:text-sm text-slate-300 leading-relaxed space-y-2"><p>The board offers three visions, for example <em>&quot;2 Danish riders&quot;</em>, and you pick one. Get them into your starting eleven and you are rewarded with extra AP, paid in parts at every kick-off for as long as you keep them. <strong class="text-white">The sooner you achieve it, the more you collect.</strong></p><p>There is no penalty for ignoring it, but chasing a vision can cost you quality. That choice is yours.</p></div>
+                <div class="px-4 pb-4 text-xs md:text-sm text-slate-300 leading-relaxed space-y-2"><p>The board offers three visions, for example <em>&quot;2 Danish riders&quot;</em>, and you pick one. Every season you meet the vision earns extra AP: +1 per season for the first vision, and for later visions +2 the first season you meet it, then +1 for every season you keep it. <strong class="text-white">The sooner you meet it, the more you collect.</strong></p><p>It is checked at every kick-off and, in a long season, again after the winter break. The AP arrive in the next off-season.</p><p>There is no penalty if you don&#39;t meet it, but chasing a vision can cost you quality. That choice is yours.</p></div>
             </details>
             <details id="htp-board" class="htp-sec bg-slate-900/60 border border-slate-700 rounded-xl">
                 <summary class="cursor-pointer select-none px-4 py-3 font-black text-white uppercase tracking-wider text-sm md:text-base flex items-center justify-between">The board<span class="htp-chev text-slate-400 text-xs">&#9660;</span></summary>
@@ -1816,7 +1816,7 @@ const AudioManager = {
         const TIPS = {
             ovr: { title: 'Pick by position', text: 'The yellow number is the rider&#39;s OVR for this position. The same rider can be great up front and poor in defence. Higher is better.', sec: 'positions' },
             chem: { title: 'Chemistry', text: 'Riders next to each other from the same team or country link up (green line) and get stronger. Weaker riders gain the most.', sec: 'chem' },
-            vision: { title: 'Club vision', text: 'Pick a direction for your club. Field these riders and the board pays extra action points. The sooner, the more.', sec: 'vision' },
+            vision: { title: 'Club vision', text: 'Pick a direction for your club. Every season you field these riders, the board pays extra action points. The sooner you get there, the more you collect.', sec: 'vision' },
             offseason: { title: 'The off-season', text: 'You have action points to spend. Training gives a sure but small boost. A transfer can bring a better rider, or a worse one. AP can&#39;t be saved, so spend them all before the season starts.', sec: 'offseason' },
             transfer: { title: 'Transfers', text: 'You must pick one of the four. As a small club, top riders rarely come your way. Climb the table to change that.', sec: 'offseason' },
             winter: { title: 'Winter break!', text: 'Two extra actions to fix weak spots before the second half. The board won&#39;t judge you now.', sec: 'offseason' },
@@ -2820,33 +2820,47 @@ function visionCount(v) {
     if (!v) return 0;
     return Object.values(userTeam).filter(p => p && (v.type === 'nat' ? p.nat === v.key : p.team === v.key)).length;
 }
-// Beloningsplan per visie. Elk deel wordt bij de aftrap van een seizoen uitgekeerd: het eerste deel zodra je de visie haalt,
-// de volgende delen bij de volgende aftrappen, maar alleen als je elftal dan nog altijd aan de visie voldoet. Anders vervalt dat deel.
-// Visie 1 (bij de draft): één gratis kamp. Visie 2: kamp, +1 AP, +1 AP. Visie 3 en later: kamp, +1 AP, kamp, +1 AP.
-function visionPlan(v) {
-    const n = (v && v.n) || 1;
-    if (n === 1) return ['ap2'];
-    if (n === 2) return ['ap2', 'ap'];
-    return ['ap2', 'ap', 'ap'];
+// Beloning per seizoen: elk seizoen binnen de visieperiode waarin je elftal aan de visie voldoet, levert AP op voor het volgende tussenseizoen.
+// Visie 1 (bij de draft): +1 per seizoen, 3 seizoenen. Visie 2: +2 het eerste seizoen dat je ze haalt, daarna +1, 4 seizoenen. Visie 3+: idem, 5 seizoenen.
+// Gecontroleerd bij de aftrap; in een lang seizoen na de winterstop (je moet ze de hele terugronde houden).
+function visionLen(v) { const n = (v && v.n) || 1; return n === 1 ? 3 : n === 2 ? 4 : 5; }
+function visionFirstAP(v) { return ((v && v.n) || 1) === 1 ? 1 : 2; }
+function visionRes(v) {   // { seizoen: aantal AP | 'x' (gemist) }; oude saves worden omgezet
+    if (!v.res) {
+        v.res = {};
+        (v.paid || []).forEach(i => { v.res[v.done + i] = i === 0 ? visionFirstAP(v) : 1; });
+        (v.missed || []).forEach(i => { v.res[v.done + i] = 'x'; });
+    }
+    return v.res;
 }
-// Het deel van het plan dat nog binnen de visieperiode valt: beloningen lopen nooit door na seizoen v.until
-function visionPlanNow(v) {
-    const start = (v && v.done) || currentSeason;
-    return visionPlan(v).slice(0, Math.max(1, v.until - start + 1));
-}
-// Is de visie afgerond? Gehaald en alle delen uitbetaald of vervallen (na de aftrap van dit seizoen), of de periode is voorbij.
+function visionEarned(v) { return Object.values(visionRes(v)).reduce((a, x) => a + (typeof x === 'number' ? x : 0), 0); }
+// Is de periode voorbij? De laatste aftrap is gespeeld (en in een lang seizoen bevestigd na de winterstop).
 function visionFinished(v) {
     if (!v) return true;
-    if (v.pendingWinter && v.pendingWinter === currentSeason) return false;   // wacht nog op de bevestiging na de winterstop
-    if (v.checked === v.until && currentSeason >= v.until) return true;
-    return !!(v.done && v.checked >= v.done && (v.checked - v.done) >= visionPlanNow(v).length - 1);
+    if (v.pendingWinter && v.pendingWinter === currentSeason) return false;
+    return currentSeason > v.until || (currentSeason === v.until && visionRes(v)[v.until] !== undefined);
 }
-const PLAN_LABEL = { camp: 'a free training camp', ap: '1 extra action point', ap2: '2 extra action points' };
-const PLAN_SHORT = { camp: '&#127957; Camp', ap: '+1 AP', ap2: '+2 AP' };
-function visionRewardText(v) {
-    const plan = visionPlanNow(v);
-    if (plan.length === 1) return PLAN_LABEL[plan[0]];
-    return plan.map(x => PLAN_LABEL[x]).join(', then ') + ', one part per season, as long as your eleven still matches the vision at kick-off';
+function visionRewardLine(v) {
+    return visionFirstAP(v) === 1 ? '+1 AP for every season you meet the vision'
+        : '+2 AP the first season you meet the vision, then +1 for every season you keep it';
+}
+// Rij vakjes: één per seizoen van de visie. Groen = verdiend, grijs doorstreept = gemist, geel omrand = de volgende aftrap.
+function visionStripHtml(v) {
+    const res = v.res ? visionRes(v) : {};
+    let first = !v.done, out = '';
+    for (let s = v.from; s <= v.until; s++) {
+        const r = res[s];
+        let cls, amt;
+        if (typeof r === 'number') { cls = 'bg-green-500/20 border-green-500 text-green-300'; amt = r; }
+        else {
+            const past = r === 'x' || s < currentSeason;
+            amt = past ? ((!v.done || s < v.done) ? visionFirstAP(v) : 1) : (first ? visionFirstAP(v) : 1);
+            if (past) cls = 'bg-slate-800/60 border-slate-700 text-slate-500 line-through';
+            else { cls = s === currentSeason && clubVision === v ? 'bg-slate-800 border-yellow-400 text-yellow-300' : 'bg-slate-800 border-slate-600 text-slate-300'; first = false; }
+        }
+        out += `<div class="flex flex-col items-center rounded-md border ${cls} px-1.5 py-0.5 min-w-[34px]"><span class="text-[9px] font-bold opacity-80 no-underline">S${s}</span><span class="text-[11px] font-black">+${amt}</span></div>`;
+    }
+    return `<div class="flex justify-center gap-1 mt-2">${out}</div>`;
 }
 function visionTarget(v) { return v.type === 'nat' ? `${v.need} ${NAT_ADJ[v.key] || v.key} riders` : `${v.need} riders from ${v.key}`; }
 let visionChoices = null;   // drie voorstellen van het bestuur; de speler kiest er één
@@ -2883,7 +2897,7 @@ function newClubVision(fromSeason) {
     const opts = visionCandidates(n, prev);
     clubVision = null;
     if (!opts.length) { visionChoices = null; return null; }
-    visionChoices = opts.map(g => ({ type: g.type, key: g.key, need: g.need, from: fromSeason, until: fromSeason + VISION.SEASONS - 1, done: 0, seen: true, n }));
+    visionChoices = opts.map(g => ({ type: g.type, key: g.key, need: g.need, from: fromSeason, until: fromSeason + visionLen({ n }) - 1, done: 0, res: {}, seen: true, n }));
     return visionChoices;
 }
 // De speler kiest een van de drie voorstellen
@@ -2899,11 +2913,9 @@ window.chooseVision = function(i) {
     else if (_visionScreen) openBoardBriefing(_visionScreen.auto, _visionScreen.opts);
 };
 function visionChoicesHtml() {
-    const plan = visionPlan(visionChoices[0]);
-    const chips = plan.map((r, i) => `<span class="text-[10px] font-black uppercase tracking-wider border rounded px-1.5 py-0.5 bg-slate-800 border-slate-600 text-slate-300">${PLAN_SHORT[r]}</span>`).join('<span class="text-slate-500 text-[10px]">&rarr;</span>');
     const v0 = visionChoices[0];
     const hasTeam = Object.values(userTeam || {}).some(p => p);
-    const old = visionLog.length ? (pv => ` <span class="text-slate-500">&middot; previous vision ${pv.done ? 'achieved' : 'not achieved'}</span>`)(visionLog[visionLog.length - 1]) : '';
+    const old = visionLog.length ? (pv => ` <span class="text-slate-500">&middot; previous vision: ${pv.done ? `+${visionEarned(pv)} AP` : 'not met'}</span>`)(visionLog[visionLog.length - 1]) : '';
     return `<div class="mt-3 bg-gradient-to-b from-yellow-500/20 to-slate-900 border-2 border-yellow-400 rounded-xl p-2.5 md:p-3 text-center">
         <div class="flex items-center justify-between gap-2 mb-2">
             <span class="text-[10px] text-yellow-400 font-black uppercase tracking-widest text-left">&#127919; Choose a vision &middot; S${v0.from}-${v0.until}</span>
@@ -2915,43 +2927,36 @@ function visionChoicesHtml() {
                 <span class="text-white font-bold text-sm leading-tight">${visionTarget(c)}</span>
                 <span class="shrink-0 text-xs ${have > 0 ? 'text-green-300' : 'text-slate-400'} font-black">${have}/${c.need}</span></button>`;
         }).join('')}</div>
-        <div class="flex flex-wrap items-center justify-center gap-1 mt-2"><span class="text-[10px] text-slate-400 font-bold mr-0.5">Reward, one part per kick-off:</span>${chips}</div>
-        <p class="text-[10px] text-slate-400 mt-1">The sooner you achieve it, the more you collect.${old}</p>
+        <p class="text-[11px] text-slate-200 font-bold mt-2">${visionRewardLine(v0)}</p>
+        ${visionStripHtml(v0)}
+        <p class="text-[10px] text-slate-400 mt-1.5">The sooner you meet it, the more you collect. No penalty if you don't.${old}</p>
     </div>`;
 }
 function visionStatusHtml() {
     if (visionChoices) return visionChoicesHtml();
     const v = clubVision;
     if (!v) return '';
-    // Na de laatste aftrap van de periode valt er niets meer te verdienen; de nieuwe visie volgt in het volgende tussenseizoen
-    if (visionFinished(v)) {
-        const got = (v.paid || []).length;
-        return `<div class="mt-3 bg-slate-900 border border-slate-700 rounded-xl p-3 text-center">
-            <p class="text-[10px] text-slate-400 font-black uppercase tracking-widest mb-1">&#127919; Club vision &middot; seasons ${v.from}-${v.until}</p>
-            <p class="text-sm text-slate-300 font-bold">${visionTarget(v)}: ${v.done ? `achieved, ${got} of ${visionPlanNow(v).length} rewards collected` : 'not achieved'}. This vision is over.</p>
-            <p class="text-xs text-slate-400 mt-1">The board presents a new vision in the next off-season.</p></div>`;
-    }
     const have = visionCount(v);
+    if (visionFinished(v)) {
+        return `<div class="mt-3 bg-slate-900 border border-slate-700 rounded-xl p-3 text-center">
+            <p class="text-[10px] text-slate-400 font-black uppercase tracking-widest mb-1">&#127919; Club vision &middot; S${v.from}-${v.until} &middot; over</p>
+            <p class="text-sm text-slate-300 font-bold">${visionTarget(v)}: ${v.done ? `+${visionEarned(v)} AP collected` : 'not met'}.</p>
+            ${visionStripHtml(v)}
+            <p class="text-xs text-slate-400 mt-1.5">The board presents a new vision in the next off-season.</p></div>`;
+    }
     const isNew = !v.seen;
-    const state = v.done
-        ? `<span class="text-green-400 font-black">Achieved in season ${v.done}.</span> ${visionPlanNow(v).length > 1 ? 'Keep it at every kick-off to collect the rest of your reward.' : `The board keeps this vision until season ${v.until}.`} You have ${have} of ${v.need} now.`
-        : `You have <span class="text-white font-black">${have} of ${v.need}</span>. Deadline: the kick-off of season ${v.until}. Reward: ${visionRewardText(v)}.`;
-    const plan = visionPlanNow(v);
-    const paid = v.paid || [], missed = v.missed || [];
-    const steps = plan.length > 1 ? `<div class="flex flex-wrap justify-center gap-1.5 mt-2">${plan.map((r, i) => {
-        const st = paid.includes(i) ? 'bg-green-500/20 border-green-500 text-green-300' : (missed.includes(i) ? 'bg-red-500/10 border-red-500/60 text-red-300 line-through' : 'bg-slate-800 border-slate-600 text-slate-300');
-        const when = v.done ? `S${v.done + i}` : `${i + 1}.`;
-        return `<span class="text-[10px] font-black uppercase tracking-wider border rounded px-1.5 py-0.5 ${st}">${when} ${PLAN_SHORT[r]}</span>`;
-    }).join('')}</div>` : '';
     const box = isNew
         ? 'mt-3 bg-gradient-to-b from-yellow-500/25 to-slate-900 border-2 border-yellow-400 rounded-xl p-4 text-center shadow-[0_0_25px_rgba(234,179,8,0.35)]'
         : 'mt-3 bg-slate-900 border border-yellow-600/50 rounded-xl p-3 text-center';
     const badge = isNew ? '<span class="inline-block bg-yellow-400 text-slate-900 text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded mb-2 animate-pulse">New vision</span><br>' : '';
-    const old = isNew && visionLog.length ? (pv => `<p class="text-[11px] text-slate-400 mt-2">Previous vision (${visionTarget(pv)}): ${pv.done ? 'achieved' : 'not achieved'}.</p>`)(visionLog[visionLog.length - 1]) : '';
+    const old = isNew && visionLog.length ? (pv => `<p class="text-[11px] text-slate-400 mt-2">Previous vision (${visionTarget(pv)}): ${pv.done ? `+${visionEarned(pv)} AP collected` : 'not met'}.</p>`)(visionLog[visionLog.length - 1]) : '';
+    const now = have >= v.need ? `<span class="text-green-400 font-black">You have ${have} of ${v.need}.</span>` : `You have <span class="text-white font-black">${have} of ${v.need}</span>.`;
     return `<div class="${box}">
-        ${badge}<p class="text-[10px] text-yellow-400 font-black uppercase tracking-widest mb-1">&#127919; Club vision &middot; seasons ${v.from}-${v.until}</p>
+        ${badge}<p class="text-[10px] text-yellow-400 font-black uppercase tracking-widest mb-1">&#127919; Club vision &middot; S${v.from}-${v.until}</p>
         <p class="${isNew ? 'text-base md:text-lg' : 'text-sm'} text-white font-bold">"We want at least ${visionTarget(v)} in your starting eleven."</p>
-        <p class="text-xs text-slate-300 mt-1">${state}</p>${steps}${old}
+        <p class="text-xs text-slate-300 mt-1">${now} ${visionRewardLine(v)}.</p>
+        ${visionStripHtml(v)}
+        <p class="text-[10px] text-slate-400 mt-1.5">Checked at every kick-off${isLongSeason() ? ' and again after the winter break' : ''}. AP arrive in the next off-season.</p>${old}
     </div>`;
 }
 function updateVisionUI() {
@@ -2961,7 +2966,7 @@ function updateVisionUI() {
     if (visionChoices) { el.classList.remove('hidden'); el.innerHTML = '<span class="bg-yellow-400 text-slate-900 rounded px-1 mr-1 font-black">NEW</span>&#127919; Choose'; el.classList.add('animate-pulse'); el.title = 'The board offers three visions: tap to choose'; return; }
     if (!v || visionFinished(v)) { el.classList.add('hidden'); return; }
     el.classList.remove('hidden');
-    el.innerHTML = (v.seen ? '' : '<span class="bg-yellow-400 text-slate-900 rounded px-1 mr-1 font-black">NEW</span>') + (v.done && visionCount(v) >= v.need ? '&#127919; &#10003;' : `&#127919; ${Math.min(visionCount(v), v.need)}/${v.need}`);
+    el.innerHTML = (v.seen ? '' : '<span class="bg-yellow-400 text-slate-900 rounded px-1 mr-1 font-black">NEW</span>') + (visionCount(v) >= v.need ? '&#127919; &#10003;' : `&#127919; ${Math.min(visionCount(v), v.need)}/${v.need}`);
     el.classList.toggle('animate-pulse', !v.seen);
     el.title = `Club vision: ${visionTarget(v)} by season ${v.until}`;
 }
@@ -2979,52 +2984,42 @@ function checkClubVision() {
     const v = clubVision;
     if (!v) return;
     if (v.checked === currentSeason) { updateVisionUI(); return; }   // één controle per seizoen, ook na herladen
-    const meets = visionCount(v) >= v.need;
     v.checked = currentSeason;
-    // Lang seizoen: pas uitbetalen als je de visie ook na de winterstop nog haalt (geen renner erin voor de aftrap en er weer uit in de winter)
-    if (isLongSeason() && meets && (!v.done || (currentSeason - v.done > 0 && currentSeason - v.done < visionPlanNow(v).length))) {
-        v.pendingWinter = currentSeason;
-        infoToast('&#127919;', 'Club vision on track', `You field ${visionTarget(v)}. Keep them in your eleven after the winter break to collect the reward.`);
+    if (currentSeason < v.from || currentSeason > v.until) { updateVisionUI(); return; }
+    const meets = visionCount(v) >= v.need;
+    // Lang seizoen: de beslissing valt na de winterstop (renner erin voor de aftrap en er weer uit in de winter telt niet)
+    if (isLongSeason()) {
+        v.pendingWinter = currentSeason; v.kickMeets = meets;
+        if (meets) infoToast('&#127919;', 'Club vision on track', `You field ${visionTarget(v)}. Keep them after the winter break to earn this season's reward.`);
         updateVisionUI();
         return;
     }
     settleClubVision(meets);
 }
-// Na de winterstop (lang seizoen): de voorlopige visie bevestigen of laten vallen
+// Na de winterstop (lang seizoen): het seizoen telt als je elftal nu aan de visie voldoet
 function confirmVisionAfterWinter() {
     const v = clubVision;
-    if (!v) return;
-    // Visie pas in de winterstop gehaald: telt meteen voor dit seizoen (je houdt de renners de hele terugronde)
-    if (v.pendingWinter !== currentSeason) {
-        if (!v.done && v.checked === currentSeason && currentSeason <= v.until && visionCount(v) >= v.need) settleClubVision(true);
-        return;
-    }
+    if (!v || v.pendingWinter !== currentSeason) return;
     v.pendingWinter = 0;
     const meets = visionCount(v) >= v.need;
-    if (!meets && !v.done) infoToast('&#127919;', 'Vision slipped away', `You no longer have ${visionTarget(v)}. No reward this season.`);
+    if (!meets && v.kickMeets) { infoToast('&#127919;', 'Vision slipped away', `You no longer have ${visionTarget(v)}. No reward this season.`); settleClubVision(false, true); return; }
     settleClubVision(meets);
 }
-function settleClubVision(meets) {
+function settleClubVision(meets, silent) {
     const v = clubVision;
-    const plan = visionPlanNow(v);
-    v.paid = v.paid || []; v.missed = v.missed || [];
-    const pay = i => {
-        addBonusAP(plan[i] === 'ap2' ? 2 : 1, 'club vision');
-        v.paid.push(i);
-    };
-    if (!v.done) {
-        if (currentSeason <= v.until && meets) {
-            v.done = currentSeason;
-            pay(0);
-            const more = plan.length > 1 ? ` Keep it up: more rewards follow at the next kick-offs.` : '';
-            infoToast('&#127919;', 'Club vision achieved!', `${visionTarget(v)}: the board grants you ${PLAN_LABEL[plan[0]]}.${more}`);
-        }
+    if (!v) return;
+    const res = visionRes(v), s = currentSeason;
+    if (s < v.from || s > v.until || res[s] !== undefined) { updateVisionUI(); return; }
+    if (meets) {
+        const first = !v.done, amt = first ? visionFirstAP(v) : 1;
+        if (first) v.done = s;
+        res[s] = amt;
+        addBonusAP(amt, 'club vision');
+        const more = s < v.until ? ' Keep them for +1 AP every season.' : '';
+        infoToast('&#127919;', first ? 'Club vision met!' : 'Club vision reward', first ? `${visionTarget(v)}: +${amt} AP next off-season.${more}` : `You kept ${visionTarget(v)}: +1 AP next off-season.`);
     } else {
-        const i = currentSeason - v.done;
-        if (i > 0 && i < plan.length && !v.paid.includes(i) && !v.missed.includes(i)) {
-            if (meets) { pay(i); infoToast('&#127919;', 'Club vision reward', `The board is pleased you kept its vision: ${PLAN_LABEL[plan[i]]} next off-season.`); }
-            else { v.missed.push(i); infoToast('&#127919;', 'Vision abandoned', `You no longer have ${visionTarget(v)}. The board withholds this season's reward.`); }
-        }
+        res[s] = 'x';
+        if (v.done && !silent) infoToast('&#127919;', 'No vision reward', `You no longer have ${visionTarget(v)}. No reward this season.`);
     }
     updateVisionUI();
 }
@@ -3037,7 +3032,7 @@ function openVisionIntro() {
             <h2 class="text-2xl md:text-3xl font-black text-yellow-400 mb-1 uppercase tracking-wider text-center">The Board</h2>
             <p class="text-center text-white font-bold text-base md:text-lg mb-1">"Welcome, coach! This club needs an identity. Which one do you want to build?"</p>
             ${visionChoicesHtml()}
-            <p class="text-xs text-slate-400 text-center mt-3">No penalty if you later choose another path. Keep it in mind during the draft.</p>
+            <p class="text-xs text-slate-400 text-center mt-3">Keep it in mind during the draft.</p>
             <button disabled class="mt-3 w-full px-6 py-3.5 bg-slate-700 text-slate-400 font-black rounded-full uppercase tracking-widest text-sm cursor-not-allowed">Choose a vision first</button>`;
         const m = document.getElementById('board-modal'); m.classList.remove('hidden'); m.classList.add('flex');
         setBoardPeekButton();
@@ -3049,7 +3044,8 @@ function openVisionIntro() {
         <h2 class="text-2xl md:text-3xl font-black text-yellow-400 mb-1 uppercase tracking-wider text-center">The Board</h2>
         <p class="text-center text-slate-400 text-xs md:text-sm font-bold uppercase tracking-widest mb-3">Club vision &middot; seasons ${v.from} to ${v.until}</p>
         <p class="text-center text-white font-bold text-base md:text-lg mb-2">"Good choice, coach. We want at least ${visionTarget(v)} in your starting eleven."</p>
-        <p class="text-xs md:text-sm text-slate-300 text-center leading-relaxed">You have until the kick-off of season ${v.until}. Field them at the start of any season before that and the board rewards you with <span class="text-yellow-300 font-bold">2 extra action points</span> for the next off-season. Every new vision after this one pays out over more seasons. There is no penalty if you choose another path. Keep it in mind during the draft: tap the &#127919; in the top bar to see your progress.</p>
+        <p class="text-xs md:text-sm text-slate-300 text-center leading-relaxed">${visionRewardLine(v)}, checked at every kick-off. No penalty if you don't. Keep it in mind during the draft: tap the &#127919; in the top bar to see your progress.</p>
+        ${visionStripHtml(v)}
         <button onclick="closeBoardBriefing(false, false)" class="mt-4 w-full px-6 py-3.5 bg-gradient-to-r from-purple-600 to-purple-500 hover:from-purple-400 text-white font-black rounded-full uppercase tracking-widest text-sm">Start the draft</button>`;
     const modal = document.getElementById('board-modal');
     modal.classList.remove('hidden');
