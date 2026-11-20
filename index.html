@@ -155,7 +155,7 @@
                 <div>
                     <h3 class="text-base md:text-lg font-bold text-white mb-1.5 uppercase">6. The Board</h3>
                     <ul class="list-disc pl-5 space-y-1">
-                        <li><strong class="text-yellow-400">What the board expects:</strong> Every season the board hopes for a finish one place better than your last two seasons. A reigning champion is expected to win again only if it is also the strongest club; otherwise the board asks it to fight for the title, without making the title itself a must. Everyone else is asked to qualify for the Continental Cup at most. Every cup round you win pleases the board too. In your first season the board judges your squad: a favourite is asked to fight for the title, a strong squad for a top 3 to 5 finish, and anyone else to stay clear of the bottom places.</li>
+                        <li><strong class="text-yellow-400">What the board expects:</strong> Every season the board hopes for a finish one place better than your last two seasons. A reigning champion is expected to win again only if it is also the strongest club; if it is one of the two strongest, the board asks it to fight for the title. A surprise champion (3rd strongest club or weaker) is asked for one place better than its strength, not for another title. The board's memory is short: credit from good seasons fades a little every season, so recent results count most. Everyone else is asked to qualify for the Continental Cup at most. Every cup round you win pleases the board too. In your first season the board judges your squad: a favourite is asked to fight for the title, a strong squad for a top 3 to 5 finish, and anyone else to stay clear of the bottom places.</li>
                         <li><strong class="text-sky-400">The board's mood:</strong> From Ecstatic to Furious. The board evaluates whether you improve the squad (the wrong stats on the wrong players do not count) and how you finish compared to what it hoped for. A bad season hurts more than a good one helps, and repeated bad seasons hurt more each time. Tap the Board badge to see how it feels.</li>
                         <li><strong class="text-white">Furious means last chance.</strong> A board that has lost all faith sacks you, and so does relegation (finishing last, or losing the play-off in ninth), from your very first season.</li>
                         <li><strong class="text-green-400">Title odds:</strong> Tap ODDS to see the title race, with every club's chance of winning the league.</li>
@@ -604,6 +604,8 @@
             // in elke formatie ongeveer evenveel punten haalt. Stijl bepaalt waar je sterk bent, dit bepaalt hoe sterk je in totaal bent.
             FORMATION_POWER: { '4-3-3': 0.978, '4-4-2': 0.992, '3-5-2': 1.012, '5-4-1': 1.007, '4-2-4': 0.982, '4-2-3-1': 1.023, '3-4-3': 0.998, '4-1-2-1-2': 1.014, '5-3-2': 0.993, '4-4-1-1': 1.001 },
             TRUST_START: 70,
+            TRUST_NEUTRAL: 70,             // krediet boven dit niveau vervaagt elk seizoen
+            TRUST_FADE: 0.25,              // ... met een kwart van de afstand tot TRUST_NEUTRAL
             EXPECT_MIN_NON_CHAMPION: 2,      // wie vorig seizoen niet kampioen werd, krijgt nooit een beter dan 2e plaats als verwachting
             TRUST_SEL_PER_POINT: 3,          // selectiescore (-2..+2): +-3% per punt
             TRUST_PERF_UP: 5,                // uitslag: +5% per plaats boven de verwachting (max 3 plaatsen; was 3)
@@ -2647,9 +2649,11 @@ function computeBoardExpectation(s) {
     }
     // Nooit meer eisen dan je plaats in de krachtsverhouding (odds), behalve voor een regerend kampioen:
     // die moet opnieuw meestrijden om de titel (2e plaats), ook als hij niet de favoriet is.
-    if (rank !== null) E = champion ? Math.max(E, Math.min(rank, 2)) : Math.max(E, rank);
+    // Verrassende kampioen (pas de 3de sterkste of zwakker): het bestuur vraagt één plaats beter dan je sterkte, geen titelstrijd
+    const underdogChamp = champion && rank !== null && rank >= 3;
+    if (rank !== null) E = underdogChamp ? Math.max(E, rank - 1) : (champion ? Math.max(E, Math.min(rank, 2)) : Math.max(E, rank));
     if (E === 1 && rank !== null && rank !== 1) E = 2;                   // kampioen, maar niet de sterkste club: meestrijden
-    const fight = E === 2 && (champion || (rank !== null && rank <= 2));   // een titelstrijd verwachten, geen titel eisen
+    const fight = E === 2 && !underdogChamp && (champion || (rank !== null && rank <= 2));   // een titelstrijd verwachten, geen titel eisen
     return { E, fight };
 }
 function boardExpectationInfo() {
@@ -3637,6 +3641,8 @@ function evaluateBoardSeason(pos) {
     if (lastVerdict && lastVerdict.season === currentSeason) return lastVerdict;
     const before = boardWordInfo(boardTrust).word;
     const pctBefore = boardTrust;
+    // Het bestuur vergeet: krediet boven het neutrale niveau vervaagt elk seizoen een stukje (recente prestaties tellen het zwaarst)
+    if (boardTrust > BALANCE.TRUST_NEUTRAL) boardTrust -= (boardTrust - BALANCE.TRUST_NEUTRAL) * BALANCE.TRUST_FADE;
     const E = boardExpectNow || boardExpectation(currentSeason);
     const fight = !!(boardExpectCache && boardExpectCache.season === currentSeason && boardExpectCache.E === E && boardExpectCache.fight);
     const sel = selectionScore();
