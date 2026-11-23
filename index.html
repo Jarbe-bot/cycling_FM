@@ -1784,7 +1784,7 @@ const AudioManager = {
             if (typeof gameOptions.tipsOn !== 'boolean') gameOptions.tipsOn = true; if (!Array.isArray(gameOptions.tipsSeen)) gameOptions.tipsSeen = [];
         }
         // ---------- Versie, update-melding en back-up ----------
-        const APP_VERSION = '2026.11.23.2';   // bij elke nieuwe versie ophogen: het spel vergelijkt dit met de versie online
+        const APP_VERSION = '2026.11.23.3';   // bij elke nieuwe versie ophogen: het spel vergelijkt dit met de versie online
         let _newVersion = null;
         function checkForUpdate() {
             if (!/^https?:/.test(location.protocol)) return;
@@ -2142,8 +2142,8 @@ const AudioManager = {
             'XDS Astana Team':                  { base: '#22b8cf', second: '#facc15', accent: '#0f172a', pattern: 'band',    label: '#67e8f9' },
             'Tudor Pro Cycling Team':           { base: '#c1121f', second: '#111111', accent: '#ffffff', pattern: 'split',   label: '#f87171' },
             'Pinarello Q36.5 Pro Cycling Team': { base: '#27272a', second: '#e4e4e7', accent: '#e4e4e7', pattern: 'band',    label: '#d4d4d8' },
-            'Cofidis': { base: '#d71920', second: '#f5d400', accent: '#6b1220', pattern: 'band', label: '#ffffff' },
-            'Unibet Rose Rockets': { base: '#38bdf8', second: '#ec4899', accent: '#6d28d9', pattern: 'band', label: '#ffffff' },
+            'Cofidis': { base: '#d71920', second: '#f5d400', accent: '#6b1220', pattern: 'band', label: '#d71920' },
+            'Unibet Rose Rockets': { base: '#38bdf8', second: '#ec4899', accent: '#6d28d9', pattern: 'band', label: '#db2777' },
             'Legends':                          { base: '#f5e6c4', second: '#8b5a2b', accent: '#8b5a2b', pattern: 'band',    label: '#fcd34d' }
         };
         // Kampioenstruien (seizoen 2027): wereld, Europa en nationale kampioenen in de pool
