@@ -696,7 +696,7 @@
             LEAGUE_GROWTH_TAU: 14,         // hoe snel het plafond benaderd wordt (kleiner = sneller)
             // Continental Cup
             CUP_POSS_EXP: 1.8,             // balbezit weegt even zwaar als in de competitie
-            PLAYOFF_OPP_FACTOR: 0.98,      // tweedeklasser in de play-off: iets zwakker dan de twee zwakste clubs van de competitie
+            PLAYOFF_OPP_FACTOR: 0.98,
             CPU_PLAYOFF_LOSS: 0.4,         // kans dat een CPU-club op de 9de plaats zijn play-off verliest
             CUP_CHANCES: 14,               // meer kansen = minder toeval, de sterkste ploeg wint vaker
             // Per ronde (R16, QF, SF, finale) een verschuiving op elke pool van de tegenstander. Nu uniform: de potten
@@ -930,28 +930,41 @@
         }
 
         const euroOpponents = [
-            // POT 1: Europese subtop (~81-83 OVR equivalent -> ~880-920 pools)
-            { id: 111, name: "Olympic Masseille", pools: { poss: 840, create: 910, prevent: 870, finish: 920, block: 870 }, names: ["Fignon", "Jalabert", "Chavanel", "Moncoutié", "Thévenet", "Bobet"] },
-            { id: 114, name: "Livenepool", pools: { poss: 860, create: 900, prevent: 890, finish: 910, block: 880 }, names: ["Wiggins", "Froome", "Thomas", "Millar", "Boardman", "Cummings"] },
-            { id: 106, name: "SSC Nibali", pools: { poss: 870, create: 920, prevent: 900, finish: 920, block: 900 }, names: ["Bettini", "Bugno", "Bartoli", "Ballan", "Pozzato", "Visentini"] },
-            { id: 113, name: "Bayer Leverkuss", pools: { poss: 860, create: 940, prevent: 880, finish: 940, block: 880 }, names: ["Zabel", "Ullrich", "Kittel", "Greipel", "Martin", "Klöden"] },
-
-            // POT 2: Sterke knock-out ploegen (~84-86 OVR equivalent -> ~940-980 pools)
-            { id: 109, name: "Chelsprint", pools: { poss: 890, create: 930, prevent: 960, finish: 930, block: 960 }, names: ["Cipollini", "Petacchi", "Freire", "McEwen", "Steels", "Abdoujaparov"] },
-            { id: 110, name: "RSC Saganderlecht", pools: { poss: 920, create: 960, prevent: 920, finish: 950, block: 930 }, names: ["Maertens", "Planckaert", "Leukemans", "Roelandts", "Nuyens", "Godefroot"] },
-            { id: 107, name: "AC Milano San Remo", pools: { poss: 880, create: 940, prevent: 980, finish: 940, block: 980 }, names: ["Gerrans", "Goss", "Ciolek", "Fondriest", "Saronni", "Kelly"] },
-            { id: 105, name: "Athletic Pello Bilbao", pools: { poss: 850, create: 920, prevent: 1020, finish: 950, block: 1010 }, names: ["Heras", "Mancebo", "Mayo", "Olano", "Escartín", "Beloki"] },
-
-            // POT 3: Europese top (~86-88 OVR equivalent -> ~990-1040 pools)
-            { id: 115, name: "AS Romandie", pools: { poss: 920, create: 980, prevent: 1020, finish: 990, block: 1020 }, names: ["Gimondi", "Moser", "Chiappucci", "Pantani", "Basso", "Bitossi"] },
-            { id: 112, name: "Club Brugge - De Panne", pools: { poss: 950, create: 1000, prevent: 1000, finish: 1000, block: 1000 }, names: ["Argentin", "Rebellin", "Roche", "Rominger", "Bauer", "Di Luca"] },
-            { id: 104, name: "Girona d’Italia", pools: { poss: 1040, create: 1030, prevent: 940, finish: 1010, block: 940 }, names: ["Purito", "Samuel Sánchez", "Pereiro", "Zubeldia", "Flecha", "Freire"] },
-            { id: 101, name: "Juventurini", pools: { poss: 960, create: 1030, prevent: 1000, finish: 1040, block: 1000 }, names: ["Moser", "Saronni", "Gimondi", "Bugno", "Chiappucci", "Fondriest"] },
-
-            // POT 4: De Eindbazen (~89-91 OVR equivalent -> ~1050-1100 pools)
-            { id: 108, name: "Manchester Huynited", pools: { poss: 1050, create: 1060, prevent: 1040, finish: 1060, block: 1040 }, names: ["Cavendish Jr.", "Hammond", "Downing", "Hunt", "Hutchinson", "Sciandri"] },
-            { id: 103, name: "Vuelta Madrid", pools: { poss: 980, create: 1070, prevent: 1050, finish: 1090, block: 1050 }, names: ["Contador Jr.", "Delgado", "Bahamontes", "Ocaña", "Lejarreta", "Arroyo"] },
-            { id: 102, name: "Paris Saint Gilbert", pools: { poss: 1020, create: 1090, prevent: 1050, finish: 1100, block: 1050 }, names: ["Duclos", "Guesdon", "Marie", "Simon", "Leblanc", "Hinault Jr."] }
+            // Indeling volgens de sterkte van de echte club: pot 1 = achtste finale en kwalificatie, pot 2 = kwartfinale, pot 3 = halve finale, pot 4 = finale
+            // POT 4
+            { id: 103, pot: 4, name: "Vuelta Madrid", pools: { poss: 1040, create: 1090, prevent: 1060, finish: 1100, block: 1060 }, names: ["Contador Jr.", "Delgado", "Bahamontes", "Ocaña", "Lejarreta", "Arroyo"] },
+            { id: 102, pot: 4, name: "Paris Saint Gilbert", pools: { poss: 1020, create: 1090, prevent: 1050, finish: 1100, block: 1050 }, names: ["Duclos", "Guesdon", "Marie", "Simon", "Leblanc", "Hinault Jr."] },
+            { id: 116, pot: 4, name: "Manchester Pithie", pools: { poss: 1080, create: 1080, prevent: 1040, finish: 1060, block: 1040 }, names: ["Kennaugh", "Rowe", "Dowsett", "Tennant", "Cummings"] },
+            { id: 117, pot: 4, name: "Bayer Munchen", pools: { poss: 1040, create: 1080, prevent: 1030, finish: 1090, block: 1030 }, names: ["Kittel", "Knees", "Burghardt", "Wesemann", "Sieberg"] },
+            { id: 114, pot: 4, name: "Livenepool", pools: { poss: 1030, create: 1070, prevent: 1040, finish: 1070, block: 1040 }, names: ["Wiggins", "Froome", "Thomas", "Millar", "Boardman", "Cummings"] },
+            { id: 118, pot: 4, name: "Dunbarcelona", pools: { poss: 1060, create: 1080, prevent: 1010, finish: 1070, block: 1010 }, names: ["Freire", "Sastre", "Mancebo", "Sevilla", "Pereiro"] },
+            { id: 119, pot: 4, name: "Arsenechal", pools: { poss: 1000, create: 1050, prevent: 1060, finish: 1040, block: 1060 }, names: ["Millar", "Hammond", "Hunt", "Downing", "Wegelius"] },
+            // POT 3
+            { id: 120, pot: 3, name: "Intermarché Milan", pools: { poss: 980, create: 1020, prevent: 1040, finish: 1010, block: 1040 }, names: ["Pantani", "Garzelli", "Simoni", "Di Luca", "Rebellin"] },
+            { id: 101, pot: 3, name: "Juventurini", pools: { poss: 960, create: 1030, prevent: 1000, finish: 1040, block: 1000 }, names: ["Moser", "Saronni", "Gimondi", "Bugno", "Chiappucci", "Fondriest"] },
+            { id: 109, pot: 3, name: "Chelseavakov", pools: { poss: 970, create: 1010, prevent: 1000, finish: 1000, block: 1000 }, names: ["Cipollini", "Petacchi", "Freire", "McEwen", "Steels", "Abdoujaparov"] },
+            { id: 113, pot: 3, name: "Bayer Leverkuss", pools: { poss: 970, create: 1000, prevent: 990, finish: 1000, block: 990 }, names: ["Zabel", "Ullrich", "Kittel", "Greipel", "Martin", "Klöden"] },
+            { id: 107, pot: 3, name: "AC Milano San Remo", pools: { poss: 950, create: 990, prevent: 1010, finish: 990, block: 1010 }, names: ["Gerrans", "Goss", "Ciolek", "Fondriest", "Saronni", "Kelly"] },
+            { id: 106, pot: 3, name: "SSC Nibali", pools: { poss: 960, create: 1000, prevent: 990, finish: 1010, block: 980 }, names: ["Bettini", "Bugno", "Bartoli", "Ballan", "Pozzato", "Visentini"] },
+            { id: 121, pot: 3, name: "Poulidortmund", pools: { poss: 950, create: 1010, prevent: 980, finish: 1020, block: 970 }, names: ["Poulidor", "Aldag", "Bölts", "Heppner", "Kessler"] },
+            { id: 122, pot: 3, name: "Atalanda Bergamo", pools: { poss: 940, create: 1010, prevent: 970, finish: 1010, block: 960 }, names: ["Gimondi", "Gotti", "Belli", "Paolini", "Noè"] },
+            // POT 2
+            { id: 105, pot: 2, name: "Athletic Pello Bilbao", pools: { poss: 850, create: 920, prevent: 1020, finish: 950, block: 1010 }, names: ["Heras", "Mancebo", "Mayo", "Olano", "Escartín", "Beloki"] },
+            { id: 115, pot: 2, name: "AS Romandie", pools: { poss: 910, create: 940, prevent: 960, finish: 940, block: 960 }, names: ["Gimondi", "Moser", "Chiappucci", "Pantani", "Basso", "Bitossi"] },
+            { id: 123, pot: 2, name: "Sporting De Lissabondt", pools: { poss: 920, create: 950, prevent: 940, finish: 940, block: 930 }, names: ["Rui Costa", "Agostinho", "Cardoso", "Paulinho", "Machado"] },
+            { id: 108, pot: 2, name: "Manchester Huynited", pools: { poss: 920, create: 950, prevent: 930, finish: 950, block: 930 }, names: ["Cavendish Jr.", "Hammond", "Downing", "Hunt", "Hutchinson", "Sciandri"] },
+            { id: 112, pot: 2, name: "Club Brugge - De Panne", pools: { poss: 920, create: 940, prevent: 940, finish: 940, block: 940 }, names: ["Argentin", "Rebellin", "Roche", "Rominger", "Bauer", "Di Luca"] },
+            { id: 124, pot: 2, name: "Gallatasaray", pools: { poss: 910, create: 950, prevent: 920, finish: 950, block: 910 }, names: ["Örken", "Balkan", "Akın", "Kaçar", "Önder"] },
+            { id: 111, pot: 2, name: "Olympique Masseille", pools: { poss: 900, create: 940, prevent: 920, finish: 950, block: 920 }, names: ["Fignon", "Jalabert", "Chavanel", "Moncoutié", "Thévenet", "Bobet"] },
+            { id: 125, pot: 2, name: "TSG Kristoffenheim", pools: { poss: 900, create: 960, prevent: 910, finish: 960, block: 900 }, names: ["Kristoff", "Hushovd", "Boasson Hagen", "Arvesen", "Nordhaug"] },
+            // POT 1
+            { id: 126, pot: 1, name: "SV Hamburg Cyclassic", pools: { poss: 870, create: 920, prevent: 890, finish: 920, block: 890 }, names: ["Klöden", "Wegmann", "Voigt", "Gerdemann", "Ciolek"] },
+            { id: 104, pot: 1, name: "Girona d’Italia", pools: { poss: 900, create: 910, prevent: 860, finish: 900, block: 860 }, names: ["Purito", "Samuel Sánchez", "Pereiro", "Zubeldia", "Flecha", "Freire"] },
+            { id: 110, pot: 1, name: "RSC Saganderlecht", pools: { poss: 880, create: 910, prevent: 890, finish: 910, block: 890 }, names: ["Maertens", "Planckaert", "Leukemans", "Roelandts", "Nuyens", "Godefroot"] },
+            { id: 127, pot: 1, name: "Shakhtar Godonetsk", pools: { poss: 880, create: 900, prevent: 880, finish: 900, block: 880 }, names: ["Godon", "Popovych", "Grivko", "Padun", "Polivoda"] },
+            { id: 128, pot: 1, name: "Fenerpacher", pools: { poss: 860, create: 920, prevent: 880, finish: 930, block: 870 }, names: ["Pacher", "Balkan", "Kaya", "Demir", "Yıldız"] },
+            { id: 129, pot: 1, name: "Barta Praha", pools: { poss: 850, create: 890, prevent: 890, finish: 880, block: 900 }, names: ["Bárta", "Konečný", "Kreuziger", "Štybar", "Svorada"] },
+            { id: 130, pot: 1, name: "FC Kopenhaigen", pools: { poss: 850, create: 880, prevent: 900, finish: 870, block: 900 }, names: ["Riis", "Sørensen", "Breschel", "Fuglsang", "Bak"] },
         ];
 
 
@@ -1784,7 +1797,7 @@ const AudioManager = {
             if (typeof gameOptions.tipsOn !== 'boolean') gameOptions.tipsOn = true; if (!Array.isArray(gameOptions.tipsSeen)) gameOptions.tipsSeen = [];
         }
         // ---------- Versie, update-melding en back-up ----------
-        const APP_VERSION = '2026.11.23.4';   // bij elke nieuwe versie ophogen: het spel vergelijkt dit met de versie online
+        const APP_VERSION = '2026.11.23.7';   // bij elke nieuwe versie ophogen: het spel vergelijkt dit met de versie online
         let _newVersion = null;
         function checkForUpdate() {
             if (!/^https?:/.test(location.protocol)) return;
@@ -3650,7 +3663,7 @@ function drawCupOpponents(season) {
     const boosted = euroOpponents.map(op => ({ ...op, pools: { poss: op.pools.poss + boost, create: op.pools.create + boost, prevent: op.pools.prevent + boost, finish: op.pools.finish + boost, block: op.pools.block + boost } }));
     const sorted = [...boosted].sort((a, b) => _tot(a.pools) - _tot(b.pools));
     // Vier sterkte-potten (R16 -> QF -> SF -> Finale): subtop, sterke middenmoot, Europese top, eindbazen
-    const pots = [sorted.slice(0, 4), sorted.slice(4, 8), sorted.slice(8, 12), sorted.slice(12, 15)].map(p => p.sort(() => 0.5 - Math.random()));
+    const pots = [1, 2, 3, 4].map(k => sorted.filter(op => op.pot === k).sort(() => 0.5 - Math.random()));   // vaste potten per ronde
     return pots.map((p, i) => {
         const op = p[0], sh = BALANCE.CUP_ROUND_SHIFT[i] - cupLateEase(season);
         const shifted = { poss: op.pools.poss + sh, create: op.pools.create + sh, prevent: op.pools.prevent + sh, finish: op.pools.finish + sh, block: op.pools.block + sh };
