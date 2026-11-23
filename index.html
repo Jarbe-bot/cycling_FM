@@ -159,7 +159,7 @@
             </details>
             <details id="htp-chem" class="htp-sec bg-slate-900/60 border border-slate-700 rounded-xl">
                 <summary class="cursor-pointer select-none px-4 py-3 font-black text-white uppercase tracking-wider text-sm md:text-base flex items-center justify-between">Chemistry<span class="htp-chev text-slate-400 text-xs">&#9660;</span></summary>
-                <div class="px-4 pb-4 text-xs md:text-sm text-slate-300 leading-relaxed space-y-2"><p>Riders next to each other on the pitch link up when they share a <strong class="text-white">team</strong> or a <strong class="text-white">nationality</strong>: you see a green line. Linked riders get stronger, and <strong class="text-white">weaker riders gain the most</strong>. A well-linked team of good riders often beats a loose collection of stars. Legends form their own team.</p></div>
+                <div class="px-4 pb-4 text-xs md:text-sm text-slate-300 leading-relaxed space-y-2"><p>Riders next to each other on the pitch link up when they share a <strong class="text-white">team</strong> or a <strong class="text-white">nationality</strong>: you see a green line. Linked riders get stronger, and <strong class="text-white">weaker riders gain the most</strong>. Riders from a <strong class="text-white">small cycling nation</strong> link even stronger with each other: two Eritreans or two Slovenians are worth more than two Belgians. A well-linked team of good riders often beats a loose collection of stars. Legends form their own team.</p></div>
             </details>
             <details id="htp-offseason" class="htp-sec bg-slate-900/60 border border-slate-700 rounded-xl">
                 <summary class="cursor-pointer select-none px-4 py-3 font-black text-white uppercase tracking-wider text-sm md:text-base flex items-center justify-between">The off-season<span class="htp-chev text-slate-400 text-xs">&#9660;</span></summary>
@@ -1205,6 +1205,19 @@
 
         // Chemie per link, zoals een pokémonrun met meerdere generaties:
         // zelfde ploeg OF zelfde nationaliteit = 1 (gele lijn), allebei = 2 (groene lijn)
+        // Chemie: elk linkpunt dicht CHEM_PER_POINT van de afstand tot 115 (zwakke renners winnen het meest).
+        // Landgenoten uit een klein wielerland linken sterker: hoe zeldzamer het land in de rennerspool, hoe groter de bonus.
+        const CHEM_PER_POINT = 0.15;
+        let _natCount = null;
+        function natRarity(nat) {
+            if (!_natCount) { _natCount = {}; (typeof RIDERS !== 'undefined' ? RIDERS : []).forEach(r => { if (r.team !== 'Legends') _natCount[r.nat] = (_natCount[r.nat] || 0) + 1; }); }
+            const n = _natCount[nat] || 1;
+            return n >= 20 ? 1 : n >= 10 ? 1.25 : n >= 4 ? 1.75 : 2.5;
+        }
+        function linkValue(p1, p2) {   // sterkte van een link (voor de boost); linkChem blijft het gewone aantal punten
+            if (!p1 || !p2) return 0;
+            return (p1.team && p1.team === p2.team ? 1 : 0) + (p1.nat && p1.nat === p2.nat ? natRarity(p1.nat) : 0);
+        }
         function linkChem(p1, p2) {
             if (!p1 || !p2) return 0;
             const sameTeam = !!p1.team && p1.team === p2.team;
@@ -1797,7 +1810,7 @@ const AudioManager = {
             if (typeof gameOptions.tipsOn !== 'boolean') gameOptions.tipsOn = true; if (!Array.isArray(gameOptions.tipsSeen)) gameOptions.tipsSeen = [];
         }
         // ---------- Versie, update-melding en back-up ----------
-        const APP_VERSION = '2026.11.23.7';   // bij elke nieuwe versie ophogen: het spel vergelijkt dit met de versie online
+        const APP_VERSION = '2026.11.23.8';   // bij elke nieuwe versie ophogen: het spel vergelijkt dit met de versie online
         let _newVersion = null;
         function checkForUpdate() {
             if (!/^https?:/.test(location.protocol)) return;
@@ -2336,7 +2349,7 @@ const AudioManager = {
         }
 
         function getPlayerChem(posId) {
-            let chem = 0;
+            let chem = 0, value = 0;
             const player = userTeam[posId];
             if (!player) return { score: 0, closurePct: 0 };
             
@@ -2347,15 +2360,14 @@ const AudioManager = {
                     const otherPlayer = userTeam[otherPosId];
                     if (otherPlayer) {
                         chem += linkChem(player, otherPlayer);
+                        value += linkValue(player, otherPlayer);
                     }
                 }
             });
 
           // DE VERNIEUWDE ROBIN HOOD BUFF
             // Wielerversie: chemie werkt zoals een run met alle generaties (ploeg en nationaliteit elk +1), dus altijd 10% per punt
-            let percentPerPoint = 0.10;
-
-            let closurePct = chem * percentPerPoint;
+            let closurePct = value * CHEM_PER_POINT;
             
             // Verhoogde Hard Cap: Zwakke spelers kunnen nu tot 75% van hun gat dichten
             if (closurePct > 0.75) closurePct = 0.75;
