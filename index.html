@@ -653,7 +653,7 @@
             // Alle clubs krijgen dezelfde verschuiving, zodat de verhoudingen (en dus de odds) realistisch blijven; ze vervalt vanzelf naarmate je team groeit.
             GEN_EARLY_SHIFT: { 1: -4.9 },
             GEN_EARLY_TAU: 15,             // na hoeveel seizoenen de verschuiving nog 37% is (e^-1); past bij hoe snel spelers in zwakke generaties inlopen
-            EARLY_HARDEN: 8,               // de eerste seizoenen zijn zwaarder: de sterkste CPU-clubs krijgen zoveel punten teamsterkte S extra, dat vanzelf wegvalt (0 = uit)
+            EARLY_HARDEN: 5,               // de eerste seizoenen zijn zwaar (5: de 3e plaats blijft bereikbaar voor een groeiende ploeg)der: de sterkste CPU-clubs krijgen zoveel punten teamsterkte S extra, dat vanzelf wegvalt (0 = uit)
             EARLY_HARDEN_TAU: 5,           // na hoeveel seizoenen die extra nog 37% is
             EARLY_HARDEN_SPAN: 8,          // de verzwaring gaat vooral naar de sterkste clubs: een club krijgt het volledige bedrag als hij zoveel S boven het gemiddelde zit, minder als hij dichterbij zit, niets als hij eronder zit (0 = alle clubs evenveel)
             CUP_LATE_EASE: 150,            // naarmate de carrière vordert wordt de cup makkelijker: zoveel pools (in dezelfde eenheid als CUP_ROUND_SHIFT) minder voor elke tegenstander, op volle sterkte na ongeveer 2-3 keer de tijdconstante
