@@ -638,7 +638,7 @@
             TRUST_FAR_PTS: 9, TRUST_FAR_PTS_LONG: 15,      // ver weg: meer punten tekort dan dit
             TRUST_FAR_EXTRA: 3,
             EXPECT_MIN_NON_CHAMPION: 2,      // wie vorig seizoen niet kampioen werd, krijgt nooit een beter dan 2e plaats als verwachting
-            TRUST_SEL_PER_POINT: 3,          // selectiescore (-2..+2): +-3% per punt
+            TRUST_SEL_PER_POINT: 3, TRUST_SEL_CAP_ON_TARGET: 3,          // selectiescore (-2..+2): +-3% per punt
             TRUST_PERF_UP: 5,                // uitslag: +5% per plaats boven de verwachting (max 3 plaatsen; was 3)
             TRUST_ON_TARGET: 2,              // precies de verwachting gehaald: +2%
             TRUST_PERF_DOWN: 6,              // uitslag: -6% per plaats onder de verwachting
@@ -1810,7 +1810,7 @@ const AudioManager = {
             if (typeof gameOptions.tipsOn !== 'boolean') gameOptions.tipsOn = true; if (!Array.isArray(gameOptions.tipsSeen)) gameOptions.tipsSeen = [];
         }
         // ---------- Versie, update-melding en back-up ----------
-        const APP_VERSION = '2026.11.23.8';   // bij elke nieuwe versie ophogen: het spel vergelijkt dit met de versie online
+        const APP_VERSION = '2026.11.23.9';   // bij elke nieuwe versie ophogen: het spel vergelijkt dit met de versie online
         let _newVersion = null;
         function checkForUpdate() {
             if (!/^https?:/.test(location.protocol)) return;
@@ -3927,11 +3927,15 @@ function evaluateBoardSeason(pos) {
         else if (gap > (L ? BALANCE.TRUST_FAR_PTS_LONG : BALANCE.TRUST_FAR_PTS)) { far = true; perf -= BALANCE.TRUST_FAR_EXTRA; }
     }
     if (diff === 0) perf += BALANCE.TRUST_ON_TARGET || 0;
-    let d = BALANCE.TRUST_SEL_PER_POINT * sel + perf;
+    const onTarget = diff >= 0;
+    let selPart = BALANCE.TRUST_SEL_PER_POINT * sel;
+    // Doel gehaald of beter: een slechte ploegontwikkeling kost hoogstens een beetje, en het ongeduld loopt niet op
+    if (onTarget) selPart = Math.max(-(BALANCE.TRUST_SEL_CAP_ON_TARGET || 3), selPart);
+    let d = selPart + perf;
     if (pos === 1) d += BALANCE.TRUST_TITLE;
     let patience = 1;
-    if (d < 0 && close) {
-        // nipt gemist: begrip, het ongeduld loopt niet op
+    if (d < 0 && (close || onTarget)) {
+        // nipt gemist of doel gehaald: begrip, het ongeduld loopt niet op
     } else if (d < 0) {
         negStreak++;
         patience = BALANCE.TRUST_PATIENCE[Math.min(negStreak, BALANCE.TRUST_PATIENCE.length) - 1];
