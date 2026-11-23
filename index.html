@@ -82,6 +82,10 @@
         </div>
     </div>
 
+    <div id="update-bar" class="fixed bottom-3 left-1/2 -translate-x-1/2 z-[600] hidden items-center gap-3 bg-blue-600 text-white rounded-full shadow-2xl pl-4 pr-1.5 py-1.5 max-w-[92vw]">
+        <span class="text-xs font-bold leading-tight">New version available. Your progress is saved.</span>
+        <button onclick="applyUpdate()" class="shrink-0 bg-white text-blue-700 font-black text-xs uppercase tracking-wide rounded-full px-3 py-1.5">Update</button>
+    </div>
     <div id="options-modal" class="fixed inset-0 bg-slate-900/95 z-[400] hidden flex-col items-center justify-center p-4 overflow-y-auto backdrop-blur-sm transition-opacity duration-300 opacity-0">
         <div class="max-w-md w-full poke-box-dark p-5 md:p-6 shadow-2xl relative my-auto">
             <button onclick="closeOptions()" class="absolute top-4 right-4 text-slate-400 hover:text-white bg-slate-700 hover:bg-slate-600 rounded-full w-8 h-8 flex items-center justify-center font-bold transition-colors">&times;</button>
@@ -116,6 +120,24 @@
                 <div class="min-w-0"><p class="text-white font-black text-sm">Show tips</p><p class="text-slate-400 text-[11px] leading-snug mt-1">Short tips the first time something new happens. Turning them on again shows every tip again.</p></div>
                 <button id="opt-tips" role="switch" aria-checked="true" onclick="toggleOptionTips()" class="shrink-0 relative w-12 h-7 rounded-full transition-colors bg-green-500"><span id="opt-tips-knob" class="absolute top-0.5 left-0.5 w-6 h-6 bg-white rounded-full shadow transition-transform translate-x-5"></span></button>
             </div>
+            <p class="text-[10px] text-slate-400 font-black uppercase tracking-widest mt-4">Backup</p>
+            <div class="bg-slate-900/60 border border-slate-700 rounded-xl p-3 mt-3">
+                <p class="text-slate-400 text-[11px] leading-snug">Save your career, achievements and settings, for example before reinstalling the app or switching devices.</p>
+                <div class="grid grid-cols-2 gap-2 mt-2">
+                    <button onclick="copyBackupCode()" class="py-2 rounded-lg font-black text-xs uppercase tracking-wide bg-slate-700 hover:bg-slate-600 text-white border border-slate-600">&#128203; Copy code</button>
+                    <button onclick="downloadBackup()" class="py-2 rounded-lg font-black text-xs uppercase tracking-wide bg-slate-700 hover:bg-slate-600 text-white border border-slate-600">&#11015;&#65039; Download file</button>
+                </div>
+                <button onclick="toggleRestore()" class="mt-2 w-full py-2 rounded-lg font-black text-xs uppercase tracking-wide bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-600">&#8617;&#65039; Restore a backup</button>
+                <div id="restore-box" class="hidden mt-2">
+                    <textarea id="restore-code" rows="3" placeholder="Paste your backup code here" class="w-full bg-slate-950 border border-slate-600 rounded-lg p-2 text-[11px] text-slate-200 font-mono"></textarea>
+                    <div class="grid grid-cols-2 gap-2 mt-2">
+                        <button onclick="restoreFromCode()" class="py-2 rounded-lg font-black text-xs uppercase tracking-wide bg-yellow-500 hover:bg-yellow-400 text-slate-900">Restore code</button>
+                        <label class="py-2 rounded-lg font-black text-xs uppercase tracking-wide bg-slate-700 hover:bg-slate-600 text-white border border-slate-600 text-center cursor-pointer">&#128194; Choose file<input type="file" accept=".txt,.json,text/plain,application/json" class="hidden" onchange="restoreFromFile(this)"></label>
+                    </div>
+                    <p class="text-[10px] text-orange-300 mt-1.5 leading-snug">Restoring replaces your current career, achievements and settings.</p>
+                </div>
+                <p id="backup-msg" class="text-[11px] text-green-300 mt-2 hidden"></p>
+            </div>
             <p class="text-[10px] text-slate-400 font-black uppercase tracking-widest mt-4">Audio</p>
             <div class="flex items-center justify-between gap-4 bg-slate-900/60 border border-slate-700 rounded-xl p-3 mt-3">
                 <div class="min-w-0"><p class="text-white font-black text-sm">Music</p><p class="text-slate-400 text-[11px] leading-snug mt-0.5">Background music</p></div>
@@ -126,6 +148,7 @@
                 <button id="opt-sfx" role="switch" aria-checked="true" onclick="toggleSFX()" class="shrink-0 relative w-12 h-7 rounded-full transition-colors bg-green-500"><span id="opt-sfx-knob" class="absolute top-0.5 left-0.5 w-6 h-6 bg-white rounded-full shadow transition-transform translate-x-5"></span></button>
             </div>
             <button onclick="closeOptions()" class="mt-5 w-full py-3 bg-yellow-500 hover:bg-yellow-400 text-slate-900 font-black rounded-xl transition-colors uppercase tracking-wide">Done</button>
+            <p class="text-center text-[10px] text-slate-500 mt-3">Version <span id="app-version"></span></p>
         </div>
     </div>
 
@@ -1768,6 +1791,91 @@ const AudioManager = {
             gameOptions.showOvr = true; gameOptions.difficulty = 'normal'; gameOptions.showNews = true;
             try { const o = JSON.parse(localStorage.getItem(OPTIONS_KEY) || '{}'); if (typeof o.showOvr === 'boolean') gameOptions.showOvr = o.showOvr; if (typeof o.showNews === 'boolean') gameOptions.showNews = o.showNews; if (o.difficulty === 'normal' || o.difficulty === 'hard') gameOptions.difficulty = o.difficulty; if (typeof o.tipsOn === 'boolean') gameOptions.tipsOn = o.tipsOn; if (Array.isArray(o.tipsSeen)) gameOptions.tipsSeen = o.tipsSeen; } catch (e) {}
             if (typeof gameOptions.tipsOn !== 'boolean') gameOptions.tipsOn = true; if (!Array.isArray(gameOptions.tipsSeen)) gameOptions.tipsSeen = [];
+        }
+        // ---------- Versie, update-melding en back-up ----------
+        const APP_VERSION = '2026.11.23';   // bij elke nieuwe versie ophogen: het spel vergelijkt dit met de versie online
+        let _newVersion = null;
+        function checkForUpdate() {
+            if (!/^https?:/.test(location.protocol)) return;
+            fetch(location.pathname + '?vcheck=' + Date.now(), { cache: 'no-store' }).then(r => r.ok ? r.text() : '').then(t => {
+                const m = t.match(/const APP_VERSION = '([^']+)'/);
+                if (m && m[1] !== APP_VERSION) { _newVersion = m[1]; const b = document.getElementById('update-bar'); b.classList.remove('hidden'); b.classList.add('flex'); }
+            }).catch(() => {});
+        }
+        function applyUpdate() {
+            try { if (typeof SaveManager !== 'undefined') SaveManager.save(); } catch (e) {}
+            location.replace(location.pathname + '?v=' + encodeURIComponent(_newVersion || Date.now()));
+        }
+        document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') checkForUpdate(); });
+        window.addEventListener('load', () => { const v = document.getElementById('app-version'); if (v) v.textContent = APP_VERSION; setTimeout(checkForUpdate, 1500); });
+
+        const BACKUP_KEYS = () => [SAVE_KEY, OPTIONS_KEY, 'cyc_achievements', 'pkm_music_muted', 'pkm_sfx_muted'];
+        function backupMsg(t, bad) { const m = document.getElementById('backup-msg'); m.textContent = t; m.classList.remove('hidden'); m.classList.toggle('text-green-300', !bad); m.classList.toggle('text-red-400', !!bad); }
+        const _b64 = bytes => { let s = ''; for (let i = 0; i < bytes.length; i += 0x8000) s += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000)); return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); };
+        const _unb64 = str => { str = str.replace(/-/g, '+').replace(/_/g, '/'); while (str.length % 4) str += '='; const s = atob(str); const a = new Uint8Array(s.length); for (let i = 0; i < s.length; i++) a[i] = s.charCodeAt(i); return a; };
+        async function makeBackupCode() {
+            try { if (typeof SaveManager !== 'undefined') SaveManager.save(); } catch (e) {}
+            const data = {}; BACKUP_KEYS().forEach(k => { try { const v = localStorage.getItem(k); if (v !== null) data[k] = v; } catch (e) {} });
+            const json = JSON.stringify({ app: 'peloton-manager-backup', v: 1, version: APP_VERSION, at: new Date().toISOString(), data });
+            const raw = new TextEncoder().encode(json);
+            if (typeof CompressionStream !== 'undefined') {
+                const gz = new Uint8Array(await new Response(new Blob([raw]).stream().pipeThrough(new CompressionStream('gzip'))).arrayBuffer());
+                return 'PMB1.' + _b64(gz);
+            }
+            return 'PMB0.' + _b64(raw);
+        }
+        async function readBackupCode(code) {
+            code = (code || '').trim().replace(/\s+/g, '');
+            let bytes;
+            if (code.startsWith('PMB1.')) {
+                if (typeof DecompressionStream === 'undefined') throw new Error('This browser cannot read compressed backups.');
+                bytes = new Uint8Array(await new Response(new Blob([_unb64(code.slice(5))]).stream().pipeThrough(new DecompressionStream('gzip'))).arrayBuffer());
+            } else if (code.startsWith('PMB0.')) bytes = _unb64(code.slice(5));
+            else throw new Error('This is not a Peloton Manager backup code.');
+            const obj = JSON.parse(new TextDecoder().decode(bytes));
+            if (!obj || obj.app !== 'peloton-manager-backup' || !obj.data) throw new Error('This is not a Peloton Manager backup code.');
+            return obj;
+        }
+        async function copyBackupCode() {
+            try {
+                const code = await makeBackupCode();
+                try { await navigator.clipboard.writeText(code); backupMsg('Backup code copied. Paste it somewhere safe, like your notes.'); }
+                catch (e) { toggleRestore(true); const t = document.getElementById('restore-code'); t.value = code; t.select(); backupMsg('Copy the code from the box above and keep it somewhere safe.'); }
+            } catch (e) { backupMsg('Could not make a backup: ' + e.message, true); }
+        }
+        async function downloadBackup() {
+            try {
+                const code = await makeBackupCode();
+                const a = document.createElement('a');
+                a.href = URL.createObjectURL(new Blob([code], { type: 'text/plain' }));
+                a.download = 'peloton-manager-backup-' + new Date().toISOString().slice(0, 10) + '.txt';
+                document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+                backupMsg('Backup file downloaded.');
+            } catch (e) { backupMsg('Could not make a backup: ' + e.message, true); }
+        }
+        function toggleRestore(open) { const b = document.getElementById('restore-box'); b.classList.toggle('hidden', open === true ? false : !b.classList.contains('hidden')); }
+        async function applyBackup(code) {
+            try {
+                const obj = await readBackupCode(code);
+                const when = obj.at ? new Date(obj.at).toLocaleDateString() : 'an earlier date';
+                if (!confirmRestore(when)) return;
+                BACKUP_KEYS().forEach(k => { try { localStorage.removeItem(k); } catch (e) {} });
+                Object.entries(obj.data).forEach(([k, v]) => { try { localStorage.setItem(k, v); } catch (e) {} });
+                backupMsg('Backup restored. Reloading...');
+                setTimeout(() => location.reload(), 600);
+            } catch (e) { backupMsg(e.message || 'This backup could not be read.', true); }
+        }
+        let _restoreArmed = 0;
+        function confirmRestore(when) {   // geen browserdialoog: tweede tik binnen 6 seconden bevestigt
+            if (Date.now() - _restoreArmed < 6000) { _restoreArmed = 0; return true; }
+            _restoreArmed = Date.now();
+            backupMsg('Backup from ' + when + ' found. Tap restore again to replace your current career.', true);
+            return false;
+        }
+        function restoreFromCode() { applyBackup(document.getElementById('restore-code').value); }
+        function restoreFromFile(input) {
+            const f = input.files && input.files[0]; if (!f) return;
+            f.text().then(t => { document.getElementById('restore-code').value = t.trim(); applyBackup(t); }).finally(() => { input.value = ''; });
         }
         function saveOptions() { try { localStorage.setItem(OPTIONS_KEY, JSON.stringify(gameOptions)); } catch (e) {} }
         function renderOptions() {
