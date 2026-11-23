@@ -171,11 +171,11 @@
             </details>
             <details id="htp-board" class="htp-sec bg-slate-900/60 border border-slate-700 rounded-xl">
                 <summary class="cursor-pointer select-none px-4 py-3 font-black text-white uppercase tracking-wider text-sm md:text-base flex items-center justify-between">The board<span class="htp-chev text-slate-400 text-xs">&#9660;</span></summary>
-                <div class="px-4 pb-4 text-xs md:text-sm text-slate-300 leading-relaxed space-y-2"><p>Every season the board sets a target, based on your recent finishes and your squad&#39;s strength (tap <strong class="text-white">ODDS</strong> to compare). It judges two things: <strong class="text-white">where you finish</strong>, and <strong class="text-white">whether you improved the squad in the right places</strong>. A bad season hurts more than a good one helps.</p><p>The meter runs from Ecstatic to Furious. <strong class="text-red-400">Furious is your last chance.</strong> Finishing last, or losing the relegation play-off, gets you sacked straight away.</p></div>
+                <div class="px-4 pb-4 text-xs md:text-sm text-slate-300 leading-relaxed space-y-2"><p>Every season the board sets a target, based on your recent finishes and your squad&#39;s strength (tap <strong class="text-white">ODDS</strong> to compare). It judges two things: <strong class="text-white">where you finish</strong>, and <strong class="text-white">whether you improved the squad in the right places</strong>. A bad season hurts more than a good one helps.</p><p>The meter runs from Ecstatic to Furious. <strong class="text-red-400">Furious is your last chance.</strong> From season 2, finishing last or losing the relegation play-off gets you sacked straight away.</p></div>
             </details>
             <details id="htp-league" class="htp-sec bg-slate-900/60 border border-slate-700 rounded-xl">
                 <summary class="cursor-pointer select-none px-4 py-3 font-black text-white uppercase tracking-wider text-sm md:text-base flex items-center justify-between">League &amp; Continental Cup<span class="htp-chev text-slate-400 text-xs">&#9660;</span></summary>
-                <div class="px-4 pb-4 text-xs md:text-sm text-slate-300 leading-relaxed space-y-2"><ul class="list-disc pl-5 space-y-1.5"><li><strong class="text-white">1st and 2nd</strong> go to the Continental Cup.</li><li><strong class="text-white">3rd</strong> plays a one-match cup qualifier.</li><li><strong class="text-white">9th</strong> plays a relegation play-off.</li><li><strong class="text-white">10th</strong> is relegated, and you are sacked.</li></ul><p>Rival clubs grow every season, so standing still means falling behind. The cup has four knockout rounds against Europe&#39;s elite. Upsets happen.</p></div>
+                <div class="px-4 pb-4 text-xs md:text-sm text-slate-300 leading-relaxed space-y-2"><ul class="list-disc pl-5 space-y-1.5"><li><strong class="text-white">1st and 2nd</strong> go to the Continental Cup.</li><li><strong class="text-white">3rd</strong> plays a one-match cup qualifier.</li><li><strong class="text-white">9th</strong> plays a relegation play-off.</li><li><strong class="text-white">10th</strong> is relegated, and you are sacked.</li><li>In your <strong class="text-white">first season</strong> the board protects you: no play-off and no relegation.</li></ul><p>Rival clubs grow every season, so standing still means falling behind. The cup has four knockout rounds against Europe&#39;s elite. Upsets happen.</p></div>
             </details>
             <details id="htp-formations" class="htp-sec bg-slate-900/60 border border-slate-700 rounded-xl">
                 <summary class="cursor-pointer select-none px-4 py-3 font-black text-white uppercase tracking-wider text-sm md:text-base flex items-center justify-between">Formations<span class="htp-chev text-slate-400 text-xs">&#9660;</span></summary>
@@ -1784,7 +1784,7 @@ const AudioManager = {
             if (typeof gameOptions.tipsOn !== 'boolean') gameOptions.tipsOn = true; if (!Array.isArray(gameOptions.tipsSeen)) gameOptions.tipsSeen = [];
         }
         // ---------- Versie, update-melding en back-up ----------
-        const APP_VERSION = '2026.11.23.3';   // bij elke nieuwe versie ophogen: het spel vergelijkt dit met de versie online
+        const APP_VERSION = '2026.11.23.4';   // bij elke nieuwe versie ophogen: het spel vergelijkt dit met de versie online
         let _newVersion = null;
         function checkForUpdate() {
             if (!/^https?:/.test(location.protocol)) return;
@@ -4783,7 +4783,7 @@ function postSeasonAction() {
     if (pos <= 2) return 'cup';
     const z = tableZone(pos, n);
     if (z === 'qual') return !em || !em.result ? 'qual' : (em.result === 'won' ? 'cup' : 'transfers');
-    if (z === 'playoff') return !em || !em.result ? 'playoff' : 'transfers';
+    if (z === 'playoff') return currentSeason === 1 ? 'transfers' : (!em || !em.result ? 'playoff' : 'transfers');   // debuutseizoen: geen play-off
     return 'transfers';
 }
 function postSeasonButtonHtml(action) {
@@ -6056,16 +6056,18 @@ await rollOptions(role, displayPos);
          const qualified = finalPos <= 2;
          const isLastPlace = (finalPos === standings.length);
          const boardResult = evaluateBoardSeason(finalPos);
+         const debutSeason = currentSeason === 1 && gameMode === 'rtg';   // in het debuutseizoen kan je niet degraderen of ontslagen worden
+         if (debutSeason) boardTrust = Math.max(boardTrust, 25);
          recordSeasonInLog(finalPos, boardResult);
-         try { resolveCpuPlayoff(); } catch (e) { console.error('playoff', e); }
+         try { if (!(debutSeason && isLastPlace)) resolveCpuPlayoff(); } catch (e) { console.error('playoff', e); }
          updateRivalBoostOnce();
-         const boardSacked = boardTrust <= 0;
-         const isSacked = (gameMode === 'rtg' && isLastPlace) || boardSacked;
+         const boardSacked = boardTrust <= 0 && !debutSeason;
+         const isSacked = (gameMode === 'rtg' && isLastPlace && !debutSeason) || boardSacked;
          if (isSacked && careerLog) careerLog.status = 'sacked';
          const sackText = (boardSacked && !isLastPlace)
              ? "The board has lost all faith in the direction of the club and terminated your contract."
              : "Your club finished last and is relegated. The board has terminated your contract.";
-         const isFirstSeasonWarning = false;   // geen bescherming meer in seizoen 1
+         const isFirstSeasonWarning = debutSeason && (isLastPlace || finalPos === standings.length - 1);
 
          // NIEUW: Tel het kampioenschap erbij op en update de UI
          if (finalPos === 1) {
@@ -6098,8 +6100,8 @@ await rollOptions(role, displayPos);
              actionHtml = `
                  <div class="mt-5 bg-orange-900/30 border border-orange-500 rounded-xl p-4 text-center shadow-inner">
                      <span class="text-2xl mb-1 block">⚠️📋</span>
-                     <p class="text-base text-orange-400 font-black uppercase tracking-widest mb-1">Board Warning: Saved From The Drop!</p>
-                     <p class="text-xs text-orange-200 font-medium mb-4">You finished dead last! Because this is your debut season, the board grants you immunity. From Season 2 onwards, finishing 8th means getting SACKED!</p>
+                     <p class="text-base text-orange-400 font-black uppercase tracking-widest mb-1">Board warning: saved from the drop</p>
+                     <p class="text-xs text-orange-200 font-medium mb-4">${isLastPlace ? "You finished last" : "You finished in the play-off spot"}. Because this is your debut season, the board protects you and the club stays up. From season 2 on, last place means relegation and the sack.</p>
                      <button onclick="startTransferWindow()" class="px-6 py-3.5 bg-gradient-to-r from-purple-600 to-purple-500 hover:from-purple-400 text-white font-black rounded-full shadow-[0_0_25px_rgba(168,85,247,0.7)] uppercase tracking-widest text-sm md:text-base w-full transform hover:scale-105 transition-all">START NEXT SEASON (OFF-SEASON)</button>
                  </div>
              `;
