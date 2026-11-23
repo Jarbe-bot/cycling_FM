@@ -1289,6 +1289,8 @@
         const SaveManager = {
             save: function() {
                 if (gameMode !== 'rtg' || !activeFormation) return;
+                // Een beëindigde carrière (ontslagen) nooit opnieuw opslaan, ook niet via back-up of update
+                if (careerLog && careerLog.status === 'sacked') { try { localStorage.removeItem(SAVE_KEY); } catch (e) {} return; }
                 const saveData = {
                     userTeam, userTeamName, activeFormation, globalIdPool,
                     myTeamEnginePools, teamChemScore, playerStats, standings,
@@ -1410,6 +1412,7 @@
                 if (saved) {
                     try {
                         const data = JSON.parse(saved);
+                        if (data.careerLog && data.careerLog.status === 'sacked') { localStorage.removeItem(SAVE_KEY); btn.classList.add('hidden'); return; }
                         btn.innerHTML = `Continue Career <span class="block text-[10px] text-blue-200 font-bold tracking-widest mt-1">Season ${data.currentSeason} - ${data.userTeamName}</span>`;
                         btn.classList.remove('hidden');
                     } catch(e) { btn.classList.add('hidden'); }
@@ -1781,7 +1784,7 @@ const AudioManager = {
             if (typeof gameOptions.tipsOn !== 'boolean') gameOptions.tipsOn = true; if (!Array.isArray(gameOptions.tipsSeen)) gameOptions.tipsSeen = [];
         }
         // ---------- Versie, update-melding en back-up ----------
-        const APP_VERSION = '2026.11.23';   // bij elke nieuwe versie ophogen: het spel vergelijkt dit met de versie online
+        const APP_VERSION = '2026.11.23.2';   // bij elke nieuwe versie ophogen: het spel vergelijkt dit met de versie online
         let _newVersion = null;
         function checkForUpdate() {
             if (!/^https?:/.test(location.protocol)) return;
