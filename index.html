@@ -163,7 +163,7 @@
             </details>
             <details id="htp-offseason" class="htp-sec bg-slate-900/60 border border-slate-700 rounded-xl">
                 <summary class="cursor-pointer select-none px-4 py-3 font-black text-white uppercase tracking-wider text-sm md:text-base flex items-center justify-between">The off-season<span class="htp-chev text-slate-400 text-xs">&#9660;</span></summary>
-                <div class="px-4 pb-4 text-xs md:text-sm text-slate-300 leading-relaxed space-y-2"><p>You get <strong class="text-white">3 action points (AP)</strong>, plus any bonus you earned. AP can&#39;t be saved, so spend them all.</p><ul class="list-disc pl-5 space-y-1.5"><li><strong class="text-white">Transfer (1 AP):</strong> replace a rider with one of four new options. You <em>must</em> pick one, so it&#39;s a gamble.</li><li><strong class="text-white">Training (1 AP):</strong> improve one stat of one rider. The gain is guaranteed. Weak stats grow fast, elite stats barely. A second training on the same rider gives half.</li><li><strong class="text-white">Training camp (2 AP):</strong> the whole squad improves one stat a little. Once per season.</li><li><strong class="text-white">Position swap (1 AP):</strong> two riders in the same line trade places.</li></ul><p><strong class="text-white">Club status:</strong> small clubs rarely attract top riders. Finish higher for a few seasons and bigger names start to listen.</p><p><strong class="text-white">Long season:</strong> after matchday 9 there&#39;s a winter break with 2 extra AP. The board doesn&#39;t judge you then.</p></div>
+                <div class="px-4 pb-4 text-xs md:text-sm text-slate-300 leading-relaxed space-y-2"><p>You get <strong class="text-white">3 action points (AP)</strong>, plus any bonus you earned. AP can&#39;t be saved, so spend them all.</p><ul class="list-disc pl-5 space-y-1.5"><li><strong class="text-white">Transfer (1 AP):</strong> replace a rider with one of four new options. You <em>must</em> pick one, so it&#39;s a gamble.</li><li><strong class="text-white">Training (1 AP):</strong> improve one stat of one rider. The gain is guaranteed. Weak stats grow fast, elite stats barely. A second training on the same rider gives half.</li><li><strong class="text-white">Training camp (2 AP):</strong> the whole squad improves one stat a little. Once per season.</li><li><strong class="text-white">Position swap (1 AP):</strong> two riders in the same line trade places.</li><li><strong class="text-white">Chief scout (3 AP):</strong> joins when you qualify for the Cup. Pick a nationality or team and choose from four of its riders. Once per off-season. Miss the Cup two seasons in a row and he leaves until you qualify again.</li></ul><p><strong class="text-white">Club status:</strong> small clubs rarely attract top riders. Finish higher for a few seasons and bigger names start to listen.</p><p><strong class="text-white">Long season:</strong> after matchday 9 there&#39;s a winter break with 2 extra AP. The board doesn&#39;t judge you then.</p></div>
             </details>
             <details id="htp-vision" class="htp-sec bg-slate-900/60 border border-slate-700 rounded-xl">
                 <summary class="cursor-pointer select-none px-4 py-3 font-black text-white uppercase tracking-wider text-sm md:text-base flex items-center justify-between">Club vision<span class="htp-chev text-slate-400 text-xs">&#9660;</span></summary>
@@ -604,6 +604,9 @@
             CAMP_STAT_MULT: { atk: 1.75, def: 1.1, hp: 1.4, spa: 0.85, spd: 1.1, spe: 0.75 },   // zo afgesteld dat elke stat bij een gemiddelde ploeg ongeveer even veel ploegsterkte oplevert
             // Positiewissel binnen dezelfde linie
             SWAP_COST: 1,
+            SCOUT_COST: 3,                 // hoofdscout: kies een land of ploeg, 4 renners daaruit
+            SCOUT_MIN: 4,                  // alleen landen/ploegen met minstens zoveel beschikbare renners
+            SCOUT_MISS_LIMIT: 2,           // zoveel seizoenen op rij geen cupvoetbal: de scout neemt ontslag
             // Bestuur
             BASE_AP: 3,
             LONG_BASE_AP: 3,               // lang seizoen: actiepunten in het tussenseizoen (plus WINTER_AP in de winterstop)
@@ -1207,7 +1210,8 @@
         // zelfde ploeg OF zelfde nationaliteit = 1 (gele lijn), allebei = 2 (groene lijn)
         // Chemie: elk linkpunt dicht CHEM_PER_POINT van de afstand tot 115 (zwakke renners winnen het meest).
         // Landgenoten uit een klein wielerland linken sterker: hoe zeldzamer het land in de rennerspool, hoe groter de bonus.
-        const CHEM_PER_POINT = 0.15;
+        const CHEM_PER_POINT = 0.12;   // per linkpunt (was 0.15)
+        const CHEM_MAX = 0.60;          // maximaal deel van het gat dat gedicht wordt (was 0.75)
         let _natCount = null;
         function natRarity(nat) {
             if (!_natCount) { _natCount = {}; (typeof RIDERS !== 'undefined' ? RIDERS : []).forEach(r => { if (r.team !== 'Legends') _natCount[r.nat] = (_natCount[r.nat] || 0) + 1; }); }
@@ -1325,7 +1329,7 @@
                     rivalBoost, rivalSeason, clubForm, clubFormSeason, freeCamps, cupMilestones, bonusLog, windowBonusNote, campSeason,
                     trustPct: boardTrust, negStreak, finHist, kickNow, kickPrev, boardExpectNow, boardExpectCache, boardBriefSeason, lastVerdict,
                     leagueReady, trainCounts, careerLog, hasReroll, pendingRoll, pendingMatch,
-                    clubVision, visionLog, visionChoices, bonusAP, seasonNews, seasonLeagueResults, newsMemory,
+                    clubVision, visionLog, visionChoices, bonusAP, seasonNews, seasonLeagueResults, newsMemory, scout,
                     savePhase, seasonMatchday, cupPath, finalSummary, extraMatch, playoffDrop,
                     resultsFeedHtml: (document.getElementById('results-feed-list') || {}).innerHTML || '',
                     genDataActive: genData.map(g => g.active)
@@ -1362,6 +1366,7 @@
                     clubVision = data.clubVision || null; visionLog = data.visionLog || []; visionChoices = data.visionChoices || null; bonusAP = data.bonusAP || 0; seasonNews = data.seasonNews || []; seasonLeagueResults = data.seasonLeagueResults || [];
                     newsMemory = data.newsMemory || { last: '', used: {} };
                     careerLog = data.careerLog || newCareerLog(currentSeason);
+                    scout = data.scout || null;   // oudere save: getScout() leidt de status af uit de carrière
                     savePhase = data.savePhase || (data.isTransferWindow ? 'transfer' : 'draft');
                     seasonMatchday = data.seasonMatchday || 0;
                     cupPath = data.cupPath || [];
@@ -1810,7 +1815,7 @@ const AudioManager = {
             if (typeof gameOptions.tipsOn !== 'boolean') gameOptions.tipsOn = true; if (!Array.isArray(gameOptions.tipsSeen)) gameOptions.tipsSeen = [];
         }
         // ---------- Versie, update-melding en back-up ----------
-        const APP_VERSION = '2026.11.23.9';   // bij elke nieuwe versie ophogen: het spel vergelijkt dit met de versie online
+        const APP_VERSION = '2026.11.23.12';   // bij elke nieuwe versie ophogen: het spel vergelijkt dit met de versie online
         let _newVersion = null;
         function checkForUpdate() {
             if (!/^https?:/.test(location.protocol)) return;
@@ -2090,7 +2095,7 @@ const AudioManager = {
             isTransferWindow = false;
             winterSeason = 0;
             hasReroll = true; pendingRoll = null; pendingMatch = null;
-            clubVision = null; visionLog = []; visionChoices = null; bonusAP = 0; seasonNews = []; seasonLeagueResults = []; newsMemory = { last: '', used: {} };
+            clubVision = null; visionLog = []; visionChoices = null; bonusAP = 0; seasonNews = []; seasonLeagueResults = []; newsMemory = { last: '', used: {} }; scout = null;
             userTeam = {};
             playerStats = {};
             formations[activeFormation].positions.forEach(pos => userTeam[pos.id] = null);
@@ -2370,7 +2375,7 @@ const AudioManager = {
             let closurePct = value * CHEM_PER_POINT;
             
             // Verhoogde Hard Cap: Zwakke spelers kunnen nu tot 75% van hun gat dichten
-            if (closurePct > 0.75) closurePct = 0.75;
+            if (closurePct > CHEM_MAX) closurePct = CHEM_MAX;
 
             return { score: chem, closurePct: closurePct };
         }
@@ -2810,7 +2815,7 @@ function resetBoardState() {
     savePhase = 'draft';
     seasonMatchday = 0;
     boardTrust = BALANCE.TRUST_START;
-    rivalBoost = 0; rivalSeason = 0; clubForm = {}; clubFormSeason = 0; freeCamps = 0; cupMilestones = { qf: 0, sf: 0 }; bonusLog = []; windowBonusNote = null; campSeason = 0;
+    rivalBoost = 0; rivalSeason = 0; clubForm = {}; clubFormSeason = 0; freeCamps = 0; cupMilestones = { qf: 0, sf: 0 }; bonusLog = []; windowBonusNote = null; campSeason = 0; scout = null;
     boardObjective = null;
     negStreak = 0; finHist = []; kickNow = null; kickPrev = null; boardExpectNow = null; boardExpectCache = null; boardBriefSeason = 0; lastVerdict = null;
     leagueReady = false;
@@ -2944,6 +2949,60 @@ function updateObjectiveLine() {
 // =====================================================================================
 let clubVision = null;      // { type: 'nat' | 'team', key, need, from, until, done }
 let visionLog = [];         // afgelopen visies
+let scout = null;           // hoofdscout: { status: 'none'|'active'|'resigned', since, lastQual, missed, used, checked }
+// Status van de scout; oudere saves: afleiden uit de carrière (laatste seizoen met cupvoetbal)
+function getScout() {
+    if (scout) return scout;
+    scout = { status: 'none', since: 0, lastQual: 0, missed: 0, used: 0, checked: 0 };
+    const seasons = (careerLog && careerLog.seasons) || [];
+    const quals = seasons.filter(x => typeof x.cup === 'number' && x.cup >= 0).map(x => x.season);
+    if (quals.length) {
+        const last = Math.max(...quals), done = Math.max(...seasons.map(x => x.season));
+        const gap = done - last;
+        Object.assign(scout, { status: gap >= BALANCE.SCOUT_MISS_LIMIT ? 'resigned' : 'active', since: last, lastQual: last, missed: Math.min(gap, BALANCE.SCOUT_MISS_LIMIT), checked: done });
+    }
+    return scout;
+}
+// Cupkwalificatie (rechtstreeks of via de qualifier): de scout tekent (of komt terug) en zijn geduld is weer vol
+function scoutOnQualify() {
+    const sc = getScout();
+    sc.lastQual = currentSeason; sc.missed = 0;
+    if (sc.status === 'active') return '';
+    const back = sc.status === 'resigned';
+    sc.status = 'active'; sc.since = currentSeason;
+    try { pushNews('SCOUT', back ? `Chief scout returns to ${userTeamName} with European football back` : `${userTeamName} appoint a chief scout`); } catch (e) {}
+    return rewardBoxHtml(back ? 'Scout is back' : 'Chief scout', `${back ? 'European football lured your chief scout back.' : 'European football attracts a chief scout.'} In the off-season, tap a rider and choose Scout: pick a nationality or team and choose from four of its riders (${BALANCE.SCOUT_COST} AP, once per off-season). Miss the Cup ${BALANCE.SCOUT_MISS_LIMIT} seasons in a row and he leaves.`);
+}
+// Bij het begin van het tussenseizoen: telde het afgelopen seizoen cupvoetbal? Zo niet, dan raakt de scout zijn geduld kwijt
+function scoutSeasonCheck(finished) {
+    const sc = getScout();
+    if (sc.checked >= finished) return null;
+    sc.checked = finished;
+    if (sc.status !== 'active') return null;
+    const rec = careerLog && careerLog.seasons.find(x => x.season === finished);
+    const qualified = sc.lastQual === finished || (rec && typeof rec.cup === 'number' && rec.cup >= 0);
+    if (qualified) { sc.missed = 0; return sc.since === finished ? 'ready' : null; }
+    sc.missed++;
+    if (sc.missed >= BALANCE.SCOUT_MISS_LIMIT) {
+        sc.status = 'resigned';
+        try { pushNews('SCOUT', `Chief scout walks out on ${userTeamName} after ${BALANCE.SCOUT_MISS_LIMIT} seasons without European football`); } catch (e) {}
+        return 'resigned';
+    }
+    try { pushNews('SCOUT', `${userTeamName}'s chief scout getting restless without European football`); } catch (e) {}
+    return 'warn';
+}
+function scoutAvailable() { const sc = getScout(); return sc.status === 'active' && isTransferWindow && savePhase !== 'winter'; }
+function scoutUsable() { return scoutAvailable() && getScout().used !== currentSeason && actionPoints >= BALANCE.SCOUT_COST; }
+// Waarom de scoutknop grijs staat (leeg = bruikbaar)
+function scoutBlockReason() {
+    const sc = getScout();
+    if (sc.status === 'none') return 'Unlocked after reaching the Continental Cup';
+    if (sc.status === 'resigned') return 'Resigned &middot; reach the Cup to rehire';
+    if (savePhase === 'winter') return 'Off-season only';
+    if (sc.used === currentSeason) return 'Used this off-season';
+    if (actionPoints < BALANCE.SCOUT_COST) return `Needs ${BALANCE.SCOUT_COST} AP`;
+    return '';
+}
 let bonusAP = 0;            // extra actiepunten voor het volgende tussenseizoen (beloning van een visie)
 const VISION = { SEASONS: 5, NAT_NEED: [[26, 4], [15, 3], [7, 2]], TEAM_NEED: 2 };
 const NAT_ADJ = { 'Belgium': 'Belgian', 'Italy': 'Italian', 'France': 'French', 'Netherlands': 'Dutch', 'Great Britain': 'British', 'Spain': 'Spanish', 'Australia': 'Australian',
@@ -4907,7 +4966,7 @@ function finishExtraMatch(score, cupOp, note) {
     } else {
         savePhase = 'summary';
         SaveManager.save();
-        const debutMsg = (em.type === 'qual' && won) ? grantCupDebut() : '';
+        const debutMsg = (em.type === 'qual' && won) ? grantCupDebut() + scoutOnQualify() : '';
         if (debutMsg) SaveManager.save();
         if (em.type === 'qual') box.innerHTML = won
             ? card('border-sky-400', 'Qualified!', 'text-sky-300', `You beat ${cupOp.name} ${sc}. The Continental Cup awaits.`, (debutMsg ? `<div class="-mt-2 mb-5">${debutMsg}</div>` : '') + postSeasonButtonHtml('cup'))
@@ -5117,7 +5176,7 @@ function handleModalClick(event) {
             modal.classList.add('flex');
 
             if (userTeam[posId] && isTransferWindow && pendingRoll && pendingRoll.transfer && pendingRoll.posId === posId) {
-                modalTitle.innerText = "Transfer Scout";
+                modalTitle.innerText = pendingRoll.scout ? "Chief Scout" : "Transfer Scout";
                 btnCancel.classList.add('hidden');
                 btnFloatingClose.classList.add('hidden');
                 btnReroll.classList.add('hidden');
@@ -5139,30 +5198,17 @@ function handleModalClick(event) {
                 const typeHex = getTypeColorHex(p.primaryType);
                 const playerOVR = calculatePlayerOVR(p, role);
                 
-                const transferBtnHtml = (isTransferWindow && actionPoints > 0) ? `
-                    <button onclick="confirmTransferOut('${role}', '${displayPos}')" class="px-5 py-3 bg-gradient-to-r from-red-600 to-red-500 hover:from-red-500 text-white font-black rounded-full shadow-lg uppercase tracking-widest text-xs sm:text-sm w-full">
-                        Transfer Out
-                    </button>
-                ` : '';
-                
-                const trainBtnHtml = (isTransferWindow && actionPoints > 0) ? `
-                    <button onclick="openTrainingMenu('${posId}', '${role}', '${displayPos}')" class="px-5 py-3 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 text-white font-black rounded-full shadow-lg uppercase tracking-widest text-xs sm:text-sm w-full">
-                        Train Stat
-                    </button>
-                ` : '';
-
-                const swapBtnHtml = (isTransferWindow && actionPoints >= BALANCE.SWAP_COST && getSwapPartners(posId).length > 0) ? `
-                    <button onclick="openSwapMenu('${posId}')" class="mt-2 px-5 py-3 bg-gradient-to-r from-purple-600 to-purple-500 hover:from-purple-500 text-white font-black rounded-full shadow-lg uppercase tracking-widest text-xs sm:text-sm w-full max-w-[240px] sm:max-w-[280px]">
-                        &#128256; Swap Position
-                    </button>
-                ` : '';
-
+                // Vier acties in een vast 2x2-raster; wat (nog) niet kan, staat grijs met de reden erbij
+                const actBtn = (ok, onclick, cls, label, sub) => `<button ${ok ? `onclick="${onclick}"` : 'disabled'} class="min-h-[52px] px-2 py-2 rounded-2xl font-black uppercase tracking-wider text-[11px] sm:text-xs leading-tight shadow-lg flex flex-col items-center justify-center text-center ${ok ? cls : 'bg-slate-800 text-slate-500 border border-slate-700 cursor-not-allowed shadow-none'}">${label}${sub ? `<span class="block mt-0.5 text-[9px] sm:text-[10px] font-bold normal-case tracking-normal ${ok ? 'opacity-80' : 'text-slate-500'}">${sub}</span>` : ''}</button>`;
+                const swapOk = actionPoints >= BALANCE.SWAP_COST && getSwapPartners(posId).length > 0;
+                const scoutWhy = scoutBlockReason();
                 const actionButtons = (isTransferWindow && actionPoints > 0) ? `
-                    <div class="flex gap-2 w-full max-w-[240px] sm:max-w-[280px] mt-4">
-                        ${transferBtnHtml}
-                        ${trainBtnHtml}
+                    <div class="grid grid-cols-2 gap-2 w-full max-w-[240px] sm:max-w-[280px] mt-4">
+                        ${actBtn(true, `confirmTransferOut('${role}', '${displayPos}')`, 'bg-gradient-to-r from-red-600 to-red-500 hover:from-red-500 text-white', 'Transfer Out', '1 AP')}
+                        ${actBtn(true, `openTrainingMenu('${posId}', '${role}', '${displayPos}')`, 'bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 text-white', 'Train Stat', '1 AP')}
+                        ${actBtn(swapOk, `openSwapMenu('${posId}')`, 'bg-gradient-to-r from-purple-600 to-purple-500 hover:from-purple-500 text-white', '&#128256; Swap', swapOk ? `${BALANCE.SWAP_COST} AP` : 'No partner in this line')}
+                        ${actBtn(!scoutWhy, `openScoutMenu('${posId}', '${role}', '${displayPos}')`, 'bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 text-slate-900', '&#128269; Scout', scoutWhy || (getScout().missed ? `${BALANCE.SCOUT_COST} AP &middot; restless` : `${BALANCE.SCOUT_COST} AP`))}
                     </div>
-                    ${swapBtnHtml}
                 ` : '';
                 
                 profileOpen = true;
@@ -5376,6 +5422,74 @@ await rollOptions(role, displayPos);
     await rollOptions(role, displayPos);
 }
 
+// ===== HOOFDSCOUT =====
+// Beschikbare renners (niet in je ploeg) gegroepeerd per land en per ploeg; alleen groepen met genoeg renners
+function scoutGroups() {
+    const mine = new Set(Object.values(userTeam).filter(Boolean).map(p => p.id));
+    const nat = {}, team = {};
+    globalIdPool.forEach(id => {
+        const r = RIDER_BY_ID[id]; if (!r || mine.has(id)) return;
+        nat[r.nat] = (nat[r.nat] || 0) + 1;
+        if (r.team !== 'Legends') team[r.team] = (team[r.team] || 0) + 1;
+    });
+    const list = o => Object.entries(o).filter(([, n]) => n >= BALANCE.SCOUT_MIN).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
+    return { nat: list(nat), team: list(team) };
+}
+function scoutMatches(id, f) { const r = RIDER_BY_ID[id]; return !!r && (f.type === 'nat' ? r.nat === f.key : r.team === f.key); }
+// Stap 1: land of ploeg. Stap 2: de lijst van die soort (met terugknop naar stap 1)
+window.openScoutMenu = function(posId, role, displayPos, mode) {
+    if (!scoutUsable()) return;
+    profileOpen = false;
+    currentDraftPos = posId;
+    document.getElementById('draft-modal-title').innerText = `Chief Scout (${BALANCE.SCOUT_COST} AP)`;
+    const g = scoutGroups();
+    const v = clubVision && !visionFinished(clubVision) && (clubVision.type === 'nat' || clubVision.type === 'team') ? clubVision : null;
+    const esc = t => String(t).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;').replace(/</g, '&lt;');
+    const vBadge = '<span class="ml-1 text-[9px] font-black uppercase tracking-wider text-yellow-300">Vision</span>';
+    const back = (onclick, label) => `<button onclick="${onclick}" class="mt-4 mx-auto block px-6 py-2.5 bg-slate-700 hover:bg-slate-600 text-white font-bold rounded-full uppercase tracking-wide text-xs">&larr; ${label}</button>`;
+    let body;
+    if (!mode) {
+        const tile = (type, icon, title, n) => {
+            const isV = v && v.type === type;
+            return `<button onclick="openScoutMenu('${posId}', '${role}', '${displayPos}', '${type}')" class="flex flex-col items-center justify-center gap-1 px-3 py-5 rounded-2xl border-2 ${isV ? 'border-yellow-400 bg-yellow-500/10' : 'border-slate-600 bg-slate-800 hover:border-yellow-400'} transition-colors"><span class="text-3xl">${icon}</span><span class="font-black uppercase tracking-widest text-sm text-white">${title}</span><span class="text-[10px] sm:text-xs text-slate-400 font-bold">${n} options</span>${isV ? `<span class="text-[10px] font-black uppercase tracking-wider text-yellow-300">Vision: ${esc(v.key)}</span>` : ''}</button>`;
+        };
+        body = `<p class="text-center text-xs sm:text-sm text-slate-300 leading-snug">Where should your scout look? You get <strong class="text-white">four riders</strong> and <strong class="text-white">must pick one</strong> to replace ${esc(cardName(userTeam[posId].name))}. Star riders stay rare.</p>
+            <div class="grid grid-cols-2 gap-3 mt-4 max-w-sm mx-auto">${tile('nat', '&#127757;', 'Country', g.nat.length)}${tile('team', '&#128690;', 'Team', g.team.length)}</div>
+            ${back(`openDraft('${posId}', '${displayPos}', '${role}')`, 'Back to rider')}
+            <p class="text-center text-[10px] text-slate-500 mt-2">You only pay once you pick a country or team.</p>`;
+    } else {
+        let rows = g[mode];
+        if (v && v.type === mode) rows = [...rows.filter(([k]) => k === v.key), ...rows.filter(([k]) => k !== v.key)];
+        const btn = (key, n) => {
+            const isV = v && v.type === mode && v.key === key;
+            const label = mode === 'nat' ? natLabel({ nat: key }) : `<span style="color:${getTypeColorHex(key)}">${esc(key)}</span>`;
+            return `<button onclick="confirmScout('${mode}', decodeURIComponent('${encodeURIComponent(key).replace(/'/g, '%27')}'), '${role}', '${displayPos}')" class="flex items-center justify-between gap-2 w-full px-3 py-2.5 rounded-lg ${isV ? 'bg-yellow-500/15 border-yellow-400' : 'bg-slate-800 border-slate-600 hover:border-yellow-400'} border text-left text-xs sm:text-sm font-bold text-slate-100 transition-colors"><span class="truncate min-w-0" title="${esc(key)}">${label}${isV ? vBadge : ''}</span><span class="text-slate-400 text-[10px] sm:text-xs shrink-0">${n} riders</span></button>`;
+        };
+        body = `<div class="flex items-center justify-between gap-2"><button onclick="openScoutMenu('${posId}', '${role}', '${displayPos}')" class="shrink-0 px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-white font-bold rounded-full uppercase tracking-wide text-[10px] sm:text-xs">&larr; Country or team</button><p class="text-right text-xs sm:text-sm text-slate-300 leading-snug">Pick a ${mode === 'nat' ? 'country' : 'team'} &middot; <strong class="text-white">${BALANCE.SCOUT_COST} AP</strong></p></div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-1.5 mt-3">${rows.map(([k, n]) => btn(k, n)).join('')}</div>
+            ${back(`openScoutMenu('${posId}', '${role}', '${displayPos}')`, 'Country or team')}`;
+    }
+    document.getElementById('gacha-container').innerHTML = `<div class="col-span-full w-full max-w-2xl mx-auto" onclick="event.stopPropagation()">${body}</div>`;
+    const m = document.getElementById('draft-modal'); if (m) m.scrollTop = 0;
+};
+window.confirmScout = async function(type, key, role, displayPos) {
+    if (!scoutUsable()) return;
+    const sc = getScout();
+    actionPoints -= BALANCE.SCOUT_COST;
+    sc.used = currentSeason;
+    if (careerLog) { careerLog.counts.transfers++; careerLog.counts.scouts = (careerLog.counts.scouts || 0) + 1; }
+    document.getElementById('action-count').innerText = actionPoints;
+    checkOffSeasonActions();
+    document.getElementById('draft-modal-title').innerText = 'Chief Scout';
+    document.getElementById('btn-cancel-draft').classList.add('hidden');
+    document.getElementById('btn-floating-close').classList.add('hidden');
+    document.getElementById('btn-reroll').classList.add('hidden');
+    document.getElementById('btn-reroll').classList.remove('flex');
+    document.getElementById('reroll-wrapper').classList.add('hidden');
+    pendingRoll = { posId: currentDraftPos, ids: null, transfer: true, scout: { type, key } };
+    await rollOptions(role, displayPos);
+};
+
 
         async function useReroll() {
             if(!hasReroll) return;
@@ -5397,6 +5511,8 @@ await rollOptions(role, displayPos);
             // Legendes verschijnen minder vaak: gewicht LEGEND_DRAFT_WEIGHT tegenover 1 voor een gewone renner
             // (0,4 geeft ongeveer 2% legendes per kaart, zoals de sterkste pokémon in Gen 1)
             const isTransfer = !!(isTransferWindow && mine && mine.transfer);
+            const scoutF = isTransfer && mine.scout ? mine.scout : null;
+            if (scoutF) availableIds = availableIds.filter(id => scoutMatches(id, scoutF));
             const st = isTransfer ? clubStatus() : null;
             const weightOf = id => ((RIDER_BY_ID[id] && RIDER_BY_ID[id].team === 'Legends') ? LEGEND_DRAFT_WEIGHT : 1) * statusWeight(id, st);
             if (kept.length) chosenIds = kept;
@@ -5408,7 +5524,7 @@ await rollOptions(role, displayPos);
                 chosenIds.push(availableIds[r]);
                 availableIds.splice(r, 1);
             }
-            pendingRoll = { posId: currentDraftPos, ids: chosenIds, transfer: !!(mine && mine.transfer) };
+            pendingRoll = { posId: currentDraftPos, ids: chosenIds, transfer: !!(mine && mine.transfer), scout: scoutF || undefined };
             SaveManager.save();
             const pokemonList = await Promise.all(chosenIds.map(id => fetchPokemonDetail(id)));
             currentRolledOptions = pokemonList.filter(p => p !== null);
@@ -5417,7 +5533,7 @@ await rollOptions(role, displayPos);
             if (st) {
                 const c = CLUB_STATUS[st], note = document.createElement('p');
                 note.className = 'col-span-full text-center text-[10px] sm:text-xs text-slate-400 -mt-1 sm:mt-0 leading-tight';
-                note.innerHTML = `<span class="text-yellow-400 font-black uppercase tracking-wider">${c.label}</span> &middot; ${c.note}`;
+                note.innerHTML = (scoutF ? `<span class="text-amber-300 font-black uppercase tracking-wider">&#128269; Scouted: ${scoutF.key}</span> &middot; ` : '') + `<span class="text-yellow-400 font-black uppercase tracking-wider">${c.label}</span> &middot; ${c.note}`;
                 document.getElementById('gacha-container').prepend(note);
             }
         }
@@ -6143,7 +6259,7 @@ await rollOptions(role, displayPos);
          awards.classList.remove('hidden');
          awards.classList.add('flex', 'order-first');
          const outcome = seasonOutcome(finalPos);
-         const debutMsg = (qualified && !isSacked) ? grantCupDebut() : '';
+         const debutMsg = (qualified && !isSacked) ? grantCupDebut() + scoutOnQualify() : '';
          const fold = (title, inner, open) => inner ? `<details class="mt-3 bg-slate-900/50 rounded-xl border border-slate-700/50 text-left group"${open ? ' open' : ''}><summary class="cursor-pointer select-none list-none px-3 py-2.5 flex justify-between items-center text-[11px] md:text-xs text-slate-300 font-black uppercase tracking-widest">${title}<span class="text-slate-500 group-open:rotate-180 transition-transform">&#9662;</span></summary><div class="px-3 pb-3">${inner}</div></details>` : '';
          const awardsInner = `<div class="flex flex-col sm:flex-row gap-3 justify-center"><div class="bg-slate-900/50 p-3 rounded-xl border border-slate-700/50 w-full sm:w-1/2 flex items-center gap-3">${mvpContent}</div><div class="bg-slate-900/50 p-3 rounded-xl border border-slate-700/50 w-full sm:w-1/2 flex items-center gap-3">${topScorerContent}</div></div>${allScorersHtml}`;
          awards.innerHTML = `<div class="poke-box-dark p-5 md:p-6 text-center shadow-2xl relative overflow-hidden"><h2 class="pixel-font text-lg md:text-xl font-black text-white mb-2 uppercase tracking-wide" style="line-height:1.4;">Season ${currentSeason} Finished</h2><p class="${outcome.c} text-sm md:text-base font-black mb-1">${outcome.t}</p>${debutMsg}${actionHtml}${fold('&#127942; Players of the season', awardsInner, false)}${fold('&#128240; The season in headlines', seasonNewsList(), false)}<button onclick="viewTeam()" class="mt-4 px-6 py-3 bg-slate-700 hover:bg-slate-600 text-white font-bold text-xs md:text-sm rounded-full transition-colors border border-slate-500 uppercase tracking-wide w-full">View Team</button></div>`;
@@ -6577,6 +6693,7 @@ await rollOptions(role, displayPos);
 
         function startTransferWindow() {
             AudioManager.fadeOutStadium(BGM_TRACK);
+    let scoutNote = null; try { scoutNote = scoutSeasonCheck(currentSeason); } catch (e) { console.error('scout', e); }
     currentSeason++;
     document.getElementById('ui-season-counter').innerText = `Season ${currentSeason}`;
     isTransferWindow = true;
@@ -6626,6 +6743,11 @@ await rollOptions(role, displayPos);
     boardBriefSeason = currentSeason;
             SaveManager.save();
     openBoardBriefing(true);
+    if (scoutNote) setTimeout(() => {
+        if (scoutNote === 'ready') infoToast('&#128269;', 'Chief scout ready', `Tap a rider and choose Scout (${BALANCE.SCOUT_COST} AP).`);
+        else if (scoutNote === 'warn') infoToast('&#128269;', 'Scout restless', 'No European football last season. Miss the Cup again and he leaves.');
+        else if (scoutNote === 'resigned') infoToast('&#128269;', 'Scout resigned', 'Two seasons without the Cup. Qualify again to bring him back.');
+    }, 1500);
 }
 
        function setTransferBannerTitle(t) { const el = document.getElementById('transfer-banner-title'); if (el) el.textContent = t; }
@@ -6843,7 +6965,7 @@ await rollOptions(role, displayPos);
             document.getElementById('btn-back-to-stats').classList.add('hidden'); document.getElementById('btn-back-to-stats').classList.remove('flex');
             
             hasReroll = true; pendingRoll = null; pendingMatch = null;
-            clubVision = null; visionLog = []; visionChoices = null; bonusAP = 0; seasonNews = []; seasonLeagueResults = []; newsMemory = { last: '', used: {} };
+            clubVision = null; visionLog = []; visionChoices = null; bonusAP = 0; seasonNews = []; seasonLeagueResults = []; newsMemory = { last: '', used: {} }; scout = null;
             userTeam = {};
             playerStats = {};
             standings = [];
