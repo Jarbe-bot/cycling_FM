@@ -5101,7 +5101,7 @@ function handleModalClick(event) {
                 rerollWrapper.classList.add('hidden');
                 btnCancel.classList.remove('hidden');
                 btnFloatingClose.classList.remove('hidden');
-                btnCancel.innerText = "Cancel";
+                btnCancel.innerText = "Close";
                 
                 const p = userTeam[posId];
                 const typeHex = getTypeColorHex(p.primaryType);
@@ -5275,7 +5275,8 @@ await rollOptions(role, displayPos);
             tag.style.opacity = '0'; tag.style.transform = 'scale(.6)'; tag.style.transition = 'transform .3s cubic-bezier(.3,1.6,.5,1), opacity .2s';
             btn.appendChild(tag);
             requestAnimationFrame(() => requestAnimationFrame(() => { tag.style.opacity = '1'; tag.style.transform = 'none'; }));
-            setTimeout(go, 750);
+            ['btn-cancel-draft', 'btn-floating-close'].forEach(id => { const el = document.getElementById(id); if (el) el.classList.add('hidden'); });
+            setTimeout(go, 450);
         }
 
         // ---------- animatie na een training ----------
@@ -5311,18 +5312,18 @@ await rollOptions(role, displayPos);
             if (card) { card.style.opacity = '0'; card.style.transform = 'scale(.97)'; requestAnimationFrame(() => requestAnimationFrame(() => { card.style.transition = 'opacity .25s ease-out, transform .25s ease-out'; card.style.opacity = '1'; card.style.transform = 'none'; })); }
             if (cell) { cell.style.transition = 'background-color .5s ease, box-shadow .5s ease'; cell.style.borderRadius = cell.style.borderRadius || '6px'; }
             // +X als effen groen labeltje bovenop de rand van het vakje, zodat het altijd leesbaar is
-            const badge = (el, txt) => { if (!el) return; el.style.position = 'relative'; const b = document.createElement('span'); b.className = 'absolute -top-2.5 -right-1.5 z-10 bg-green-500 text-slate-950 text-[10px] leading-none font-black px-1.5 py-0.5 rounded-full shadow-md whitespace-nowrap'; b.textContent = txt; b.style.opacity = '0'; b.style.transform = 'scale(.5)'; b.style.transition = 'transform .3s cubic-bezier(.3,1.6,.5,1), opacity .25s ease-out'; el.appendChild(b); requestAnimationFrame(() => requestAnimationFrame(() => { b.style.opacity = '1'; b.style.transform = 'none'; })); setTimeout(() => { b.style.transition = 'opacity .7s ease'; b.style.opacity = '0'; }, 2800); };
+            const badge = (el, txt) => { if (!el) return; el.style.position = 'relative'; const b = document.createElement('span'); b.className = 'absolute -top-2.5 -right-1.5 z-10 bg-green-500 text-slate-950 text-[10px] leading-none font-black px-1.5 py-0.5 rounded-full shadow-md whitespace-nowrap'; b.textContent = txt; b.style.opacity = '0'; b.style.transform = 'scale(.5)'; b.style.transition = 'transform .3s cubic-bezier(.3,1.6,.5,1), opacity .25s ease-out'; el.appendChild(b); requestAnimationFrame(() => requestAnimationFrame(() => { b.style.opacity = '1'; b.style.transform = 'none'; })); setTimeout(() => { b.style.transition = 'opacity .5s ease'; b.style.opacity = '0'; }, 1700); };
             setTimeout(() => {
                 if (cell) { cell.style.backgroundColor = 'rgba(34,197,94,.14)'; cell.style.boxShadow = '0 0 0 1px rgba(34,197,94,.5)'; }
-                if (bar) { bar.style.transition = 'width .9s cubic-bezier(.3,.7,.3,1)'; bar.style.width = pct(a.to) + '%'; }
-                countUp(val, a.from, a.to, 900, () => {
+                if (bar) { bar.style.transition = 'width .55s cubic-bezier(.3,.7,.3,1)'; bar.style.width = pct(a.to) + '%'; }
+                countUp(val, a.from, a.to, 550, () => {
                     badge(cell || val, `+${a.to - a.from}`);
-                    setTimeout(() => countUp(ovr, a.ovrFrom, a.ovrTo, 600, () => {
-                        if (ovr && a.ovrTo > a.ovrFrom) { ovr.parentElement.classList.add('text-green-400'); setTimeout(() => ovr.parentElement.classList.remove('text-green-400'), 1500); }
+                    setTimeout(() => countUp(ovr, a.ovrFrom, a.ovrTo, 400, () => {
+                        if (ovr && a.ovrTo > a.ovrFrom) { ovr.parentElement.classList.add('text-green-400'); setTimeout(() => ovr.parentElement.classList.remove('text-green-400'), 1000); }
                     }), 150);
                 });
-            }, 400);
-            setTimeout(() => { if (cell) { cell.style.backgroundColor = ''; cell.style.boxShadow = ''; } }, 3300);
+            }, 200);
+            setTimeout(() => { if (cell) { cell.style.backgroundColor = ''; cell.style.boxShadow = ''; } }, 2000);
         }
 
      window.confirmTransferOut = async function(role, displayPos) {
