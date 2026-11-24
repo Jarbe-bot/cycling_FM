@@ -686,7 +686,7 @@
             // (jouw zes gewone drafts in Gen 1+2+3: gemiddeld 75,3; de bot: 74,9). Ter documentatie en voor de tests; bijstellen kan met de echte start-S uit de export.
             GEN_TYPICAL_S1: { 1: 71.2 },
             GEN_CLUB_TARGETS: {
-                1: [81.0, 79.5, 78.0, 74.5, 73.0, 71.0, 69.0, 68.0, 67.0],   // 10 clubs: drie kanshebbers, een brede middenmoot en zwakkere clubs onderaan (bijgesteld voor de pool van 343 renners)
+                1: [81.7, 80.2, 78.7, 76.0, 74.5, 73.0, 71.0, 69.0, 67.5],   // 10 clubs: drie kanshebbers, een stevige middenmoot (24/11: +1,5 à 2) en zwakkere clubs onderaan
             },
             // Hoe zwaar sterkte telt in een uitslag: met hogere waarden wint de sterkere ploeg vaker (een echte Bayern).
             // Twee gelijke ploegen blijven gelijk en maken evenveel doelpunten als vroeger; alleen het verschil telt zwaarder.
@@ -1823,7 +1823,7 @@ const AudioManager = {
             if (typeof gameOptions.tipsOn !== 'boolean') gameOptions.tipsOn = true; if (!Array.isArray(gameOptions.tipsSeen)) gameOptions.tipsSeen = [];
         }
         // ---------- Versie, update-melding en back-up ----------
-        const APP_VERSION = '2026.11.24.1';   // bij elke nieuwe versie ophogen: het spel vergelijkt dit met de versie online
+        const APP_VERSION = '2026.11.24.2';   // bij elke nieuwe versie ophogen: het spel vergelijkt dit met de versie online
         let _newVersion = null;
         function checkForUpdate() {
             if (!/^https?:/.test(location.protocol)) return;
