@@ -167,7 +167,7 @@
             </details>
             <details id="htp-vision" class="htp-sec bg-slate-900/60 border border-slate-700 rounded-xl">
                 <summary class="cursor-pointer select-none px-4 py-3 font-black text-white uppercase tracking-wider text-sm md:text-base flex items-center justify-between">Club vision<span class="htp-chev text-slate-400 text-xs">&#9660;</span></summary>
-                <div class="px-4 pb-4 text-xs md:text-sm text-slate-300 leading-relaxed space-y-2"><p>The board offers three visions, for example <em>&quot;2 Danish riders&quot;</em>, and you pick one. Every season you meet the vision earns extra AP: +1 per season for the first vision, and for later visions +2 the first season you meet it, then +1 for every season you keep it. <strong class="text-white">The sooner you meet it, the more you collect.</strong></p><p>It is checked at every kick-off and, in a long season, again after the winter break. The AP arrive in the next off-season.</p><p>There is no penalty if you don&#39;t meet it, but chasing a vision can cost you quality. That choice is yours.</p></div>
+                <div class="px-4 pb-4 text-xs md:text-sm text-slate-300 leading-relaxed space-y-2"><p>The board offers three visions, for example <em>&quot;2 Danish riders&quot;</em>, and you pick one. Every season you meet the vision earns extra AP: +1 per season for the first vision, and for later visions +2 the first season you meet it, then +1 for every season you keep it. <strong class="text-white">The sooner you meet it, the more you collect.</strong></p><p>It is checked at every kick-off and, in a long season, again after the winter break. The AP arrive in the next off-season.</p><p>There is no penalty if you don&#39;t meet it, but chasing a vision can cost you quality. That choice is yours.</p><p><strong class="text-white">&#127942; Cup visions:</strong> top clubs can also be offered a Continental Cup goal, such as reaching the semi-final within 3 seasons. The goal depends on how strong you are compared with the best rival. Reach it once for +4 AP, and the board presents a new vision.</p></div>
             </details>
             <details id="htp-board" class="htp-sec bg-slate-900/60 border border-slate-700 rounded-xl">
                 <summary class="cursor-pointer select-none px-4 py-3 font-black text-white uppercase tracking-wider text-sm md:text-base flex items-center justify-between">The board<span class="htp-chev text-slate-400 text-xs">&#9660;</span></summary>
@@ -1823,7 +1823,7 @@ const AudioManager = {
             if (typeof gameOptions.tipsOn !== 'boolean') gameOptions.tipsOn = true; if (!Array.isArray(gameOptions.tipsSeen)) gameOptions.tipsSeen = [];
         }
         // ---------- Versie, update-melding en back-up ----------
-        const APP_VERSION = '2026.11.24.2';   // bij elke nieuwe versie ophogen: het spel vergelijkt dit met de versie online
+        const APP_VERSION = '2026.11.24.3';   // bij elke nieuwe versie ophogen: het spel vergelijkt dit met de versie online
         let _newVersion = null;
         function checkForUpdate() {
             if (!/^https?:/.test(location.protocol)) return;
@@ -3025,8 +3025,48 @@ function visionGroups() {
     Object.entries(team).forEach(([key, n]) => { if (n >= 8) out.push({ type: 'team', key, need: VISION.TEAM_NEED, size: n }); });
     return out;
 }
+// Cupvisie (alleen topclubs): een eenmalig doel in de Continental Cup binnen 3 seizoenen, +4 AP zodra je het haalt.
+// De lat hangt af van je sterkte tegenover de sterkste CPU-club (gesimuleerd: zo'n 50-60% kans over 3 seizoenen).
+const CUP_VISION = { SEASONS: 3, AP: 4, GAP_FINAL: -0.5, GAP_WIN: 3 };
+const CUP_GOALS = {
+    sf:    { round: 1, label: 'Reach the Cup semi-final', ask: 'reach the semi-final of the Continental Cup', short: 'SF', news: 'reach the Cup semi-final' },
+    final: { round: 2, label: 'Reach the Cup final', ask: 'reach the final of the Continental Cup', short: 'Final', news: 'reach the Cup final' },
+    win:   { round: 3, label: 'Win the Continental Cup', ask: 'win the Continental Cup', short: 'Win', news: 'win the Continental Cup' }
+};
+function cupVisionTier() {
+    const rows = currentPowerTable();
+    const u = rows.find(r => r.isUser), cpu = rows.filter(r => !r.isUser);
+    if (!u || !cpu.length) return 'sf';
+    const gap = u.S - Math.max(...cpu.map(r => r.S));
+    return gap >= CUP_VISION.GAP_WIN ? 'win' : gap >= CUP_VISION.GAP_FINAL ? 'final' : 'sf';
+}
+function cupVisionEligible(n) {
+    try { return n >= 2 && gameMode === 'rtg' && clubStatus() === 'big'; } catch (e) { return false; }
+}
+// Een cupronde gewonnen: is het doel van de cupvisie nu bereikt?
+function cupVisionOnWin(round) {
+    const v = clubVision;
+    if (!v || v.type !== 'cup' || v.done || currentSeason < v.from || currentSeason > v.until) return '';
+    const g = CUP_GOALS[v.key];
+    if (!g || round !== g.round) return '';
+    v.done = currentSeason;
+    visionRes(v)[currentSeason] = CUP_VISION.AP;
+    addBonusAP(CUP_VISION.AP, 'club vision');
+    try { pushNews('VISION', `Board mission accomplished: ${userTeamName} ${g.news}`); } catch (e) {}
+    infoToast('&#127942;', 'Club vision met!', `${g.label}: +${CUP_VISION.AP} AP next off-season.`);
+    updateVisionUI();
+    SaveManager.save();
+    return rewardBoxHtml(`+${CUP_VISION.AP} AP`, `Club vision met: ${g.label.toLowerCase()}. The board will present a new vision next off-season.`);
+}
+// Einde seizoen: cupdoel niet gehaald dit seizoen
+function cupVisionSeasonEnd(finished) {
+    const v = clubVision;
+    if (!v || v.type !== 'cup' || v.done || finished < v.from || finished > v.until) return;
+    const res = visionRes(v);
+    if (res[finished] === undefined) res[finished] = 'x';
+}
 function visionCount(v) {
-    if (!v) return 0;
+    if (!v || v.type === 'cup') return 0;
     return Object.values(userTeam).filter(p => p && (v.type === 'nat' ? p.nat === v.key : p.team === v.key)).length;
 }
 // Beloning per seizoen: elk seizoen binnen de visieperiode waarin je elftal aan de visie voldoet, levert AP op voor het volgende tussenseizoen.
@@ -3046,15 +3086,28 @@ function visionEarned(v) { return Object.values(visionRes(v)).reduce((a, x) => a
 // Is de periode voorbij? De laatste aftrap is gespeeld (en in een lang seizoen bevestigd na de winterstop).
 function visionFinished(v) {
     if (!v) return true;
+    if (v.type === 'cup') return !!v.done || currentSeason > v.until || (currentSeason === v.until && visionRes(v)[v.until] !== undefined);
     if (v.pendingWinter && v.pendingWinter === currentSeason) return false;
     return currentSeason > v.until || (currentSeason === v.until && visionRes(v)[v.until] !== undefined);
 }
 function visionRewardLine(v) {
+    if (v && v.type === 'cup') return `+${CUP_VISION.AP} AP once, the moment you reach it`;
     return visionFirstAP(v) === 1 ? '+1 AP for every season you meet the vision'
         : '+2 AP the first season you meet the vision, then +1 for every season you keep it';
 }
 // Rij vakjes: één per seizoen van de visie. Groen = verdiend, grijs doorstreept = gemist, geel omrand = de volgende aftrap.
 function visionStripHtml(v) {
+    if (v.type === 'cup') {
+        const res = visionRes(v); let out = '';
+        for (let s = v.from; s <= v.until; s++) {
+            const r = res[s]; let cls, txt;
+            if (typeof r === 'number') { cls = 'bg-green-500/20 border-green-500 text-green-300'; txt = `&#127942; +${r}`; }
+            else if (v.done || r === 'x' || s < currentSeason) { cls = 'bg-slate-800/60 border-slate-700 text-slate-500 line-through'; txt = '&ndash;'; }
+            else { cls = s === currentSeason && clubVision === v ? 'bg-slate-800 border-yellow-400 text-yellow-300' : 'bg-slate-800 border-slate-600 text-slate-300'; txt = '&#127942;'; }
+            out += `<div class="flex flex-col items-center rounded-md border ${cls} px-1.5 py-0.5 min-w-[40px]"><span class="text-[9px] font-bold opacity-80 no-underline">S${s}</span><span class="text-[11px] font-black">${txt}</span></div>`;
+        }
+        return `<div class="flex justify-center gap-1 mt-2">${out}</div>`;
+    }
     const res = v.res ? visionRes(v) : {};
     let first = !v.done, out = '';
     for (let s = v.from; s <= v.until; s++) {
@@ -3071,7 +3124,7 @@ function visionStripHtml(v) {
     }
     return `<div class="flex justify-center gap-1 mt-2">${out}</div>`;
 }
-function visionTarget(v) { return v.type === 'nat' ? `${v.need} ${NAT_ADJ[v.key] || v.key} riders` : `${v.need} riders from ${v.key}`; }
+function visionTarget(v) { if (v.type === 'cup') return (CUP_GOALS[v.key] || CUP_GOALS.sf).label; return v.type === 'nat' ? `${v.need} ${NAT_ADJ[v.key] || v.key} riders` : `${v.need} riders from ${v.key}`; }
 let visionChoices = null;   // drie voorstellen van het bestuur; de speler kiest er één
 // Drie verschillende richtingen (land/ploeg gemengd). Vanaf de tweede visie bouwen ze bij voorkeur verder op renners die je al hebt.
 function visionCandidates(n, prev) {
@@ -3105,8 +3158,13 @@ function newClubVision(fromSeason) {
     const n = visionLog.length + 1;
     const opts = visionCandidates(n, prev);
     clubVision = null;
-    if (!opts.length) { visionChoices = null; return null; }
+    const cup = cupVisionEligible(n);
+    if (!opts.length && !cup) { visionChoices = null; return null; }
     visionChoices = opts.map(g => ({ type: g.type, key: g.key, need: g.need, from: fromSeason, until: fromSeason + visionLen({ n }) - 1, done: 0, res: {}, seen: true, n }));
+    if (cup) {
+        const key = cupVisionTier();
+        visionChoices = visionChoices.slice(0, 2).concat([{ type: 'cup', key, need: CUP_GOALS[key].round, from: fromSeason, until: fromSeason + CUP_VISION.SEASONS - 1, done: 0, res: {}, seen: true, n }]);
+    }
     return visionChoices;
 }
 // De speler kiest een van de drie voorstellen
@@ -3134,12 +3192,15 @@ function visionChoicesHtml() {
             ${hasTeam ? '<button onclick="toggleBoardPeek()" class="shrink-0 text-[10px] font-bold text-slate-200 bg-slate-800 border border-slate-600 rounded-full px-2.5 py-1">&#128065;&#65039; Peek team</button>' : ''}
         </div>
         <div class="flex flex-col gap-1.5">${visionChoices.map((c, i) => {
+            if (c.type === 'cup') return `<button onclick="chooseVision(${i})" class="w-full flex items-center justify-between gap-2 text-left bg-gradient-to-r from-amber-500/15 to-slate-900 hover:from-amber-500/25 border border-amber-400/70 hover:border-yellow-300 rounded-lg px-3 py-2 transition-colors">
+                <span class="min-w-0"><span class="block text-white font-bold text-sm leading-tight">&#127942; ${visionTarget(c)}</span><span class="block text-[10px] text-amber-200 font-bold mt-0.5">Once, by season ${c.until} &middot; then a new vision</span></span>
+                <span class="shrink-0 text-xs text-amber-300 font-black">+${CUP_VISION.AP} AP</span></button>`;
             const have = visionCount(c);
             return `<button onclick="chooseVision(${i})" class="w-full flex items-center justify-between gap-2 text-left bg-slate-900 hover:bg-slate-800 border border-slate-600 hover:border-yellow-400 rounded-lg px-3 py-2 transition-colors">
                 <span class="text-white font-bold text-sm leading-tight">${visionTarget(c)}</span>
                 <span class="shrink-0 text-xs ${have > 0 ? 'text-green-300' : 'text-slate-400'} font-black">${have}/${c.need}</span></button>`;
         }).join('')}</div>
-        <p class="text-[11px] text-slate-200 font-bold mt-2">${visionRewardLine(v0)}</p>
+        <p class="text-[11px] text-slate-200 font-bold mt-2">${v0.type === 'cup' ? visionRewardLine(v0) : `Rider visions: ${visionRewardLine(v0)}`}</p>
         ${visionStripHtml(v0)}
         <p class="text-[10px] text-slate-400 mt-1.5">The sooner you meet it, the more you collect. No penalty if you don't.${old}</p>
     </div>`;
@@ -3155,6 +3216,16 @@ function visionStatusHtml() {
             <p class="text-sm text-slate-300 font-bold">${visionTarget(v)}: ${v.done ? `+${visionEarned(v)} AP collected` : 'not met'}.</p>
             ${visionStripHtml(v)}
             <p class="text-xs text-slate-400 mt-1.5">The board presents a new vision in the next off-season.</p></div>`;
+    }
+    if (v.type === 'cup') {
+        const g = CUP_GOALS[v.key] || CUP_GOALS.sf;
+        return `<div class="mt-3 bg-gradient-to-b from-amber-500/15 to-slate-900 border border-amber-400/60 rounded-xl p-3 text-center">
+            <p class="text-[10px] text-amber-300 font-black uppercase tracking-widest mb-1">&#127942; Club vision &middot; S${v.from}-${v.until}</p>
+            <p class="text-sm text-white font-bold">"We want you to ${g.ask} by season ${v.until}."</p>
+            <p class="text-xs text-slate-300 mt-1">${visionRewardLine(v)}. Then the board presents a new vision.</p>
+            ${visionStripHtml(v)}
+            <p class="text-[10px] text-slate-400 mt-1.5">You need to qualify for the Cup first: finish in the top 2, or 3rd and win the qualifier.</p>
+        </div>`;
     }
     const isNew = !v.seen;
     const box = isNew
@@ -3178,6 +3249,7 @@ function updateVisionUI() {
     if (visionChoices) { el.classList.remove('hidden'); el.innerHTML = '<span class="bg-yellow-400 text-slate-900 rounded px-1 mr-1 font-black">NEW</span>&#127919; Choose'; el.classList.add('animate-pulse'); el.title = 'The board offers three visions: tap to choose'; return; }
     if (!v || visionFinished(v)) { el.classList.add('hidden'); return; }
     el.classList.remove('hidden');
+    if (v.type === 'cup') { el.innerHTML = `&#127919; &#127942; ${(CUP_GOALS[v.key] || CUP_GOALS.sf).short}`; el.classList.remove('animate-pulse'); el.title = `Club vision: ${visionTarget(v)} by season ${v.until}`; return; }
     el.innerHTML = (v.seen ? '' : '<span class="bg-yellow-400 text-slate-900 rounded px-1 mr-1 font-black">NEW</span>') + (visionCount(v) >= v.need ? '&#127919; &#10003;' : `&#127919; ${Math.min(visionCount(v), v.need)}/${v.need}`);
     el.classList.toggle('animate-pulse', !v.seen);
     el.title = `Club vision: ${visionTarget(v)} by season ${v.until}`;
@@ -3195,6 +3267,7 @@ function infoToast(icon, title, text) {
 function checkClubVision() {
     const v = clubVision;
     if (!v) return;
+    if (v.type === 'cup') { updateVisionUI(); return; }
     if (v.checked === currentSeason) { updateVisionUI(); return; }   // één controle per seizoen, ook na herladen
     v.checked = currentSeason;
     if (currentSeason < v.from || currentSeason > v.until) { updateVisionUI(); return; }
@@ -6574,7 +6647,8 @@ window.confirmScout = async function(type, key, role, displayPos) {
             logCupProgress(finalScore.h > finalScore.a);
             const cupWon = finalScore.h > finalScore.a;
             if (cupWon) awardCupTrust(currentCupRound);
-            const milestoneMsg = cupWon ? grantCupMilestone(currentCupRound) : '';
+            let milestoneMsg = cupWon ? grantCupMilestone(currentCupRound) : '';
+            try { if (cupWon && !isExtra) milestoneMsg += cupVisionOnWin(currentCupRound); } catch (e) { console.error('cupvision', e); }
             const cupBoardHtml = (cupWon && currentCupRound < 3 ? '<p class="mt-3 text-xs font-bold text-green-400">&#9650; The board is pleased with your Continental Cup run.</p>' : '')
                 + milestoneMsg;
             if (finalScore.h > finalScore.a) {
@@ -6703,6 +6777,7 @@ window.confirmScout = async function(type, key, role, displayPos) {
         function startTransferWindow() {
             AudioManager.fadeOutStadium(BGM_TRACK);
     let scoutNote = null; try { scoutNote = scoutSeasonCheck(currentSeason); } catch (e) { console.error('scout', e); }
+    try { cupVisionSeasonEnd(currentSeason); } catch (e) { console.error('cupvision', e); }
     currentSeason++;
     document.getElementById('ui-season-counter').innerText = `Season ${currentSeason}`;
     isTransferWindow = true;
@@ -6712,9 +6787,6 @@ window.confirmScout = async function(type, key, role, displayPos) {
     bonusAP = 0; bonusLog = [];
     setTransferBannerTitle('Off-Season Window');
     hasReroll = false; pendingRoll = null;
-    // Nieuwe visie zodra de vorige afgerond is: periode voorbij, of gehaald en alle beloningen uitbetaald of vervallen
-    if (!visionChoices && (!clubVision || currentSeason > clubVision.until || visionFinished(clubVision))) newClubVision(currentSeason);
-    updateVisionUI();
     trainCounts = {};
 
     document.body.className = 'min-h-screen flex flex-col relative bg-office';        
@@ -6747,6 +6819,9 @@ window.confirmScout = async function(type, key, role, displayPos) {
     window.scrollTo({ top: 0, behavior: 'smooth' });
     initStandings();          // competitie van het nieuwe seizoen (incl. degradatie) voor de verwachting van het bestuur
     leagueReady = true;
+    // Nieuwe visie zodra de vorige afgerond is (na de nieuwe competitie: de lat van een cupvisie hangt af van je sterkte tegenover de top)
+    if (!visionChoices && (!clubVision || currentSeason > clubVision.until || visionFinished(clubVision))) newClubVision(currentSeason);
+    updateVisionUI();
     updateObjectiveBanner();
     savePhase = 'transfer';
     boardBriefSeason = currentSeason;
