@@ -633,7 +633,8 @@
             // Bestuursvertrouwen (intern een percentage; de speler ziet alleen een woord)
             // Algemene sterkte per formatie (los van de stijl hierboven): gekalibreerd zodat een speler die op de OVR van de kaart draft en traint
             // in elke formatie ongeveer evenveel punten haalt. Stijl bepaalt waar je sterk bent, dit bepaalt hoe sterk je in totaal bent.
-            FORMATION_POWER: { '4-3-3': 0.978, '4-4-2': 0.992, '3-5-2': 1.012, '5-4-1': 1.007, '4-2-4': 0.982, '4-2-3-1': 1.023, '3-4-3': 0.998, '4-1-2-1-2': 1.014, '5-3-2': 0.993, '4-4-1-1': 1.001 },
+            // Herijkt 23/11: gemiddelde van een OVR-drafter en een chemistry-drafter (meer linklijnen = meer chemistry-potentieel).
+            FORMATION_POWER: { '4-3-3': 0.982, '4-4-2': 0.991, '3-5-2': 1.027, '5-4-1': 1.003, '4-2-4': 0.966, '4-2-3-1': 1.031, '3-4-3': 1.008, '4-1-2-1-2': 1.023, '5-3-2': 0.961, '4-4-1-1': 1.011 },
             TRUST_START: 70,
             TRUST_NEUTRAL: 70,             // krediet boven dit niveau vervaagt elk seizoen
             TRUST_FADE: 0.25,              // ... met een kwart van de afstand tot TRUST_NEUTRAL
@@ -1527,6 +1528,10 @@ const AudioManager = {
             stadiumChant2: null,
             stadiumMixer: null, 
             uiPlink: new Audio('audio/pling.mp3'),
+            // Spel op de achtergrond (andere app, beginscherm, scherm uit): niets nieuws laten starten.
+            // Timers van een lopende match blijven anders geluid afvuren terwijl je weg bent.
+            suspended: false,
+            away: () => AudioManager.suspended || document.hidden,
 
             // WEB AUDIO: korte effecten worden 1x geladen en gedecodeerd en daarna zonder vertraging afgespeeld.
             // Muziek en stadiongeluid blijven via <audio> lopen (lange bestanden).
@@ -1576,7 +1581,7 @@ const AudioManager = {
 
             // De fade timer triggert nu EXACT na de meegegeven milliseconden!
             playSFX: (src, vol = 0.8, startFadeAfterMs = 0) => {
-                if (AudioManager.isSfxMuted) return;
+                if (AudioManager.isSfxMuted || AudioManager.away()) return;
                 if (AudioManager.playBuffer(src, vol, startFadeAfterMs)) return;   // snelle weg (Web Audio)
                 // Gsm: de context kan stilgelegd zijn (scherm uit, app gewisseld, iOS-onderbreking). Probeer te hervatten.
                 const ctx = AudioManager.ctx;
@@ -1619,7 +1624,7 @@ const AudioManager = {
             },
             
             playCry: (cryUrl) => {
-                if (AudioManager.isSfxMuted || !cryUrl) return;
+                if (AudioManager.isSfxMuted || !cryUrl || AudioManager.away()) return;
                 let a = new Audio(cryUrl);
                 a.volume = 0.4; 
                 a.play().catch(e => console.warn("Cry niet gevonden:", e));
@@ -1627,7 +1632,7 @@ const AudioManager = {
             
             playBGM: (src, vol = 0.2) => {
                 if (AudioManager.bgm && AudioManager.bgmSrc === src) {
-                    if (!AudioManager.isMusicMuted && AudioManager.bgm.paused) {
+                    if (!AudioManager.isMusicMuted && AudioManager.bgm.paused && !AudioManager.away()) {
                         AudioManager.bgm.play().catch(e => console.warn(e));
                     }
                     return; 
@@ -1639,7 +1644,7 @@ const AudioManager = {
                 const startLoopingTrack = (trackSrc) => {
                     let a = new Audio(trackSrc);
                     a.volume = vol; 
-                    if (!AudioManager.isMusicMuted) a.play().catch(e => console.warn("BGM geblokkeerd:", e));
+                    if (!AudioManager.isMusicMuted && !AudioManager.away()) a.play().catch(e => console.warn("BGM geblokkeerd:", e));
                     
                     let hasSpawnedNext = false;
                     a.addEventListener('timeupdate', () => {
@@ -1714,9 +1719,11 @@ const AudioManager = {
                 AudioManager.makeStadium();
 
                 if (!AudioManager.isSfxMuted) {
-                    AudioManager.stadiumBase.play().catch(e => {});
-                    AudioManager.stadiumChant1.play().catch(e => {});
-                    AudioManager.stadiumChant2.play().catch(e => {});
+                    if (!AudioManager.away()) {   // weg? dan start resumeAudio het stadion bij terugkeer
+                        AudioManager.stadiumBase.play().catch(e => {});
+                        AudioManager.stadiumChant1.play().catch(e => {});
+                        AudioManager.stadiumChant2.play().catch(e => {});
+                    }
                     
                     AudioManager.fadeTo(AudioManager.stadiumBase, 0.6); 
                     AudioManager.fadeTo(AudioManager.stadiumChant1, 0.5);
@@ -1765,6 +1772,7 @@ const AudioManager = {
         function toggleMusic() {
             AudioManager.isMusicMuted = !AudioManager.isMusicMuted;
             localStorage.setItem('pkm_music_muted', AudioManager.isMusicMuted);
+            try { applyAudioSession(); } catch (e) {}
             updateAudioUI();
             
             if (AudioManager.isMusicMuted) {
@@ -1815,7 +1823,7 @@ const AudioManager = {
             if (typeof gameOptions.tipsOn !== 'boolean') gameOptions.tipsOn = true; if (!Array.isArray(gameOptions.tipsSeen)) gameOptions.tipsSeen = [];
         }
         // ---------- Versie, update-melding en back-up ----------
-        const APP_VERSION = '2026.11.23.12';   // bij elke nieuwe versie ophogen: het spel vergelijkt dit met de versie online
+        const APP_VERSION = '2026.11.24.1';   // bij elke nieuwe versie ophogen: het spel vergelijkt dit met de versie online
         let _newVersion = null;
         function checkForUpdate() {
             if (!/^https?:/.test(location.protocol)) return;
@@ -2380,7 +2388,7 @@ const AudioManager = {
             return { score: chem, closurePct: closurePct };
         }
 
-        function calculateTeamPhaseScore(phase) {
+        function calculateTeamPhaseScore(phase, raw = false) {
             let totalScore = 0;
             let totalWeight = 0;
 
@@ -2473,7 +2481,8 @@ const AudioManager = {
             if (totalWeight === 0) return 0;
             const profile = BALANCE.FORMATION_PROFILES[activeFormation];
             const styleFactor = (profile && profile[phase]) || 1;
-            return Math.round((totalScore / totalWeight) * styleFactor * ((BALANCE.FORMATION_POWER && BALANCE.FORMATION_POWER[activeFormation]) || 1));
+            const v = (totalScore / totalWeight) * styleFactor * ((BALANCE.FORMATION_POWER && BALANCE.FORMATION_POWER[activeFormation]) || 1);
+            return raw ? v : Math.round(v);   // raw: zonder afronding (voor adviezen die kleine verschillen moeten zien)
         }
 
        function updateScores() {
@@ -4188,8 +4197,8 @@ function previewStatChange(applyFn) {
 
 // ---------------- Training Camp ----------------
 // Ploegsterkte zoals de motor ze ziet (zelfde berekening als updateScores, zonder het scherm aan te passen)
-function teamStrengthNow() {
-    const sc = ph => Math.pow(calculateTeamPhaseScore(ph), 2) / 7.5;
+function teamStrengthNow(raw = false) {
+    const sc = ph => Math.pow(calculateTeamPhaseScore(ph, raw), 2) / 7.5;
     return clubS({ poss: sc('poss'), create: sc('create'), finish: sc('finish'), prevent: sc('prevent'), block: sc('block') });
 }
 function campMid(p, statKey) {
@@ -4232,11 +4241,11 @@ window.openTrainingCamp = function(lastStat = null, lastSummary = '') {
     };
     const gains = Object.fromEntries(TRAIN_STAT_LABELS.map(s => [s.key, squadOvrGain(s.key)]));
     // Aanbeveling: de stat die de ploegsterkte (wedstrijdmotor) het meest verhoogt, dus volgens de sterktes en zwaktes van deze ploeg
-    const baseS = teamStrengthNow();
+    const baseS = teamStrengthNow(true);   // zonder afronding: anders beslist de afronding bij bijna gelijke stats
     const sGain = Object.fromEntries(TRAIN_STAT_LABELS.map(s => [s.key, (() => {
         const snap = players.map(p => [p, p.stats[s.key], p.normStats[s.key]]);
         players.forEach(p => { p.stats[s.key] = Math.min(255, p.stats[s.key] + Math.round(campMid(p, s.key))); p.normStats[s.key] = scaleStat(p.stats[s.key]); });
-        const g = teamStrengthNow() - baseS;
+        const g = teamStrengthNow(true) - baseS;
         snap.forEach(([p, st, ns]) => { p.stats[s.key] = st; p.normStats[s.key] = ns; });
         return g;
     })()]));
@@ -7133,11 +7142,16 @@ window.confirmScout = async function(type, key, role, displayPos) {
         // iOS ontgrendelt audio soms pas bij touchend/click: daar ook proberen
         document.addEventListener('touchend', () => { AudioManager.initWebAudio(); AudioManager.unlockStadium(); }, { passive: true });
         document.addEventListener('click', () => { AudioManager.initWebAudio(); AudioManager.unlockStadium(); });
-        // iPhone: effecten (Web Audio) volgen anders de stille-modus-schakelaar, terwijl de muziek wel speelt
-        try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch (e) {}
+        // iPhone: met spelmuziek aan neemt het spel het geluid over ('playback', ook in stille modus).
+        // Spelmuziek uit: 'ambient', zodat Spotify en co. gewoon doorspelen en de effecten erbovenop klinken.
+        function applyAudioSession() {
+            try { if (navigator.audioSession) navigator.audioSession.type = AudioManager.isMusicMuted ? 'ambient' : 'playback'; } catch (e) {}
+        }
+        applyAudioSession();
 
         // Meedogenloze audio-pauze voor Homescreen Web-Apps
         function suspendAudio() {
+            AudioManager.suspended = true;
             if (AudioManager.bgm) AudioManager.bgm.pause();
             if (AudioManager.stadiumBase) AudioManager.stadiumBase.pause();
             if (AudioManager.stadiumChant1) AudioManager.stadiumChant1.pause();
@@ -7147,6 +7161,7 @@ window.confirmScout = async function(type, key, role, displayPos) {
 
         function resumeAudio() {
             if (document.hidden) return; // Veiligheidscheck
+            AudioManager.suspended = false;
             if (AudioManager.ctx && AudioManager.ctx.state !== 'running') AudioManager.ctx.resume().catch(() => {});
             if (!AudioManager.isMusicMuted && AudioManager.bgm) {
                 AudioManager.bgm.play().catch(e => console.warn(e));
