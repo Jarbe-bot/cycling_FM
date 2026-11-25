@@ -167,7 +167,7 @@
             </details>
             <details id="htp-vision" class="htp-sec bg-slate-900/60 border border-slate-700 rounded-xl">
                 <summary class="cursor-pointer select-none px-4 py-3 font-black text-white uppercase tracking-wider text-sm md:text-base flex items-center justify-between">Club vision<span class="htp-chev text-slate-400 text-xs">&#9660;</span></summary>
-                <div class="px-4 pb-4 text-xs md:text-sm text-slate-300 leading-relaxed space-y-2"><p>The board offers three visions, for example <em>&quot;2 Danish riders&quot;</em>, and you pick one. Every season you meet the vision earns extra AP: +1 per season for the first vision, and for later visions +2 the first season you meet it, then +1 for every season you keep it. <strong class="text-white">The sooner you meet it, the more you collect.</strong></p><p>It is checked at every kick-off and, in a long season, again after the winter break. The AP arrive in the next off-season.</p><p>There is no penalty if you don&#39;t meet it, but chasing a vision can cost you quality. That choice is yours.</p><p><strong class="text-white">&#127942; Cup visions:</strong> top clubs can also be offered a Continental Cup goal, such as reaching the semi-final within 3 seasons. The goal depends on how strong you are compared with the best rival. Reach it once for +4 AP, and the board presents a new vision.</p></div>
+                <div class="px-4 pb-4 text-xs md:text-sm text-slate-300 leading-relaxed space-y-2"><p>The board offers three visions, for example <em>&quot;2 Danish riders&quot;</em>, and you pick one. Every season you meet the vision earns extra AP: +1 per season for the first vision, and for later visions +2 the first season you meet it, then +1 for every season you keep it. <strong class="text-white">The sooner you meet it, the more you collect.</strong></p><p>It is checked at every kick-off and, in a long season, again after the winter break. The AP arrive in the next off-season.</p><p>There is no penalty if you don&#39;t meet it, but chasing a vision can cost you quality. That choice is yours.</p><p><strong class="text-white">&#127942; Cup visions:</strong> top clubs that are not too far behind the best rival can also be offered a Continental Cup goal, such as reaching the semi-final within 3 seasons. The goal depends on how strong you are compared with that rival. Reach it once for +4 AP, and the board presents a new vision.</p></div>
             </details>
             <details id="htp-board" class="htp-sec bg-slate-900/60 border border-slate-700 rounded-xl">
                 <summary class="cursor-pointer select-none px-4 py-3 font-black text-white uppercase tracking-wider text-sm md:text-base flex items-center justify-between">The board<span class="htp-chev text-slate-400 text-xs">&#9660;</span></summary>
@@ -1823,7 +1823,7 @@ const AudioManager = {
             if (typeof gameOptions.tipsOn !== 'boolean') gameOptions.tipsOn = true; if (!Array.isArray(gameOptions.tipsSeen)) gameOptions.tipsSeen = [];
         }
         // ---------- Versie, update-melding en back-up ----------
-        const APP_VERSION = '2026.11.24.4';   // bij elke nieuwe versie ophogen: het spel vergelijkt dit met de versie online
+        const APP_VERSION = '2026.11.25.1';   // bij elke nieuwe versie ophogen: het spel vergelijkt dit met de versie online
         let _newVersion = null;
         function checkForUpdate() {
             if (!/^https?:/.test(location.protocol)) return;
@@ -3033,8 +3033,9 @@ function visionGroups() {
 }
 // Cupvisie (alleen topclubs): een eenmalig doel in de Continental Cup binnen 3 seizoenen, +4 AP zodra je het haalt.
 // De lat hangt af van je sterkte tegenover de sterkste CPU-club (gesimuleerd: zo'n 50-60% kans over 3 seizoenen).
-const CUP_VISION = { SEASONS: 3, AP: 4, GAP_FINAL: -0.5, GAP_WIN: 3 };
+const CUP_VISION = { SEASONS: 3, AP: 4, GAP_NONE: -5, GAP_SF: -3, GAP_FINAL: -0.5, GAP_WIN: 3 };
 const CUP_GOALS = {
+    qf:    { round: 0, label: 'Reach the Cup quarter-final', ask: 'reach the quarter-final of the Continental Cup', short: 'QF', news: 'reach the Cup quarter-final' },
     sf:    { round: 1, label: 'Reach the Cup semi-final', ask: 'reach the semi-final of the Continental Cup', short: 'SF', news: 'reach the Cup semi-final' },
     final: { round: 2, label: 'Reach the Cup final', ask: 'reach the final of the Continental Cup', short: 'Final', news: 'reach the Cup final' },
     win:   { round: 3, label: 'Win the Continental Cup', ask: 'win the Continental Cup', short: 'Win', news: 'win the Continental Cup' }
@@ -3042,9 +3043,10 @@ const CUP_GOALS = {
 function cupVisionTier() {
     const rows = currentPowerTable();
     const u = rows.find(r => r.isUser), cpu = rows.filter(r => !r.isUser);
-    if (!u || !cpu.length) return 'sf';
+    if (!u || !cpu.length) return null;
     const gap = u.S - Math.max(...cpu.map(r => r.S));
-    return gap >= CUP_VISION.GAP_WIN ? 'win' : gap >= CUP_VISION.GAP_FINAL ? 'final' : 'sf';
+    if (gap < CUP_VISION.GAP_NONE) return null;   // nog te ver van de top: alleen gewone visies
+    return gap >= CUP_VISION.GAP_WIN ? 'win' : gap >= CUP_VISION.GAP_FINAL ? 'final' : gap >= CUP_VISION.GAP_SF ? 'sf' : 'qf';
 }
 function cupVisionEligible(n) {
     try { return n >= 2 && gameMode === 'rtg' && clubStatus() === 'big'; } catch (e) { return false; }
@@ -3164,20 +3166,30 @@ function newClubVision(fromSeason) {
     const n = visionLog.length + 1;
     const opts = visionCandidates(n, prev);
     clubVision = null;
-    const cup = cupVisionEligible(n);
+    const cup = cupVisionEligible(n) ? cupVisionTier() : null;
     if (!opts.length && !cup) { visionChoices = null; return null; }
     visionChoices = opts.map(g => ({ type: g.type, key: g.key, need: g.need, from: fromSeason, until: fromSeason + visionLen({ n }) - 1, done: 0, res: {}, seen: true, n }));
     if (cup) {
-        const key = cupVisionTier();
+        const key = cup;
         visionChoices = visionChoices.slice(0, 2).concat([{ type: 'cup', key, need: CUP_GOALS[key].round, from: fromSeason, until: fromSeason + CUP_VISION.SEASONS - 1, done: 0, res: {}, seen: true, n }]);
     }
     return visionChoices;
 }
 // De speler kiest een van de drie voorstellen
 let _visionScreen = null;   // waar de keuze gemaakt werd, om dat scherm daarna opnieuw te tonen
+// Er ligt nog een keuze van het bestuur klaar: eerst kiezen (anders verlies je een seizoen van de visie)
+function visionPending() {
+    if (!visionChoices || gameMode !== 'rtg') return false;
+    if (boardPeeking) toggleBoardPeek();
+    else openBoardBriefing(false);
+    infoToast('&#127919;', 'Choose a vision first', 'The board is waiting for your choice.');
+    return true;
+}
 window.chooseVision = function(i) {
     if (!visionChoices || !visionChoices[i]) return;
     clubVision = visionChoices[i];
+    // Later gekozen dan voorgesteld (bv. na herladen): de periode start pas nu, je verliest geen seizoen
+    if (clubVision.from < currentSeason) { const len = clubVision.until - clubVision.from; clubVision.from = currentSeason; clubVision.until = currentSeason + len; }
     visionChoices = null;
     updateVisionUI();
     SaveManager.save();
@@ -4184,6 +4196,7 @@ window.closeBoardBriefing = function(auto, kickoff) {
 
 // Seizoen 1: eerst de boodschap van het bestuur, daarna de aftrap
 window.beginSeason = function() {
+    if (visionPending()) return;
     if (currentSeason === 1 && boardBriefSeason !== 1) {
         boardBriefSeason = 1;
         openBoardBriefing(true, { kickoff: true });
@@ -6911,6 +6924,7 @@ window.confirmScout = async function(type, key, role, displayPos) {
        }
 
        function finishTransfers() {
+            if (visionPending()) return;
             const wasWinter = savePhase === 'winter';
             isTransferWindow = false; pendingRoll = null;
             document.getElementById('transfer-banner').classList.add('hidden');
