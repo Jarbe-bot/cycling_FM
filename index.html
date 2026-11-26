@@ -163,7 +163,7 @@
             </details>
             <details id="htp-offseason" class="htp-sec bg-slate-900/60 border border-slate-700 rounded-xl">
                 <summary class="cursor-pointer select-none px-4 py-3 font-black text-white uppercase tracking-wider text-sm md:text-base flex items-center justify-between">The off-season<span class="htp-chev text-slate-400 text-xs">&#9660;</span></summary>
-                <div class="px-4 pb-4 text-xs md:text-sm text-slate-300 leading-relaxed space-y-2"><p>You get <strong class="text-white">3 action points (AP)</strong>, plus any bonus you earned. AP can&#39;t be saved, so spend them all.</p><ul class="list-disc pl-5 space-y-1.5"><li><strong class="text-white">Transfer (1 AP):</strong> replace a rider with one of four new options. You <em>must</em> pick one, so it&#39;s a gamble. How often strong riders show up depends on your club status (shown in the off-season banner): small, mid-table or top club, based on your average finish over the last two seasons.</li><li><strong class="text-white">Training (1 AP):</strong> improve one stat of one rider. The gain is guaranteed. Weak stats grow fast, elite stats barely. A second training on the same rider gives half.</li><li><strong class="text-white">Training camp (2 AP):</strong> the whole squad improves one stat a little. Once per season.</li><li><strong class="text-white">Position swap (1 AP):</strong> two riders in the same line trade places.</li><li><strong class="text-white">Chief scout (3 AP):</strong> joins when you qualify for the Cup. Pick a nationality or team and choose from four of its riders. Once per off-season. Miss the Cup two seasons in a row and he leaves until you qualify again.</li></ul><p><strong class="text-white">Club status:</strong> small clubs rarely attract top riders. Finish higher for a few seasons and bigger names start to listen.</p><p><strong class="text-white">Long season:</strong> after matchday 9 there&#39;s a winter break with 2 extra AP. The board doesn&#39;t judge you then.</p></div>
+                <div class="px-4 pb-4 text-xs md:text-sm text-slate-300 leading-relaxed space-y-2"><p>You get <strong class="text-white">3 action points (AP)</strong>, plus any bonus you earned. AP can&#39;t be saved, so spend them all.</p><ul class="list-disc pl-5 space-y-1.5"><li><strong class="text-white">Transfer (1 AP):</strong> replace a rider with one of four new options. You <em>must</em> pick one, so it&#39;s a gamble. How often strong riders show up depends on your club status (shown in the off-season banner): small, mid-table, top or world-class club. It depends on your average finish over the last two seasons; a top club that played in the Cup last season is world class.</li><li><strong class="text-white">Training (1 AP):</strong> improve one stat of one rider. The gain is guaranteed. Weak stats grow fast, elite stats barely. A second training on the same rider gives half.</li><li><strong class="text-white">Training camp (2 AP):</strong> the whole squad improves one stat a little. Once per season.</li><li><strong class="text-white">Position swap (1 AP):</strong> two riders in the same line trade places.</li><li><strong class="text-white">Chief scout (3 AP):</strong> joins when you qualify for the Cup. Pick a nationality or team and choose from four of its riders. Once per off-season. Miss the Cup two seasons in a row and he leaves until you qualify again.</li></ul><p><strong class="text-white">Club status:</strong> small clubs rarely attract top riders. Finish higher for a few seasons and bigger names start to listen.</p><p><strong class="text-white">Long season:</strong> after matchday 9 there&#39;s a winter break with 2 extra AP. The board doesn&#39;t judge you then.</p></div>
             </details>
             <details id="htp-vision" class="htp-sec bg-slate-900/60 border border-slate-700 rounded-xl">
                 <summary class="cursor-pointer select-none px-4 py-3 font-black text-white uppercase tracking-wider text-sm md:text-base flex items-center justify-between">Club vision<span class="htp-chev text-slate-400 text-xs">&#9660;</span></summary>
@@ -356,7 +356,7 @@
             
             <div id="transfer-banner" class="hidden w-full max-w-3xl mx-auto bg-gradient-to-r from-purple-700 to-purple-600 text-white font-black px-3.5 py-2.5 md:px-5 md:py-3 rounded-xl mb-2.5 shadow-xl border-2 border-purple-400 items-center justify-between gap-2 flex-wrap">
                 <div class="flex flex-col flex-1 min-w-0 order-1">
-                    <div class="flex items-center gap-2 min-w-0"><span id="transfer-banner-title" class="uppercase tracking-widest text-xs md:text-base leading-tight">Off-Season Window</span><button id="club-status-chip" onclick="explainClubStatus()" class="hidden shrink-0 rounded-full px-2 py-0.5 text-[9px] md:text-[10px] font-black uppercase tracking-wider border leading-tight"></button></div>
+                    <div class="flex flex-wrap items-center gap-x-2 gap-y-1 min-w-0"><span id="transfer-banner-title" class="uppercase tracking-widest text-xs md:text-base leading-tight whitespace-nowrap">Off-Season Window</span><button id="club-status-chip" onclick="explainClubStatus()" class="hidden shrink-0 rounded-full px-2 py-0.5 text-[9px] md:text-[10px] font-black uppercase tracking-wider border leading-tight"></button></div>
                     <span id="board-objective-text" class="text-[10px] md:text-xs text-purple-200 font-medium">Swap players or train specific stats</span>
                 </div>
                 <div class="shrink-0 bg-slate-900 rounded-xl px-3 py-1 text-center leading-none shadow-inner border border-yellow-500/40 order-2 md:order-3">
@@ -1824,7 +1824,7 @@ const AudioManager = {
             if (typeof gameOptions.tipsOn !== 'boolean') gameOptions.tipsOn = true; if (!Array.isArray(gameOptions.tipsSeen)) gameOptions.tipsSeen = [];
         }
         // ---------- Versie, update-melding en back-up ----------
-        const APP_VERSION = '2026.11.25.2';   // bij elke nieuwe versie ophogen: het spel vergelijkt dit met de versie online
+        const APP_VERSION = '2026.11.26.1';   // bij elke nieuwe versie ophogen: het spel vergelijkt dit met de versie online
         let _newVersion = null;
         function checkForUpdate() {
             if (!/^https?:/.test(location.protocol)) return;
@@ -2138,21 +2138,30 @@ const AudioManager = {
         const LEGEND_DRAFT_WEIGHT = 0.4;
         // Clubstatus: gemiddelde eindplaats van de laatste twee seizoenen. Kleine clubs krijgen bij transfers zelden toppers
         // (gouden wiel, BST 600+) en minder sterke renners (paars, 500+). De initiële draft blijft ongemoeid.
+        // 26/11: vier treden. Topclubs krijgen ook minder zwakke dossiers (BST < 450), world class (topclub + cupvoetbal) nog meer toppers.
         const CLUB_STATUS = {
-            small: { label: 'Small club', gold: 0.3, purple: 0.65, note: 'Top riders rarely join. Finish higher to attract them.' },
-            mid:   { label: 'Mid-table club', gold: 0.6, purple: 0.85, note: 'Some top riders are interested.' },
-            big:   { label: 'Top club', gold: 1, purple: 1, note: 'Every rider wants to join.' }
+            small: { label: 'Small club', gold: 0.3, purple: 0.65, weak: 1, note: 'Top riders rarely join. Finish higher to attract them.' },
+            mid:   { label: 'Mid-table club', gold: 0.6, purple: 0.85, weak: 1, note: 'Some top riders are interested.' },
+            big:   { label: 'Top club', gold: 1.25, purple: 1.15, weak: 0.85, note: 'Strong riders are keen to join.' },
+            world: { label: 'World-class club', gold: 1.6, purple: 1.3, weak: 0.65, note: 'The best riders want to join.' }
         };
+        // Cupvoetbal in het laatst afgewerkte seizoen (voorwaarde voor world class)
+        function playedCupLastSeason() {
+            const ss = (careerLog && careerLog.seasons) || [];
+            const rec = ss.length ? ss[ss.length - 1] : null;
+            return !!rec && typeof rec.cup === 'number' && rec.cup >= 0;
+        }
         function clubStatus() {
             if (!finHist.length) return 'small';
             // Top club: gemiddeld top 3 (de top 3 is duidelijk sterker dan de rest). Small club: gemiddeld slechter dan 6e.
             const last = finHist.slice(-2), avg = last.reduce((a, b) => a + b, 0) / last.length;
-            return avg <= 3.5 ? 'big' : avg <= 6 ? 'mid' : 'small';
+            if (avg <= 3.5) return playedCupLastSeason() ? 'world' : 'big';
+            return avg <= 6 ? 'mid' : 'small';
         }
         function statusWeight(id, st) {
             const r = RIDER_BY_ID[id]; if (!r || !st) return 1;
             const bst = r.s.reduce((a, x) => a + x, 0), t = CLUB_STATUS[st];
-            return bst >= 600 ? t.gold : bst >= 500 ? t.purple : 1;
+            return bst >= 600 ? t.gold : bst >= 500 ? t.purple : bst < 450 ? (t.weak || 1) : 1;
         }
         // Voorlopige afbeelding: een neutraal truitje (wordt later vervangen door ploegkleuren en vlag)
         const RIDER_PLACEHOLDER = 'data:image/svg+xml;utf8,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><path d="M30 15 L42 10 Q50 18 58 10 L70 15 L90 32 L78 45 L70 38 L70 90 L30 90 L30 38 L22 45 L10 32 Z" fill="#94a3b8" stroke="#1e293b" stroke-width="3"/></svg>');
@@ -2940,20 +2949,21 @@ function hopeNoun(E, fight) {
 function expectationLabel(E, fight) { return E <= 1 ? 'Title' : (E === 2 ? (fight ? 'Title race' : 'Cup spot') : (E >= LEAGUE_CPU ? 'Stay up' : (E === LEAGUE_CPU - 1 ? 'No play-off' : `Top ${E}`))); }
 
 // Clubstatus zichtbaar in de transferbanner: bepaalt hoe vaak sterke renners bij een transfer opduiken
-const CLUB_STATUS_STYLE = { small: 'bg-slate-800 text-slate-300 border-slate-500', mid: 'bg-sky-900/60 text-sky-200 border-sky-400', big: 'bg-amber-400/20 text-amber-200 border-amber-300' };
+const CLUB_STATUS_STYLE = { small: 'bg-slate-800 text-slate-300 border-slate-500', mid: 'bg-sky-900/60 text-sky-200 border-sky-400', big: 'bg-amber-400/20 text-amber-200 border-amber-300', world: 'bg-gradient-to-r from-fuchsia-500/40 to-amber-400/40 text-white border-yellow-300' };
+const CLUB_STATUS_ICON = { small: '', mid: '', big: '&#11088; ', world: '&#127757; ' };
 function updateClubStatusChip() {
     const el = document.getElementById('club-status-chip');
     if (!el) return;
     if (gameMode !== 'rtg' || !isTransferWindow) { el.classList.add('hidden'); return; }
     const st = clubStatus();
     el.className = `shrink-0 rounded-full px-2 py-0.5 text-[9px] md:text-[10px] font-black uppercase tracking-wider border leading-tight ${CLUB_STATUS_STYLE[st]}`;
-    el.innerHTML = (st === 'big' ? '&#11088; ' : '') + CLUB_STATUS[st].label + ' &#9432;';
+    el.innerHTML = CLUB_STATUS_ICON[st] + CLUB_STATUS[st].label + ' &#9432;';
 }
 window.explainClubStatus = function() {
     const st = clubStatus(), last = finHist.slice(-2);
     const avg = last.length ? (last.reduce((a, b) => a + b, 0) / last.length) : null;
-    const how = avg === null ? 'Every club starts small.' : `Average finish over the last ${last.length === 1 ? 'season' : '2 seasons'}: ${avg % 1 ? avg.toFixed(1) : avg}. Top club: 3.5 or better. Mid-table: 6 or better.`;
-    infoToast(st === 'big' ? '&#11088;' : '&#127967;&#65039;', CLUB_STATUS[st].label, `${CLUB_STATUS[st].note} ${how}`);
+    const how = avg === null ? 'Every club starts small.' : `Average finish over the last ${last.length === 1 ? 'season' : '2 seasons'}: ${avg % 1 ? avg.toFixed(1) : avg}. Top club: 3.5 or better. Mid-table: 6 or better. World class: a top club that played in the Cup last season.`;
+    infoToast(st === 'world' ? '&#127757;' : st === 'big' ? '&#11088;' : '&#127967;&#65039;', CLUB_STATUS[st].label, `${CLUB_STATUS[st].note} ${how}`);
 };
 function updateObjectiveBanner() {
     try { updateClubStatusChip(); } catch (e) {}
@@ -3067,7 +3077,7 @@ function cupVisionTier() {
     return gap >= CUP_VISION.GAP_WIN ? 'win' : gap >= CUP_VISION.GAP_FINAL ? 'final' : gap >= CUP_VISION.GAP_SF ? 'sf' : 'qf';
 }
 function cupVisionEligible(n) {
-    try { return n >= 2 && gameMode === 'rtg' && clubStatus() === 'big'; } catch (e) { return false; }
+    try { const st = clubStatus(); return n >= 2 && gameMode === 'rtg' && (st === 'big' || st === 'world'); } catch (e) { return false; }
 }
 // Een cupronde gewonnen: is het doel van de cupvisie nu bereikt?
 function cupVisionOnWin(round) {
