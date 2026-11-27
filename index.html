@@ -1826,7 +1826,7 @@ const AudioManager = {
             if (typeof gameOptions.tipsOn !== 'boolean') gameOptions.tipsOn = true; if (!Array.isArray(gameOptions.tipsSeen)) gameOptions.tipsSeen = [];
         }
         // ---------- Versie, update-melding en back-up ----------
-        const APP_VERSION = '2026.11.27.4';   // bij elke nieuwe versie ophogen: het spel vergelijkt dit met de versie online
+        const APP_VERSION = '2026.11.27.6';   // bij elke nieuwe versie ophogen: het spel vergelijkt dit met de versie online
         let _newVersion = null;
         function checkForUpdate() {
             if (!/^https?:/.test(location.protocol)) return;
@@ -2390,6 +2390,13 @@ const AudioManager = {
             }[role];
             
             let ovr = (boostedS.spe * w.spe) + (boostedS.atk * w.atk) + (boostedS.hp * w.hp) + (boostedS.spa * w.spa) + (boostedS.def * w.def) + (boostedS.spd * w.spd);
+            // Spits: exact zoals de wedstrijdmotor. Per fase het beste profiel (targetspits op GC, snelle spits op Sprint), kansen creëren ×0,4 en afwerken ×1,3
+            if (role === 'ST') {
+                const { atk, hp, spe, spa } = boostedS;
+                const create = Math.max(hp * 0.6 + spa * 0.3 + atk * 0.1, spe * 0.6 + spa * 0.3 + atk * 0.1);
+                const finish = Math.max(atk * 0.6 + hp * 0.4, atk * 0.6 + spe * 0.3 + spa * 0.1);
+                ovr = (create * 0.4 + finish * 1.3) / 1.7 * 0.9;   // ×0,9: het beste profiel kiezen geeft hogere getallen; zo blijft een spits-OVR gemiddeld even hoog als vroeger
+            }
             // Zelfs al barst de speler van de chemie, op het spelerskaartje (UI) toppen we dit af op 99.
             return Math.min(99, Math.round(ovr)); 
         }
@@ -5489,7 +5496,18 @@ await rollOptions(role, displayPos);
 
             // Eerst bevestigen op het gekozen knopje, dan terug naar de kaart van de renner en daar de winst laten optellen
             trainAnim = { posId, stat: statKey, from: currentRawVal, to: p.stats[statKey], ovrFrom: ovrBefore, ovrTo: calculatePlayerOVR(p, role) };
-            const go = () => { trainBusy = false; openDraft(posId, displayPos, role); };
+            // Vangnet: lukt het terugkeren naar de rennerskaart niet, dan nooit vastzitten; toon de fout zodat we ze kunnen opsporen
+            const go = () => {
+                trainBusy = false;
+                const fail = e => {
+                    console.error('training → profiel', e);
+                    trainAnim = null;
+                    try { closeModal(); } catch (e2) { const m = document.getElementById('draft-modal'); if (m) { m.classList.add('hidden'); m.classList.remove('flex'); } }
+                    try { renderPitch(); updateScores(); } catch (e3) {}
+                    infoToast('&#9888;&#65039;', 'Training saved', `The card could not be shown (${String(e && e.message || e).slice(0, 80)}). Please send a screenshot.`);
+                };
+                try { Promise.resolve(openDraft(posId, displayPos, role)).catch(fail); } catch (e) { fail(e); }
+            };
             if (!btn || reduceMotion()) { go(); return; }
             trainBusy = true;
             document.querySelectorAll('#gacha-container button').forEach(b => { if (b !== btn) { b.style.transition = 'opacity .25s'; b.style.opacity = '.35'; } b.style.pointerEvents = 'none'; });
