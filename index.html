@@ -163,7 +163,7 @@
             </details>
             <details id="htp-offseason" class="htp-sec bg-slate-900/60 border border-slate-700 rounded-xl">
                 <summary class="cursor-pointer select-none px-4 py-3 font-black text-white uppercase tracking-wider text-sm md:text-base flex items-center justify-between">The off-season<span class="htp-chev text-slate-400 text-xs">&#9660;</span></summary>
-                <div class="px-4 pb-4 text-xs md:text-sm text-slate-300 leading-relaxed space-y-2"><p>You get <strong class="text-white">3 action points (AP)</strong>, plus any bonus you earned. AP can&#39;t be saved, so spend them all.</p><ul class="list-disc pl-5 space-y-1.5"><li><strong class="text-white">Transfer (1 AP):</strong> replace a rider with one of four new options (three for a local club). You <em>must</em> pick one, so it&#39;s a gamble. How often strong riders show up depends on your club status (shown in the off-season banner): local, small, mid-table, top or world-class club. It depends on your average finish over the last two seasons, and at the start your squad strength at the first kick-off counts as a season. A top club that played in the Cup last season is world class.</li><li><strong class="text-white">Training (1 AP):</strong> improve one stat of one rider. The gain is guaranteed. Weak stats grow fast, elite stats barely. A second training on the same rider gives half.</li><li><strong class="text-white">Training camp (2 AP):</strong> the whole squad improves one stat a little. Once per season.</li><li><strong class="text-white">Position swap (1 AP):</strong> two riders in the same line trade places.</li><li><strong class="text-white">Chief scout (3 AP):</strong> joins when you qualify for the Cup. Pick a nationality or team and choose from four of its riders. Once per off-season. Miss the Cup two seasons in a row and he leaves until you qualify again.</li></ul><p><strong class="text-white">Club status:</strong> small clubs rarely attract top riders. Finish higher for a few seasons and bigger names start to listen.</p><p><strong class="text-white">Long season:</strong> after matchday 9 there&#39;s a winter break with 2 extra AP. The board doesn&#39;t judge you then.</p></div>
+                <div class="px-4 pb-4 text-xs md:text-sm text-slate-300 leading-relaxed space-y-2"><p>You get <strong class="text-white">3 action points (AP)</strong>, plus any bonus you earned. AP can&#39;t be saved, so spend them all.</p><ul class="list-disc pl-5 space-y-1.5"><li><strong class="text-white">Transfer (1 AP):</strong> replace a rider with one of four new options (three for a local club). You <em>must</em> pick one, so it&#39;s a gamble. How often strong riders show up depends on your club status (shown in the off-season banner): local, small, mid-table, top or world-class club. It depends on your average finish over the last two seasons, and at the start your squad strength at the first kick-off counts as a season. A top club that played in the Cup last season is world class.</li><li><strong class="text-white">Training (1 AP):</strong> improve one stat of one rider. The gain is guaranteed. Weak stats grow fast, elite stats barely. A second training on the same rider gives half.</li><li><strong class="text-white">Training camp (2 AP):</strong> the whole squad improves one stat a little. Once per season.</li><li><strong class="text-white">Position swap (1 AP):</strong> two riders in the same line trade places.</li><li><strong class="text-white">Chief scout (3 AP):</strong> joins when you qualify for the Cup. Pick a nationality or team and choose from 2 to 4 of its riders who want to sign. After each search he needs a season to explore new markets, so you can use him every other off-season. Miss the Cup two seasons in a row and he leaves until you qualify again.</li></ul><p><strong class="text-white">Club status:</strong> small clubs rarely attract top riders. Finish higher for a few seasons and bigger names start to listen.</p><p><strong class="text-white">Long season:</strong> after matchday 9 there&#39;s a winter break with 2 extra AP. The board doesn&#39;t judge you then.</p></div>
             </details>
             <details id="htp-vision" class="htp-sec bg-slate-900/60 border border-slate-700 rounded-xl">
                 <summary class="cursor-pointer select-none px-4 py-3 font-black text-white uppercase tracking-wider text-sm md:text-base flex items-center justify-between">Club vision<span class="htp-chev text-slate-400 text-xs">&#9660;</span></summary>
@@ -606,7 +606,8 @@
             SWAP_COST: 1,
             SCOUT_COST: 3,                 // hoofdscout: kies een land of ploeg, 4 renners daaruit
             SCOUT_MIN: 4,                  // alleen landen/ploegen met minstens zoveel beschikbare renners
-            SCOUT_MISS_LIMIT: 2,           // zoveel seizoenen op rij geen cupvoetbal: de scout neemt ontslag
+            SCOUT_MISS_LIMIT: 2,
+            SCOUT_COOLDOWN: 2,             // na gebruik pas weer inzetbaar na zoveel seizoenen (dus om de twee tussenseizoenen)           // zoveel seizoenen op rij geen cupvoetbal: de scout neemt ontslag
             // Bestuur
             BASE_AP: 3,
             LONG_BASE_AP: 3,               // lang seizoen: actiepunten in het tussenseizoen (plus WINTER_AP in de winterstop)
@@ -1825,7 +1826,7 @@ const AudioManager = {
             if (typeof gameOptions.tipsOn !== 'boolean') gameOptions.tipsOn = true; if (!Array.isArray(gameOptions.tipsSeen)) gameOptions.tipsSeen = [];
         }
         // ---------- Versie, update-melding en back-up ----------
-        const APP_VERSION = '2026.11.27.1';   // bij elke nieuwe versie ophogen: het spel vergelijkt dit met de versie online
+        const APP_VERSION = '2026.11.27.3';   // bij elke nieuwe versie ophogen: het spel vergelijkt dit met de versie online
         let _newVersion = null;
         function checkForUpdate() {
             if (!/^https?:/.test(location.protocol)) return;
@@ -3031,7 +3032,7 @@ function scoutOnQualify() {
     const back = sc.status === 'resigned';
     sc.status = 'active'; sc.since = currentSeason;
     try { pushNews('SCOUT', back ? `Chief scout returns to ${userTeamName} with European football back` : `${userTeamName} appoint a chief scout`); } catch (e) {}
-    return rewardBoxHtml(back ? 'Scout is back' : 'Chief scout', `${back ? 'European football lured your chief scout back.' : 'European football attracts a chief scout.'} In the off-season, tap a rider and choose Scout: pick a nationality or team and choose from four of its riders (${BALANCE.SCOUT_COST} AP, once per off-season). Miss the Cup ${BALANCE.SCOUT_MISS_LIMIT} seasons in a row and he leaves.`);
+    return rewardBoxHtml(back ? 'Scout is back' : 'Chief scout', `${back ? 'European football lured your chief scout back.' : 'European football attracts a chief scout.'} In the off-season, tap a rider and choose Scout: pick a nationality or team and choose from the 2 to 4 riders he finds (${BALANCE.SCOUT_COST} AP). After each search he needs a season to explore new markets. Miss the Cup ${BALANCE.SCOUT_MISS_LIMIT} seasons in a row and he leaves.`);
 }
 // Bij het begin van het tussenseizoen: telde het afgelopen seizoen cupvoetbal? Zo niet, dan raakt de scout zijn geduld kwijt
 function scoutSeasonCheck(finished) {
@@ -3052,14 +3053,15 @@ function scoutSeasonCheck(finished) {
     return 'warn';
 }
 function scoutAvailable() { const sc = getScout(); return sc.status === 'active' && isTransferWindow && savePhase !== 'winter'; }
-function scoutUsable() { return scoutAvailable() && getScout().used !== currentSeason && actionPoints >= BALANCE.SCOUT_COST; }
+function scoutResting() { const u = getScout().used; return !!u && currentSeason - u < BALANCE.SCOUT_COOLDOWN; }
+function scoutUsable() { return scoutAvailable() && !scoutResting() && actionPoints >= BALANCE.SCOUT_COST; }
 // Waarom de scoutknop grijs staat (leeg = bruikbaar)
 function scoutBlockReason() {
     const sc = getScout();
     if (sc.status === 'none') return 'Unlocked after reaching the Continental Cup';
     if (sc.status === 'resigned') return 'Resigned &middot; reach the Cup to rehire';
     if (savePhase === 'winter') return 'Off-season only';
-    if (sc.used === currentSeason) return 'Used this off-season';
+    if (scoutResting()) return sc.used === currentSeason ? `Used &middot; back in S${sc.used + BALANCE.SCOUT_COOLDOWN}` : `Scouting new markets &middot; back in S${sc.used + BALANCE.SCOUT_COOLDOWN}`;
     if (actionPoints < BALANCE.SCOUT_COST) return `Needs ${BALANCE.SCOUT_COST} AP`;
     return '';
 }
@@ -5600,7 +5602,7 @@ window.openScoutMenu = function(posId, role, displayPos, mode) {
             const isV = v && v.type === type;
             return `<button onclick="openScoutMenu('${posId}', '${role}', '${displayPos}', '${type}')" class="flex flex-col items-center justify-center gap-1 px-3 py-5 rounded-2xl border-2 ${isV ? 'border-yellow-400 bg-yellow-500/10' : 'border-slate-600 bg-slate-800 hover:border-yellow-400'} transition-colors"><span class="text-3xl">${icon}</span><span class="font-black uppercase tracking-widest text-sm text-white">${title}</span><span class="text-[10px] sm:text-xs text-slate-400 font-bold">${n} options</span>${isV ? `<span class="text-[10px] font-black uppercase tracking-wider text-yellow-300">Vision: ${esc(v.key)}</span>` : ''}</button>`;
         };
-        body = `<p class="text-center text-xs sm:text-sm text-slate-300 leading-snug">Where should your scout look? You get <strong class="text-white">four riders</strong> and <strong class="text-white">must pick one</strong> to replace ${esc(cardName(userTeam[posId].name))}. Star riders stay rare.</p>
+        body = `<p class="text-center text-xs sm:text-sm text-slate-300 leading-snug">Where should your scout look? He finds <strong class="text-white">2 to 4 riders</strong> willing to sign, and you <strong class="text-white">must pick one</strong> to replace ${esc(cardName(userTeam[posId].name))}. Star riders stay rare.</p>
             <div class="grid grid-cols-2 gap-3 mt-4 max-w-sm mx-auto">${tile('nat', '&#127757;', 'Country', g.nat.length)}${tile('team', '&#128690;', 'Team', g.team.length)}</div>
             ${back(`openDraft('${posId}', '${displayPos}', '${role}')`, 'Back to rider')}
             <p class="text-center text-[10px] text-slate-500 mt-2">You only pay once you pick a country or team.</p>`;
@@ -5633,7 +5635,8 @@ window.confirmScout = async function(type, key, role, displayPos) {
     document.getElementById('btn-reroll').classList.add('hidden');
     document.getElementById('btn-reroll').classList.remove('flex');
     document.getElementById('reroll-wrapper').classList.add('hidden');
-    pendingRoll = { posId: currentDraftPos, ids: null, transfer: true, scout: { type, key } };
+    // Hoeveel renners in dat profiel willen tekenen, is een gok: 2, 3 of 4
+    pendingRoll = { posId: currentDraftPos, ids: null, transfer: true, scout: { type, key, n: 2 + Math.floor(Math.random() * 3) } };
     await rollOptions(role, displayPos);
 };
 
@@ -5662,7 +5665,7 @@ window.confirmScout = async function(type, key, role, displayPos) {
             if (scoutF) availableIds = availableIds.filter(id => scoutMatches(id, scoutF));
             const st = isTransfer ? clubStatus() : null;
             const weightOf = id => ((RIDER_BY_ID[id] && RIDER_BY_ID[id].team === 'Legends') ? LEGEND_DRAFT_WEIGHT : 1) * statusWeight(id, st);
-            const nOpts = (st && CLUB_STATUS[st].options) || 4;   // een local club krijgt maar 3 kaartjes
+            const nOpts = scoutF ? (scoutF.n || 4) : ((st && CLUB_STATUS[st].options) || 4);   // local club: 3 kaartjes; scout: 2 tot 4
             if (kept.length) chosenIds = kept;
             else for(let i=0; i<nOpts; i++) {
                 if(availableIds.length === 0) break;
@@ -5681,7 +5684,7 @@ window.confirmScout = async function(type, key, role, displayPos) {
             if (st) {
                 const c = CLUB_STATUS[st], note = document.createElement('p');
                 note.className = 'col-span-full text-center text-[10px] sm:text-xs text-slate-400 -mt-1 sm:mt-0 leading-tight';
-                note.innerHTML = (scoutF ? `<span class="text-amber-300 font-black uppercase tracking-wider">&#128269; Scouted: ${scoutF.key}</span> &middot; ` : '') + `<span class="text-yellow-400 font-black uppercase tracking-wider">${c.label}</span> &middot; ${c.note}`;
+                note.innerHTML = (scoutF ? `<span class="text-amber-300 font-black uppercase tracking-wider">&#128269; ${scoutF.key}</span> &middot; your scout found ${chosenIds.length} rider${chosenIds.length === 1 ? '' : 's'} willing to sign` : `<span class="text-yellow-400 font-black uppercase tracking-wider">${c.label}</span> &middot; ${c.note}`);
                 document.getElementById('gacha-container').prepend(note);
             }
         }
