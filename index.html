@@ -1826,7 +1826,7 @@ const AudioManager = {
             if (typeof gameOptions.tipsOn !== 'boolean') gameOptions.tipsOn = true; if (!Array.isArray(gameOptions.tipsSeen)) gameOptions.tipsSeen = [];
         }
         // ---------- Versie, update-melding en back-up ----------
-        const APP_VERSION = '2026.11.27.3';   // bij elke nieuwe versie ophogen: het spel vergelijkt dit met de versie online
+        const APP_VERSION = '2026.11.27.4';   // bij elke nieuwe versie ophogen: het spel vergelijkt dit met de versie online
         let _newVersion = null;
         function checkForUpdate() {
             if (!/^https?:/.test(location.protocol)) return;
@@ -5664,7 +5664,8 @@ window.confirmScout = async function(type, key, role, displayPos) {
             const scoutF = isTransfer && mine.scout ? mine.scout : null;
             if (scoutF) availableIds = availableIds.filter(id => scoutMatches(id, scoutF));
             const st = isTransfer ? clubStatus() : null;
-            const weightOf = id => ((RIDER_BY_ID[id] && RIDER_BY_ID[id].team === 'Legends') ? LEGEND_DRAFT_WEIGHT : 1) * statusWeight(id, st);
+            // Legendes vallen buiten de clubstatus: voor iedereen even zeldzaam (speciaal om te vinden)
+            const weightOf = id => (RIDER_BY_ID[id] && RIDER_BY_ID[id].team === 'Legends') ? LEGEND_DRAFT_WEIGHT : statusWeight(id, st);
             const nOpts = scoutF ? (scoutF.n || 4) : ((st && CLUB_STATUS[st].options) || 4);   // local club: 3 kaartjes; scout: 2 tot 4
             if (kept.length) chosenIds = kept;
             else for(let i=0; i<nOpts; i++) {
